@@ -1,0 +1,46 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { findTool, TOOLS, workspaceForToken } from "../app/tools/index.js";
+
+// Tool calls from the Claude CLI. It speaks the Model Context Protocol, which is JSON-RPC 2.0 over HTTP.
+// The bearer token picks the run, and so the workspace the calls work in.
+export async function handleMcp(req: IncomingMessage, res: ServerResponse, message: any): Promise<void> {
+  const token = req.headers.authorization?.replace(/^Bearer /, "");
+  const workspace = workspaceForToken(token);
+  if (!workspace) return json(res, 401, { error: "unauthorized" });
+
+  const { id, method, params } = message;
+  // Notifications have no id, and get no reply body.
+  if (id === undefined) return void res.writeHead(202).end();
+
+  switch (method) {
+    case "initialize":
+      return reply(res, id, {
+        protocolVersion: params?.protocolVersion ?? "2025-03-26",
+        capabilities: { tools: {} },
+        serverInfo: { name: "mip", version: "0.1.0" },
+      });
+    case "tools/list":
+      return reply(res, id, { tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) });
+    case "tools/call": {
+      const tool = findTool(params?.name);
+      if (!tool) return replyError(res, id, -32602, `unknown tool: ${params?.name}`);
+      const result = await tool.run(params.arguments ?? {}, { workspace });
+      return reply(res, id, { content: [{ type: "text", text: result.text }], isError: result.isError });
+    }
+    default:
+      return replyError(res, id, -32601, `method not found: ${method}`);
+  }
+}
+
+function reply(res: ServerResponse, id: unknown, result: unknown): void {
+  json(res, 200, { jsonrpc: "2.0", id, result });
+}
+
+function replyError(res: ServerResponse, id: unknown, code: number, message: string): void {
+  json(res, 200, { jsonrpc: "2.0", id, error: { code, message } });
+}
+
+function json(res: ServerResponse, status: number, data: unknown): void {
+  res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+  res.end(JSON.stringify(data));
+}

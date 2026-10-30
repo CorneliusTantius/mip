@@ -1,4 +1,7 @@
-import { createProviders, findProvider } from "./agent/registry.js";
+import { defaultPersona, personaPrompt } from "../app/personas.js";
+import { findProvider } from "../app/providers.js";
+import { TOOLS } from "../app/tools/index.js";
+import { workspaceFor } from "../app/tools/workspace.js";
 
 // Usage: npm start -- "prompt" [--provider claude-cli|pi] [--model <name>] [--session <id>]
 function parseArgs(argv: string[]) {
@@ -25,10 +28,10 @@ async function main() {
     process.exit(1);
   }
 
-  const provider = findProvider(createProviders(), providerId);
+  const provider = findProvider(providerId);
   let failed = false;
 
-  for await (const event of provider.run({ prompt, model, sessionId })) {
+  for await (const event of provider.run({ prompt, systemPrompt: personaPrompt(defaultPersona().id), tools: TOOLS, workspace: workspaceFor("cli"), model, sessionId })) {
     switch (event.type) {
       case "text":
         process.stdout.write(event.text);

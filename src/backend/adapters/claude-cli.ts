@@ -1,21 +1,51 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { createInterface } from "node:readline";
-import { AsyncQueue } from "../async-queue.js";
-import { SignInSession } from "../sign-in-session.js";
+import { AsyncQueue } from "./async-queue.js";
+import { SignInSession } from "./sign-in-session.js";
 import type {
   AgentEvent,
   AgentProvider,
   AuthState,
+  ModelOption,
   RunOptions,
   SignInMethod,
   SignInProgress,
   SignInTarget,
-} from "../types.js";
+  ThinkingLevel,
+} from "./contract.js";
 
 const TARGET_ID = "claude-subscription";
 // Auth status changes rarely, and the dashboard polls often, so cache it briefly.
 const STATUS_TTL_MS = 5_000;
+// The model list changes rarely, and reading it starts the CLI, so cache it for longer.
+const CATALOG_TTL_MS = 10 * 60_000;
+const CATALOG_TIMEOUT_MS = 20_000;
+
+// One model as the CLI lists it.
+interface CliModel {
+  value: string;
+  displayName: string;
+  supportsEffort?: boolean;
+  supportedEffortLevels?: ThinkingLevel[];
+}
+
+// One reply on the CLI's control channel. A success carries the answer in `response`.
+interface ControlReply {
+  subtype: string;
+  request_id: string;
+  error?: string;
+  response?: { models?: CliModel[] };
+}
+
+// The CLI's "default" entry is what it uses when no --model is given, so it maps to an empty id.
+function toModelOption(model: CliModel): ModelOption {
+  return {
+    id: model.value === "default" ? "" : model.value,
+    name: model.displayName,
+    thinkingLevels: model.supportsEffort ? (model.supportedEffortLevels ?? []) : [],
+  };
+}
 
 interface ClaudeAuthStatus {
   loggedIn: boolean;
@@ -24,10 +54,12 @@ interface ClaudeAuthStatus {
 }
 
 // Drops API keys so the CLI uses the subscription login.
-function cliEnv(): NodeJS.ProcessEnv {
+// configDir (when set) becomes the CLI's config folder, so its chats and login are kept there.
+function cliEnv(configDir?: string): NodeJS.ProcessEnv {
   const env = { ...process.env };
   delete env.ANTHROPIC_API_KEY;
   delete env.ANTHROPIC_AUTH_TOKEN;
+  if (configDir) env.CLAUDE_CONFIG_DIR = configDir;
   return env;
 }
 
@@ -82,9 +114,16 @@ export function parseStreamLine(line: string): AgentEvent[] {
   }
 }
 
+// The MCP config that points the CLI at the app's tool endpoint. The server name "mip" makes tools "mcp__mip__<name>".
+function mcpConfig(mcp: { url: string; token: string }): string {
+  return JSON.stringify({ mcpServers: { mip: { type: "http", url: mcp.url, headers: { Authorization: `Bearer ${mcp.token}` } } } });
+}
+
 export interface ClaudeCliOptions {
   // Path or name of the claude binary. Defaults to CLAUDE_BIN or "claude" on PATH.
   bin?: string;
+  // Folder for the CLI's config, chats, and login. Unset uses the CLI default (~/.claude).
+  configDir?: string;
   defaultTimeoutMs?: number;
 }
 
@@ -94,13 +133,70 @@ export class ClaudeCliProvider implements AgentProvider {
   readonly capabilities = { streaming: true, tools: true, mcp: true, sessions: true, signIn: true };
 
   private readonly bin: string;
+  private readonly configDir?: string;
   private readonly defaultTimeoutMs: number;
   private statusCache?: { at: number; value: ClaudeAuthStatus };
+  private catalogCache?: { at: number; models: ModelOption[] };
   private signInState?: { session: SignInSession; child: ChildProcessWithoutNullStreams };
 
   constructor(options: ClaudeCliOptions = {}) {
     this.bin = options.bin ?? process.env.CLAUDE_BIN ?? "claude";
+    this.configDir = options.configDir;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 300_000;
+  }
+
+  async models(): Promise<ModelOption[]> {
+    if (!this.catalogCache || Date.now() - this.catalogCache.at > CATALOG_TTL_MS) {
+      this.catalogCache = { at: Date.now(), models: await this.listModels() };
+    }
+    return this.catalogCache.models;
+  }
+
+  // Asks the CLI for its model list over its stream-json control channel, the same channel the Agent SDK uses.
+  // No prompt is sent, so no model is called.
+  private async listModels(): Promise<ModelOption[]> {
+    const child = spawn(this.bin, ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose"], {
+      env: cliEnv(this.configDir),
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    // The child may exit while we write to it. The failure below reports that, so the write error is ignored.
+    child.stdin.on("error", () => {});
+
+    const replies = new Map<string, (reply: ControlReply) => void>();
+    createInterface({ input: child.stdout }).on("line", (line) => {
+      let message: any;
+      try {
+        message = JSON.parse(line);
+      } catch {
+        return;
+      }
+      if (message.type === "control_response") replies.get(message.response?.request_id)?.(message.response);
+    });
+
+    const ask = (subtype: string) =>
+      new Promise<ControlReply>((resolve) => {
+        const requestId = randomUUID();
+        replies.set(requestId, resolve);
+        child.stdin.write(JSON.stringify({ type: "control_request", request_id: requestId, request: { subtype } }) + "\n");
+      });
+    const failed = new Promise<never>((_, reject) => {
+      child.on("error", (err) => reject(new Error(`failed to start "${this.bin}": ${err.message}`)));
+      child.on("close", (code) => reject(new Error(`claude CLI exited with code ${code} before listing its models`)));
+    });
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("claude CLI did not list its models in time")), CATALOG_TIMEOUT_MS);
+    });
+
+    try {
+      await Promise.race([ask("initialize"), failed, timeout]);
+      const list = await Promise.race([ask("list_models"), failed, timeout]);
+      if (list.subtype !== "success") throw new Error(list.error ?? "claude CLI could not list its models");
+      return (list.response?.models ?? []).map(toModelOption);
+    } finally {
+      clearTimeout(timer);
+      child.kill("SIGTERM");
+    }
   }
 
   async targets(): Promise<SignInTarget[]> {
@@ -115,7 +211,7 @@ export class ClaudeCliProvider implements AgentProvider {
     if (this.signInState?.session.progress().running) return;
 
     const session = new SignInSession();
-    const child = spawn(this.bin, ["auth", "login", "--claudeai"], { env: cliEnv(), stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(this.bin, ["auth", "login", "--claudeai"], { env: cliEnv(this.configDir), stdio: ["pipe", "pipe", "pipe"] });
     this.signInState = { session, child };
 
     const readOutput = (chunk: Buffer) => chunk.toString().split("\n").forEach((line) => session.log(line));
@@ -156,12 +252,26 @@ export class ClaudeCliProvider implements AgentProvider {
     // A new run gets a known session id, so the caller can resume it later.
     const sessionId = options.sessionId ?? randomUUID();
     const args = ["-p", options.prompt, "--output-format", "stream-json", "--verbose", "--include-partial-messages"];
+    // The app's tools replace Claude Code's built-in ones for this run. Only the app's tools are allowed.
+    if (options.toolServer && options.tools?.length) {
+      args.push(
+        "--mcp-config",
+        mcpConfig(options.toolServer),
+        "--strict-mcp-config",
+        "--tools",
+        "",
+        "--allowedTools",
+        ...options.tools.map((tool) => `mcp__mip__${tool.name}`),
+      );
+    }
     if (options.model) args.push("--model", options.model);
-    if (options.systemPrompt) args.push("--append-system-prompt", options.systemPrompt);
+    if (options.thinking) args.push("--effort", options.thinking);
+    // Replaces Claude Code's default prompt. Snapshot off re-renders it on every run, so resumed chats pick up changes.
+    if (options.systemPrompt) args.push("--system-prompt", options.systemPrompt, "--system-prompt-snapshot", "off");
     args.push(options.sessionId ? "--resume" : "--session-id", sessionId);
 
     const queue = new AsyncQueue<AgentEvent>();
-    const child = spawn(this.bin, args, { env: cliEnv(), stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(this.bin, args, { env: cliEnv(this.configDir), stdio: ["ignore", "pipe", "pipe"] });
     const timer = setTimeout(() => child.kill("SIGTERM"), this.defaultTimeoutMs);
     const onAbort = () => child.kill("SIGTERM");
     options.signal?.addEventListener("abort", onAbort);
@@ -210,7 +320,7 @@ export class ClaudeCliProvider implements AgentProvider {
 
   private runCli(args: string[]): Promise<{ stdout: string; stderr: string }> {
     return new Promise((resolve, reject) => {
-      const child = spawn(this.bin, args, { env: cliEnv(), stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(this.bin, args, { env: cliEnv(this.configDir), stdio: ["ignore", "pipe", "pipe"] });
       let stdout = "";
       let stderr = "";
       child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));

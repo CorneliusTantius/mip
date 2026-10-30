@@ -1,4 +1,4 @@
-import type { SignInPrompt, SignInProgress } from "./types.js";
+import type { SignInPrompt, SignInProgress } from "./contract.js";
 
 // Tracks one sign-in attempt: its output, a pending prompt, and the answer that resolves it.
 export class SignInSession {

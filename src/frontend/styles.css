@@ -1,0 +1,72 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: false;
+}
+
+/* One screen: the page itself never scrolls, panels scroll inside themselves, and no scrollbar shows. */
+html,
+body,
+#app {
+  height: 100%;
+  overflow: hidden;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* No focus or open highlight on any control. Only the style is set: a full `outline: none` also resets the color to the
+   text color, and a card that gains focus inside (like the delete dialog) then fades a white ring out. :is() skips selectors a browser doesn't know. */
+:is(:focus, :focus-visible, :focus-within, :open),
+select::picker(select) {
+  outline-style: none !important;
+}
+
+:is(button, input, select, textarea, .input, .select):is(:focus, :focus-visible, :focus-within, :open) {
+  box-shadow: none !important;
+}
+
+/* Inputs and dropdowns keep their resting border color. */
+:is(input, select, .input, .select):is(:focus, :focus-within, :open) {
+  border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent) !important;
+}
+
+/* Nord palette, dark only: https://www.nordtheme.com */
+@plugin "daisyui/theme" {
+  name: "mip-nord-dark";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: #2e3440;
+  --color-base-200: #3b4252;
+  --color-base-300: #434c5e;
+  --color-base-content: #eceff4;
+  --color-primary: #88c0d0;
+  --color-primary-content: #2e3440;
+  --color-secondary: #81a1c1;
+  --color-secondary-content: #2e3440;
+  --color-accent: #8fbcbb;
+  --color-accent-content: #2e3440;
+  --color-neutral: #434c5e;
+  --color-neutral-content: #eceff4;
+  --color-info: #5e81ac;
+  --color-info-content: #eceff4;
+  --color-success: #a3be8c;
+  --color-success-content: #2e3440;
+  --color-warning: #ebcb8b;
+  --color-warning-content: #2e3440;
+  --color-error: #bf616a;
+  --color-error-content: #eceff4;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}

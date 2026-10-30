@@ -1,25 +1,31 @@
-import { join } from "node:path";
+import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import {
   type AgentSessionEvent,
   createAgentSession,
+  DefaultResourceLoader,
+  getAgentDir,
   ModelRuntime,
   SessionManager,
+  type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
-import { AsyncQueue } from "../async-queue.js";
-import { SignInSession } from "../sign-in-session.js";
+import { Type } from "typebox";
+import { AsyncQueue } from "./async-queue.js";
+import { SignInSession } from "./sign-in-session.js";
 import type {
   AgentEvent,
   AgentProvider,
+  ModelOption,
   RunOptions,
   SignInMethod,
   SignInProgress,
   SignInPrompt,
   SignInTarget,
-} from "../types.js";
+  ThinkingLevel,
+  ToolSpec,
+} from "./contract.js";
 
-// Anthropic's subscription OAuth is a Claude Pro/Max token used inside a third-party tool.
-// Reported terms restrict that, so Pi's Anthropic sign-in offers an API key only.
-const SUBSCRIPTION_BLOCKED = new Set(["anthropic"]);
+// Anthropic is hidden in Pi. Its only sign-in here is an API key, which bills separately from the Claude subscription.
+const HIDDEN_PROVIDERS = new Set(["anthropic"]);
 
 type Runtime = Awaited<ReturnType<typeof ModelRuntime.create>>;
 
@@ -85,9 +91,24 @@ function toAppEvent(event: AgentSessionEvent): AgentEvent | undefined {
   }
 }
 
+// Wraps an app tool for Pi. Pi shows the call and the result; the app's function does the work.
+function toPiTool(tool: ToolSpec, workspace: string): ToolDefinition {
+  return {
+    name: tool.name,
+    label: tool.name,
+    description: tool.description,
+    parameters: Type.Unsafe(tool.inputSchema),
+    async execute(_id, params, signal) {
+      const result = await tool.run(params, { workspace, signal });
+      if (result.isError) throw new Error(result.text);
+      return { content: [{ type: "text", text: result.text }], details: undefined };
+    },
+  };
+}
+
 export interface PiProviderOptions {
-  // Where Pi's session files go. Defaults to ./.mip/pi-sessions.
-  sessionDir?: string;
+  // Where Pi's session files go.
+  sessionDir: string;
 }
 
 export class PiProvider implements AgentProvider {
@@ -100,9 +121,21 @@ export class PiProvider implements AgentProvider {
   private runtimePromise?: Promise<Runtime>;
   private signIns = new Map<string, { session: SignInSession; controller: AbortController }>();
 
-  constructor(options: PiProviderOptions = {}) {
-    const dataDir = process.env.MIP_DATA_DIR ?? join(process.cwd(), ".mip");
-    this.sessionDir = options.sessionDir ?? join(dataDir, "pi-sessions");
+  constructor(options: PiProviderOptions) {
+    this.sessionDir = options.sessionDir;
+  }
+
+  // Every model of the providers that are signed in. The first one is the default, the same one run falls back to.
+  async models(): Promise<ModelOption[]> {
+    const runtime = await this.runtime();
+    const available = await runtime.getAvailable();
+    const options = available.map((model) => ({
+      id: `${model.provider}/${model.id}`,
+      name: `${model.name} (${model.provider})`,
+      thinkingLevels: getSupportedThinkingLevels(model),
+    }));
+    const [first] = options;
+    return first ? [{ ...first, id: "", name: `Default (${first.name})` }, ...options] : [];
   }
 
   async targets(): Promise<SignInTarget[]> {
@@ -110,8 +143,9 @@ export class PiProvider implements AgentProvider {
     const targets: SignInTarget[] = [];
 
     for (const provider of runtime.getProviders()) {
+      if (HIDDEN_PROVIDERS.has(provider.id)) continue;
       const methods: SignInMethod[] = [];
-      if (provider.auth.oauth && !SUBSCRIPTION_BLOCKED.has(provider.id)) methods.push("subscription");
+      if (provider.auth.oauth) methods.push("subscription");
       if (provider.auth.apiKey?.login) methods.push("api_key");
       if (methods.length === 0) continue;
 
@@ -132,8 +166,8 @@ export class PiProvider implements AgentProvider {
     if (method !== "subscription" && method !== "api_key") {
       throw new Error(`${this.id} does not support the "${method}" sign-in method`);
     }
-    if (method === "subscription" && SUBSCRIPTION_BLOCKED.has(targetId)) {
-      throw new Error(`${targetId} sign-in with a subscription is not offered here; use an API key`);
+    if (HIDDEN_PROVIDERS.has(targetId)) {
+      throw new Error(`${targetId} is not offered in mip`);
     }
     const running = this.signIns.get(targetId)?.session.progress().running;
     if (running) return;
@@ -181,13 +215,24 @@ export class PiProvider implements AgentProvider {
         ? this.openSession(cwd, options.sessionId)
         : SessionManager.create(cwd, this.sessionDir);
 
-      // Pi takes no system prompt option here, so options.systemPrompt is not applied yet.
+      // Replaces Pi's default prompt. Project context files are off, so every run sees the same prompt.
+      const resourceLoader = new DefaultResourceLoader({
+        cwd,
+        agentDir: getAgentDir(),
+        noContextFiles: true,
+        systemPrompt: options.systemPrompt,
+      });
+      await resourceLoader.reload();
       const { session } = await createAgentSession({
         cwd,
         modelRuntime: runtime,
         model,
+        thinkingLevel: options.thinking,
         sessionManager,
-        noTools: "all",
+        resourceLoader,
+        // Pi's own copies of these tools are off. The app's copies are on.
+        noTools: "builtin",
+        customTools: (options.tools ?? []).map((tool) => toPiTool(tool, options.workspace ?? process.cwd())),
       });
 
       const unsubscribe = session.subscribe((event) => {
