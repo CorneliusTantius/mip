@@ -1,0 +1,25 @@
+{
+  "name": "mip",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AIOS that routes tasks to model providers, starting with the local Claude CLI",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "serve": "node dist/server.js",
+    "dev": "tsc && node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "^1.4.0"
+  }
+}
