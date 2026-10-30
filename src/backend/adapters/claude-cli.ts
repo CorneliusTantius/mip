@@ -76,7 +76,7 @@ function toText(content: unknown): string {
 
 // Maps one line of `claude -p --output-format stream-json` to app events.
 // Non-JSON lines and events the app doesn't use return nothing.
-export function parseStreamLine(line: string): AgentEvent[] {
+function parseStreamLine(line: string): AgentEvent[] {
   let data: any;
   try {
     data = JSON.parse(line);

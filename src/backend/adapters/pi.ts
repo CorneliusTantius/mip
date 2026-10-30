@@ -20,7 +20,6 @@ import type {
   SignInProgress,
   SignInPrompt,
   SignInTarget,
-  ThinkingLevel,
   ToolSpec,
 } from "./contract.js";
 

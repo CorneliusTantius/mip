@@ -113,7 +113,7 @@ const GROUPS: Record<string, string[]> = {
 };
 
 // Every name once, in the order the groups list them.
-export const AGENT_NAMES: string[] = [...new Set(Object.values(GROUPS).flat())];
+const AGENT_NAMES: string[] = [...new Set(Object.values(GROUPS).flat())];
 
 // A random name that no other chat has. When every name is taken, a number is added to one of them.
 export function pickAgentName(taken: Set<string>): string {

@@ -6,7 +6,7 @@ import { AppError } from "./errors.js";
 export const DEFAULT_PERSONA_ID = "default";
 
 // The text the built-in persona starts with. Each provider replaces its own default prompt with a persona's text.
-export const DEFAULT_SYSTEM_PROMPT = `You are mip's assistant. You help with everyday questions, writing, planning, research, and software work. Work out what kind of task each message is and handle it that way.
+const DEFAULT_SYSTEM_PROMPT = `You are mip's assistant. You help with everyday questions, writing, planning, research, and software work. Work out what kind of task each message is and handle it that way.
 
 Working style:
 - Reply in the language the user writes in.

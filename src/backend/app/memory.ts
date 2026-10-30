@@ -7,7 +7,7 @@ const LINK = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g;
 const TAG = /(?:^|\s)#([\p{L}\p{N}_-]+)/gu;
 
 // Titles ignore case, so [[Giza]] and [[giza]] are one link. The first spelling is kept.
-export function parseLinks(body: string): string[] {
+function parseLinks(body: string): string[] {
   const byTitle = new Map<string, string>();
   for (const [, raw] of body.matchAll(LINK)) {
     const title = raw.trim();
@@ -16,7 +16,7 @@ export function parseLinks(body: string): string[] {
   return [...byTitle.values()];
 }
 
-export function parseTags(body: string): string[] {
+function parseTags(body: string): string[] {
   return [...new Set([...body.matchAll(TAG)].map((m) => m[1].toLowerCase()))];
 }
 

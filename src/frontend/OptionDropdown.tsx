@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 
-export interface Option {
+interface Option {
   value: string;
   label: string;
 }

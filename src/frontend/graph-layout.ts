@@ -1,12 +1,12 @@
 // What the server sends for the memory graph.
-export interface GraphNode {
+interface GraphNode {
   id: string;
   title: string;
   missing: boolean;
   degree: number;
 }
 
-export interface GraphEdge {
+interface GraphEdge {
   source: string;
   target: string;
 }
@@ -16,7 +16,7 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
-export type Positions = Map<string, { x: number; y: number }>;
+type Positions = Map<string, { x: number; y: number }>;
 
 const ITERATIONS = 300;
 // A weak pull toward the middle, so groups with no links between them don't drift apart forever.

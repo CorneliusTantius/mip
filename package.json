@@ -2,16 +2,13 @@
   "name": "mip",
   "version": "0.1.0",
   "private": true,
-  "description": "AIOS that routes tasks to model providers, starting with the local Claude CLI",
+  "description": "A personal AI OS that routes tasks to model providers (Claude CLI and Pi)",
   "type": "module",
-  "main": "dist/backend/cli/index.js",
   "scripts": {
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "tsc -p src/backend/tsconfig.json",
     "build:frontend": "vite build --config src/frontend/vite.config.ts",
-    "start": "node dist/backend/cli/index.js",
     "serve": "node dist/backend/http/server.js",
-    "dev": "npm run build:backend && node dist/backend/cli/index.js",
     "dev:frontend": "vite --config src/frontend/vite.config.ts",
     "typecheck": "tsc --noEmit -p src/backend/tsconfig.json && tsc --noEmit -p src/frontend/tsconfig.json"
   },
