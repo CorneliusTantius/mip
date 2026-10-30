@@ -5,6 +5,7 @@ import { AppError, errorMessage } from "../app/errors.js";
 import { forgetNote, memoryGraph, memoryList, readNote, writeNote } from "../app/memory.js";
 import { allPersonas, createPersona, editPersona, makeDefaultPersona, removePersona } from "../app/personas.js";
 import { answerSignIn, listProviders, signIn, signOut } from "../app/providers.js";
+import { addRepo, copyRepoToChat, listRepoCards, removeRepo } from "../app/repos.js";
 import { readRun, startRun } from "../app/runs.js";
 import { createChat, deleteChat, getChat, listChats, updateChat } from "../app/sessions.js";
 import { handleMcp } from "./mcp.js";
@@ -44,6 +45,20 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   }
   if (method === "GET" && parts[0] === "api" && parts[1] === "runs" && parts[3] === "events" && parts.length === 4) {
     return sendJson(res, 200, readRun(parts[2], Number(url.searchParams.get("after") ?? 0)));
+  }
+
+  // Repositories: paste a clone link to add one, copy one into a chat, or remove a clone.
+  if (url.pathname === "/api/repos") {
+    if (method === "GET") return sendJson(res, 200, { repos: listRepoCards() });
+    if (method === "POST") return sendJson(res, 202, addRepo((await readJson(req)).url));
+  }
+  if (parts[0] === "api" && parts[1] === "repos" && parts.length === 3 && method === "DELETE") {
+    removeRepo(parts[2]);
+    return sendJson(res, 200, { ok: true });
+  }
+  if (parts[0] === "api" && parts[1] === "repos" && parts.length === 4 && parts[3] === "copies" && method === "POST") {
+    await copyRepoToChat(parts[2], (await readJson(req)).sessionId);
+    return sendJson(res, 201, { ok: true });
   }
 
   // The memory graph for the dashboard card. Its own path, so a note titled "graph" still opens.

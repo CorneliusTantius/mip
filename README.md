@@ -88,6 +88,16 @@ Every provider gets the same seven tools, defined in `src/backend/app/tools/`: `
 - Each chat's files live in `~/.mip/workspaces/<chat id>`. The file tools refuse paths outside it.
 - `bash` is not sandboxed. It runs with your user's access. Nothing asks for approval, so writes and commands run right away.
 
+## Repositories
+
+The **Repositories** card on the main page clones git repositories, and gives each chat its own copy.
+
+- Paste a clone link: `https://`, `ssh://`, `git@host:path`, or any form git accepts. mip clones it with your own `git` into `~/.mip/repos/<name>`, so private repositories work when your git can reach them. The folder name comes from the link.
+- The list shows each repository, its status, and the chats that have a copy. Choose a chat under "Copy to a chat" to give it one.
+- A copy is a separate clone in that chat's workspace, at `~/.mip/workspaces/<chat id>/<name>`. Its `origin` is the real link, so pushes go to that remote.
+- Each run tells the agent which repositories are in its workspace.
+- Removing a repository deletes its master clone. Copies in chats stay. Deleting a chat deletes its workspace, copies included.
+
 ## HTTP API
 
 All routes are on the dashboard port. Requests and responses are JSON.
@@ -115,6 +125,10 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/memory/:title` | Read a note |
 | DELETE | `/api/memory/:title` | Delete a note |
 | GET | `/api/graph` | Notes and links, for the memory card |
+| GET | `/api/repos` | Repositories, with the chats that have a copy |
+| POST | `/api/repos` | Clone a link. Body: `{ url }`. Returns 202, and the repository shows `cloning` until done |
+| DELETE | `/api/repos/:id` | Remove a repository's master clone |
+| POST | `/api/repos/:id/copies` | Copy a repository into a chat. Body: `{ sessionId }` |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 
 ## Storage
@@ -123,10 +137,11 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
 
 ```
 ~/.mip/
-  data/mip.db           SQLite: personas, chats, messages, runs, memory
+  data/mip.db           SQLite: personas, chats, messages, runs, memory, repositories
+  repos/<name>/         Master clones from the Repositories card
   sessions/claude/      Claude CLI config, login, and chat files
   sessions/pi/          Pi session files
-  workspaces/<chat id>/ Each chat's files
+  workspaces/<chat id>/ Each chat's files, and its repository copies
 ```
 
 ## Layout
@@ -136,13 +151,14 @@ The backend and the frontend are separate. A request flows from `http` to `app`,
 ```
 src/backend/
   http/       routes (server.ts) and the /mcp tool endpoint (mcp.ts)
-  app/        use cases: providers, chats, runs, personas, memory, tools
+  app/        use cases: providers, chats, runs, personas, memory, repositories, tools, git
   adapters/   one file per provider, plus contract.ts, the interface they implement
   storage/    SQLite (store.ts) and folder paths (paths.ts)
 
 src/frontend/ the dashboard, in Preact with daisyUI, built by Vite
   App.tsx, Chat.tsx, Settings.tsx    the page, the chat room, and settings
   Memory*.tsx, graph-layout.ts       the memory card, graph, and memory screen
+  RepositoriesCard.tsx               the repositories card
   ConfirmDialog.tsx, OptionDropdown.tsx  shared controls
   styles.css                         the Nord theme
 ```

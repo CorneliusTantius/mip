@@ -60,12 +60,21 @@ db.exec(`
     event TEXT NOT NULL,
     PRIMARY KEY (run_id, seq)
   );
+  CREATE TABLE IF NOT EXISTS repos (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    url TEXT NOT NULL,
+    status TEXT NOT NULL,
+    error TEXT,
+    created_at INTEGER NOT NULL
+  );
 `);
 
 type Row = Record<string, any>;
 
-// A run cut off by a server restart can't finish, so it is marked as failed.
+// A run cut off by a server restart can't finish, so it is marked as failed. The same goes for clones.
 db.prepare("UPDATE runs SET status = 'error' WHERE status = 'running'").run();
+db.prepare("UPDATE repos SET status = 'error', error = 'interrupted by a server restart' WHERE status = 'cloning'").run();
 
 // Databases made before personas have no persona column. Their chats get the default persona.
 if (!(db.prepare("PRAGMA table_info(sessions)").all() as Row[]).some((c) => c.name === "persona_id")) {
@@ -331,4 +340,50 @@ export function finishRun(sessionId: string, providerSessionId: string | undefin
     Date.now(),
     sessionId,
   );
+}
+
+// Repositories: a clone in the repos folder, and the link it was cloned from.
+export interface Repo {
+  id: string;
+  name: string;
+  url: string;
+  status: "cloning" | "ready" | "error";
+  error: string | null;
+}
+
+function toRepo(row: Row): Repo {
+  return { id: row.id, name: row.name, url: row.url, status: row.status, error: row.error ?? null };
+}
+
+export function listRepos(): Repo[] {
+  return (db.prepare("SELECT * FROM repos ORDER BY name").all() as Row[]).map(toRepo);
+}
+
+export function getRepo(id: string): Repo | undefined {
+  const row = db.prepare("SELECT * FROM repos WHERE id = ?").get(id) as Row | undefined;
+  return row && toRepo(row);
+}
+
+export function getRepoByName(name: string): Repo | undefined {
+  const row = db.prepare("SELECT * FROM repos WHERE name = ?").get(name) as Row | undefined;
+  return row && toRepo(row);
+}
+
+export function insertRepo(repo: Repo): void {
+  db.prepare("INSERT INTO repos (id, name, url, status, error, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+    repo.id,
+    repo.name,
+    repo.url,
+    repo.status,
+    repo.error,
+    Date.now(),
+  );
+}
+
+export function setRepoStatus(id: string, status: Repo["status"], error: string | null): void {
+  db.prepare("UPDATE repos SET status = ?, error = ? WHERE id = ?").run(status, error, id);
+}
+
+export function deleteRepo(id: string): void {
+  db.prepare("DELETE FROM repos WHERE id = ?").run(id);
 }

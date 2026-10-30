@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import { Chat } from "./Chat";
 import { Memory } from "./Memory";
 import { MemoryCard } from "./MemoryCard";
+import { RepositoriesCard } from "./RepositoriesCard";
 import { Settings } from "./Settings";
 import { Starfield } from "./Starfield";
 
@@ -46,6 +47,7 @@ export function App() {
             </section>
           ))}
           <MemoryCard version={memoryVersion} onOpen={openMemory} onSeeMore={() => openMemory()} />
+          <RepositoriesCard />
         </div>
       </main>
 

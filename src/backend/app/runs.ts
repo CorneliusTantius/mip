@@ -6,6 +6,7 @@ import { AppError } from "./errors.js";
 import { recallFor } from "./memory.js";
 import { personaPrompt } from "./personas.js";
 import { findProvider } from "./providers.js";
+import { repoNote } from "./repos.js";
 import { registerRun, releaseRun, TOOLS } from "./tools/index.js";
 import { workspaceFor } from "./tools/workspace.js";
 
@@ -62,8 +63,8 @@ async function execute(job: RunJob): Promise<void> {
   try {
     for await (const event of job.provider.run({
       prompt: job.prompt,
-      // The persona's prompt, plus any shared notes that match this message.
-      systemPrompt: [personaPrompt(job.session.personaId), recallFor(job.prompt)].filter(Boolean).join("\n\n"),
+      // The persona's prompt, the repositories in the workspace, and any shared notes that match this message.
+      systemPrompt: [personaPrompt(job.session.personaId), repoNote(job.workspace), recallFor(job.prompt)].filter(Boolean).join("\n\n"),
       tools: TOOLS,
       workspace: job.workspace,
       toolServer: { url: `http://${HOST}:${PORT}/mcp`, token: job.token },

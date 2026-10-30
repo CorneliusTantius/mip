@@ -89,7 +89,11 @@ export function Chat() {
   const loadSessions = () =>
     fetch("/api/sessions")
       .then((res) => res.json())
-      .then((data) => setSessions(data.sessions));
+      .then((data) => {
+        setSessions(data.sessions);
+        // The repositories card keeps its list of chats in step.
+        window.dispatchEvent(new Event("sessions-changed"));
+      });
 
   const loadPersonas = () =>
     fetch("/api/personas")

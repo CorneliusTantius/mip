@@ -3,6 +3,7 @@ import { AppError } from "./errors.js";
 import { pickAgentName } from "./names.js";
 import { defaultPersona, hasPersona } from "./personas.js";
 import { findProvider, hasProvider } from "./providers.js";
+import { removeWorkspace } from "./tools/workspace.js";
 import { activeRunId } from "./runs.js";
 
 export function listChats(): Session[] {
@@ -54,10 +55,12 @@ function optionalText(value: unknown): string | null {
   return String(value ?? "").trim() || null;
 }
 
+// Deletes a chat, its messages, and its workspace with any repository copies in it.
 export function deleteChat(id: string): void {
   requireSession(id);
   if (activeRunId(id)) throw new AppError(409, "this chat is still running");
   deleteSession(id);
+  removeWorkspace(id);
 }
 
 function requireSession(id: string): Session {
