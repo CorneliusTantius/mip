@@ -65,7 +65,7 @@ A message is a run. It keeps going after the browser closes, and each event is s
 
 **Names**
 
-A new chat gets a random name from a bank of ancient gods, heroes, and philosophers. No two chats share a name at the same time. The bank is in `src/backend/app/names.ts`.
+A new chat gets a random name from a bank of Norse names: gods, giants, valkyries, dwarves, heroes, saga figures, and rulers of the Viking Age. No two chats share a name at the same time. The bank is in `src/backend/app/names.ts`.
 
 ## Memory
 
