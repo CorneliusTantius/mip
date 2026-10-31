@@ -1,10 +1,10 @@
-import type { ThinkingLevel } from "../adapters/contract.js";
-import { type Bot, listBots } from "../storage/bots.js";
-import { addRoomMessage, type RoomMessage, roomMessagesAfter } from "../storage/room.js";
-import { AppError } from "./errors.js";
-import { findProvider } from "./providers.js";
-import { converseRoom, mentionedBots } from "./room-engine.js";
-import { BOT_TOOLS } from "./tools/index.js";
+import type { ThinkingLevel } from "../../adapters/contract.js";
+import { type Bot, listBots } from "../../storage/bots.js";
+import { addRoomMessage, type RoomMessage, roomMessagesAfter } from "../../storage/room.js";
+import { AppError } from "../errors.js";
+import { findProvider } from "../providers.js";
+import { converseRoom, mentionedBots } from "./engine.js";
+import { BOT_TOOLS } from "../tools/index.js";
 
 // How many turns one message can set off, and how much of the room each bot sees.
 const MAX_TURNS = 8;

@@ -1,17 +1,17 @@
 // Checks tool-call recording: each call keeps its input and result, a result is matched by id, and long text is cut.
-// Run after a build: node src/backend/app/tool-calls.test.mjs. It sets MIP_HOME to a temporary folder before the modules load.
+// Run after a build: node src/backend/app/tools/calls.test.mjs. It sets MIP_HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const DIST = pathToFileURL(fileURLToPath(new URL("../../../dist/backend/", import.meta.url))).href;
+const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-calls-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { MAX_TEXT, ToolCallLog } = await import(`${DIST}app/tool-calls.js`);
+  const { MAX_TEXT, ToolCallLog } = await import(`${DIST}app/tools/calls.js`);
   const sessions = await import(`${DIST}storage/sessions.js`);
 
   // A log keeps each call's input, and attaches its result by the call's id. An unknown id is ignored.

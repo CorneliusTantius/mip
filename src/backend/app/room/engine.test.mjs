@@ -1,7 +1,7 @@
-// Checks the room's turn-taking with fake bots. Run after a build: node src/backend/app/room-engine.test.mjs
+// Checks the room's turn-taking with fake bots. Run after a build: node src/backend/app/room/engine.test.mjs
 // The tests import the compiled module from dist, so they need `npm run build:backend` first.
 import assert from "node:assert/strict";
-import { converseRoom, isSilent, mentionedBots } from "../../../dist/backend/app/room-engine.js";
+import { converseRoom, isSilent, mentionedBots } from "../../../../dist/backend/app/room/engine.js";
 
 const alice = { id: "a", name: "Alice" };
 const bob = { id: "b", name: "Bob" };

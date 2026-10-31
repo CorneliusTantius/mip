@@ -10,7 +10,7 @@ import { findProvider } from "./providers.js";
 import { repoNote } from "./repos.js";
 import { CHAT_DEFERRED, CHAT_TOOLS, registerRun, releaseRun, toolGuidesPrompt } from "./tools/index.js";
 import { skillsPrompt } from "./skills/registry.js";
-import { ToolCallLog } from "./tool-calls.js";
+import { ToolCallLog } from "./tools/calls.js";
 import { workspaceFor } from "./tools/workspace.js";
 
 // Starts a turn and returns its run id. The run is not tied to the browser: it keeps going if the page closes,

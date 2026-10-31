@@ -4,6 +4,7 @@ import type { Bot, Session, SkillDetail, SkillSummary } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { RunScopePills, type RunScope } from "../../ui/RunScopePills";
 import { CreateSkillDialog } from "./CreateSkillDialog";
 import { ImportSkillDialog } from "./ImportSkillDialog";
 import { useSkills } from "./useSkills";
@@ -17,19 +18,11 @@ export function SkillsCard() {
   );
 }
 
-// Which view the card shows: the installed skills, the skills each chat has, or the skills each bot has.
-type Scope = "all" | "chat" | "bot";
-const SCOPES: [Scope, string][] = [
-  ["all", "All"],
-  ["chat", "Chat"],
-  ["bot", "Bot"],
-];
-
 // The installed skills, with the view pill. Expanded, the All view also shows the selected skill's instructions, with remove.
 function SkillsBody() {
   const { expanded } = useCardExpansion();
   const { skills, problems, error, setError, load } = useSkills();
-  const [scope, setScope] = useState<Scope>("all");
+  const [scope, setScope] = useState<RunScope>("all");
   const [selected, setSelected] = useState<string>();
   const [detail, setDetail] = useState<SkillDetail>();
   const [importing, setImporting] = useState(false);
@@ -73,13 +66,7 @@ function SkillsBody() {
         </>
       }
     >
-      <div className="join self-start">
-        {SCOPES.map(([key, label]) => (
-          <button key={key} className={`join-item btn ${expanded ? "btn-sm" : "btn-xs"} ${scope === key ? "btn-active" : ""}`} onClick={() => setScope(key)}>
-            {label}
-          </button>
-        ))}
-      </div>
+      <RunScopePills value={scope} onChange={setScope} />
 
       {scope === "all" &&
         (skills.length === 0 ? (

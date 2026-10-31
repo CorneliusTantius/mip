@@ -3,18 +3,11 @@ import { api, errorText } from "../../api/client";
 import type { ToolInfo } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { RunScopePills, type RunScope } from "../../ui/RunScopePills";
 import { Modal } from "../../ui/Modal";
 
 // How many tools the collapsed card lists.
 const PREVIEW = 4;
-
-// Which kind of run the table is for: every tool, the tools chats can use, or the tools bots can use.
-type Scope = "all" | "chat" | "bot";
-const SCOPES: [Scope, string][] = [
-  ["all", "All"],
-  ["chat", "Chat"],
-  ["bot", "Bot"],
-];
 
 // The tool registry as a table: each tool, how it is offered, and which kinds of run may use it. The pill picks the kind of run.
 // Clicking a tool opens its guide and inputs in a dialog. The guide is the part that goes into the model's system prompt.
@@ -29,7 +22,7 @@ export function ToolsCard() {
 function ToolsBody() {
   const { expanded } = useCardExpansion();
   const [tools, setTools] = useState<ToolInfo[]>([]);
-  const [scope, setScope] = useState<Scope>("all");
+  const [scope, setScope] = useState<RunScope>("all");
   // The tool whose dialog is open.
   const [selected, setSelected] = useState<ToolInfo>();
   const [error, setError] = useState<string>();
@@ -44,13 +37,7 @@ function ToolsBody() {
 
   return (
     <CardBody title="Tools" className={expanded ? "min-h-0 flex-1" : ""} actions={<ExpandButton />}>
-      <div className="join self-start">
-        {SCOPES.map(([key, label]) => (
-          <button key={key} className={`join-item btn ${expanded ? "btn-sm" : "btn-xs"} ${scope === key ? "btn-active" : ""}`} onClick={() => setScope(key)}>
-            {label}
-          </button>
-        ))}
-      </div>
+      <RunScopePills value={scope} onChange={setScope} />
 
       {tools.length === 0 ? (
         <p className="py-4 text-center text-sm opacity-60">{error ? "" : "Loading tools…"}</p>

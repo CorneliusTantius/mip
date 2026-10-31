@@ -1,4 +1,4 @@
-import { postToRoom, roomMessages, roomStatus } from "../../app/room.js";
+import { postToRoom, roomMessages, roomStatus } from "../../app/room/room.js";
 import { accepted, ok, readJson } from "../respond.js";
 import { get, post, type Route } from "../router.js";
 

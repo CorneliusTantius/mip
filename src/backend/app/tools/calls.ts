@@ -1,4 +1,4 @@
-import type { ToolCall } from "../storage/sessions.js";
+import type { ToolCall } from "../../storage/sessions.js";
 
 // Long inputs and results are cut, so a chat's history stays small. The cut is marked, so the reader knows it is partial.
 export const MAX_TEXT = 8000;
