@@ -86,7 +86,8 @@ export function Card({ glow, className = "", children }: { glow: Glow; className
   useEffect(() => {
     if (!expanded) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLatest.current();
+      // A dialog open on top (such as Personas) takes Escape first, so the card stays expanded until the dialog is closed.
+      if (e.key === "Escape" && !document.querySelector("dialog[open]")) closeLatest.current();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
