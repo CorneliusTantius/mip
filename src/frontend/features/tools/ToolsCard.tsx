@@ -1,9 +1,9 @@
-import { Fragment } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
 import type { ToolInfo } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { Modal } from "../../ui/Modal";
 
 // How many tools the collapsed card lists.
 const PREVIEW = 4;
@@ -17,7 +17,7 @@ const SCOPES: [Scope, string][] = [
 ];
 
 // The tool registry as a table: each tool, how it is offered, and which kinds of run may use it. The pill picks the kind of run.
-// Expanded, a row opens to the tool's guide and inputs. The guide is the part that goes into the model's system prompt.
+// Clicking a tool opens its guide and inputs in a dialog. The guide is the part that goes into the model's system prompt.
 export function ToolsCard() {
   return (
     <Card glow="orange">
@@ -30,8 +30,8 @@ function ToolsBody() {
   const { expanded } = useCardExpansion();
   const [tools, setTools] = useState<ToolInfo[]>([]);
   const [scope, setScope] = useState<Scope>("all");
-  // The tool whose row is open, when the card is expanded.
-  const [open, setOpen] = useState<string>();
+  // The tool whose dialog is open.
+  const [selected, setSelected] = useState<ToolInfo>();
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -70,27 +70,15 @@ function ToolsBody() {
             </thead>
             <tbody>
               {shown.map((tool) => (
-                <Fragment key={tool.name}>
-                  <tr
-                    className={expanded ? "cursor-pointer hover" : ""}
-                    onClick={expanded ? () => setOpen(open === tool.name ? undefined : tool.name) : undefined}
-                  >
-                    <td className="font-medium">{tool.name}</td>
-                    <td>
-                      <span className="badge badge-ghost badge-xs">{tool.load}</span>
-                    </td>
-                    <td>
-                      <Access tool={tool} />
-                    </td>
-                  </tr>
-                  {expanded && open === tool.name && (
-                    <tr>
-                      <td colSpan={3}>
-                        <ToolDetail tool={tool} />
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                <tr key={tool.name} className="cursor-pointer hover" onClick={() => setSelected(tool)}>
+                  <td className="font-medium">{tool.name}</td>
+                  <td>
+                    <span className="badge badge-ghost badge-xs">{tool.load}</span>
+                  </td>
+                  <td>
+                    <Access tool={tool} />
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -98,33 +86,54 @@ function ToolsBody() {
       )}
       {!expanded && scoped.length > PREVIEW && <p className="text-xs opacity-60">{scoped.length - PREVIEW} more. Expand to see all.</p>}
       <ErrorAlert message={error} />
+
+      <Modal open={!!selected} onClose={() => setSelected(undefined)} glow="orange" boxClassName="max-w-xl">
+        {selected && (
+          <>
+            <ToolDetail tool={selected} />
+            <div className="modal-action">
+              <button className="btn btn-sm" onClick={() => setSelected(undefined)}>
+                Close
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
     </CardBody>
   );
 }
 
-// A tool's description, its guide, and its inputs. Shown under the tool's row.
+// A tool's name, how it is offered, its description, its guide, and its inputs. Shown in the tool's dialog.
 function ToolDetail({ tool }: { tool: ToolInfo }) {
   const inputs = Object.entries(tool.inputSchema.properties ?? {});
   const required = new Set(tool.inputSchema.required ?? []);
   return (
-    <div className="flex flex-col gap-2 py-2 text-sm">
-      <p>{tool.description}</p>
-      <div>
-        <span className="text-xs font-semibold">Guide</span>
-        <p className="rounded bg-base-100/60 p-2 text-xs">{tool.guide}</p>
+    <div className="flex flex-col gap-3 text-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-lg font-semibold">{tool.name}</h3>
+        <span className="badge badge-ghost badge-sm">{tool.load}</span>
+        <Access tool={tool} />
       </div>
-      {inputs.length === 0 ? (
-        <p className="text-xs">Takes no input.</p>
-      ) : (
-        <ul className="flex flex-col gap-1 text-xs">
-          {inputs.map(([name, spec]) => (
-            <li key={name}>
-              <strong>{name}</strong> <span>({spec.type ?? "any"}{required.has(name) ? ", required" : ""})</span>
-              {spec.description && <span>: {spec.description}</span>}
-            </li>
-          ))}
-        </ul>
-      )}
+      <p>{tool.description}</p>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-semibold">Guide</span>
+        <p className="rounded-box bg-base-100/60 p-3 text-xs">{tool.guide}</p>
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-semibold">Inputs</span>
+        {inputs.length === 0 ? (
+          <p className="text-xs">Takes no input.</p>
+        ) : (
+          <ul className="flex flex-col gap-1 text-xs">
+            {inputs.map(([name, spec]) => (
+              <li key={name}>
+                <strong>{name}</strong> <span>({spec.type ?? "any"}{required.has(name) ? ", required" : ""})</span>
+                {spec.description && <span>: {spec.description}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
