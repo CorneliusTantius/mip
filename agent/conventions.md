@@ -13,6 +13,8 @@
     npm run typecheck
     npm run build
     node src/backend/app/room-engine.test.mjs
+    node src/backend/app/sync/merge.test.mjs
+    node src/backend/app/sync/sync.test.mjs
 For behavior: restart the server after `build:backend` (`npm run build:backend`, then stop and start `dist/backend/http/server.js`). Frontend-only changes: `npm run build:frontend` is enough; the server reads `dist/frontend` on each request.
 Browser check: open http://127.0.0.1:3000, then the affected card. Check the console for errors.
 API regression check (used in the 2026-10-31 refactor): record each route's status and body before and after a change, then diff. The probe list is the route table in `api.md`.
@@ -71,6 +73,10 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - The memory graph's degree-based sizing and the note count count only nodes with a note (`MemoryCard.tsx`).
 - The room is one conversation at a time (`app/room.ts:14`). A second post while busy gets 409.
 - `git` runs with `GIT_TERMINAL_PROMPT=0` (`app/git.ts`). A clone that needs a password fails instead of waiting.
+- A write to a synced table must set its change time (`data-model.md` invariants). A write that skips it is lost in a GitHub sync merge.
+- The GitHub token is in `MIP_HOME/sync/github.json` (mode 0600). Git gets it only through `authEnv` (`app/sync/github.ts`), never in argv or a config file. Don't log it.
+- Sync refuses a public `dotmip` repo and an empty database when the last sync had data (`app/sync/engine.ts`).
+- The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
 
 ## Git
 - Push every change to `origin main`, as the GitHub account CorneliusTantius. No attribution lines (no Co-Authored-By, no "Generated with").

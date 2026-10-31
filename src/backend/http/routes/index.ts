@@ -7,6 +7,7 @@ import { repoRoutes } from "./repos.js";
 import { roomRoutes } from "./room.js";
 import { runRoutes } from "./runs.js";
 import { sessionRoutes } from "./sessions.js";
+import { syncRoutes } from "./sync.js";
 import { systemRoutes } from "./system.js";
 
 // Every API route, grouped by domain. Each route is matched by its method and path, so the order does not change behavior.
@@ -20,5 +21,6 @@ export const routes: Route[] = [
   ...roomRoutes,
   ...repoRoutes,
   ...memoryRoutes,
+  ...syncRoutes,
   ...systemRoutes,
 ];

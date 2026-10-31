@@ -8,6 +8,8 @@ export const DATA_DIR = join(MIP_HOME, "data");
 export const SESSIONS_DIR = join(MIP_HOME, "sessions");
 // Master clones of repositories. Each chat gets its own copy in its workspace.
 export const REPOS_DIR = join(MIP_HOME, "repos");
+// GitHub sync: the sign-in token, the merge base, and a local copy of the dotmip repo.
+export const SYNC_DIR = join(MIP_HOME, "sync");
 
 export function ensureMipDirs(): void {
   for (const dir of [DATA_DIR, REPOS_DIR, join(SESSIONS_DIR, "claude"), join(SESSIONS_DIR, "pi")]) {

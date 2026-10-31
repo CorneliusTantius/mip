@@ -24,11 +24,23 @@ export function getPersona(id: string): Persona | undefined {
 }
 
 export function insertPersona(persona: PersonaFields): void {
-  db.prepare("INSERT INTO personas (id, name, system_prompt, is_default, created_at) VALUES (?, ?, ?, 0, ?)").run(persona.id, persona.name, persona.systemPrompt, Date.now());
+  const now = Date.now();
+  db.prepare("INSERT INTO personas (id, name, system_prompt, is_default, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)").run(
+    persona.id,
+    persona.name,
+    persona.systemPrompt,
+    now,
+    now,
+  );
 }
 
 export function updatePersona(persona: PersonaFields): void {
-  db.prepare("UPDATE personas SET name = ?, system_prompt = ? WHERE id = ?").run(persona.name, persona.systemPrompt, persona.id);
+  db.prepare("UPDATE personas SET name = ?, system_prompt = ?, updated_at = ? WHERE id = ?").run(
+    persona.name,
+    persona.systemPrompt,
+    Date.now(),
+    persona.id,
+  );
 }
 
 // Marks one persona as the default and clears the mark from the rest.

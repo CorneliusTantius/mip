@@ -12,13 +12,13 @@ export function getNoteByTitle(title: string): Note | undefined {
   return row && { id: row.id, title: row.title, body: row.body };
 }
 
-// Saves a note, and rebuilds its search entry, links, and tags in one step.
-export function saveNote(note: Note, links: string[], tags: string[]): void {
+// Saves a note, and rebuilds its search entry, links, and tags in one step. A sync import passes the time the note was last edited elsewhere.
+export function saveNote(note: Note, links: string[], tags: string[], updatedAt = Date.now()): void {
   db.exec("BEGIN");
   try {
     db.prepare(
       "INSERT INTO notes (id, title, body, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title = excluded.title, body = excluded.body, updated_at = excluded.updated_at",
-    ).run(note.id, note.title, note.body, Date.now());
+    ).run(note.id, note.title, note.body, updatedAt);
     db.prepare("DELETE FROM notes_fts WHERE note_id = ?").run(note.id);
     db.prepare("INSERT INTO notes_fts (title, body, note_id) VALUES (?, ?, ?)").run(note.title, note.body, note.id);
     db.prepare("DELETE FROM note_links WHERE from_id = ?").run(note.id);

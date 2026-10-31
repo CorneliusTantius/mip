@@ -85,6 +85,19 @@ Both need `Content-Type: application/json`, or they return 415. A page on anothe
 | POST | /api/system/update | :17 | 200 | `{output}` (git's output, from `app/system.ts` `pullLatest`) | `git pull --ff-only` in the checkout. Non-fast-forward or git errors come back as `error`. |
 | POST | /api/system/restart | :22 | 202 | `{restarting: true}` | The server exits about 300 ms later. A detached shell waits, runs `npm install` and `npm run build` (output to `MIP_HOME/restart.log`), then starts the server again. |
 
+## Sync — `routes/sync.ts`
+GitHub sync (Settings → Sync). Writes need `Content-Type: application/json`, or they return 415. Background work (the device sign-in and a sync run) is reported by `GET /api/sync`: poll it until `running` is false and `device` is null.
+
+| method | path | handler | status | body | errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | /api/sync | :6 | 200 | `SyncStatus`: `{clientId, connected, login, repo, device, running, error, lastSync}` | |
+| PUT | /api/sync/client-id | :7 | 200 | `SyncStatus` (body `{clientId}`) | 400 empty or malformed ID; 415 not JSON |
+| POST | /api/sync/connect | :13 | 202 | `SyncStatus` with `device: {userCode, verificationUri, expiresAt}` | 400 no client ID; 409 a sign-in is waiting; 502 GitHub refused or unreachable |
+| POST | /api/sync/disconnect | :18 | 200 | `{ok:true}` | 415 |
+| POST | /api/sync/run | :24 | 202 | `SyncStatus` with `running: true` | 409 not connected, or a sync is running |
+
+`lastSync` is `{at, ok, message, pulled, pushed, notes}`. A failed run has `ok: false` and the reason in `message` (public repo, empty local database, GitHub changed during the run). `error` holds a failed sign-in.
+
 ## Tool endpoint — `http/server.ts:11` and `http/mcp.ts:7`
 | method | path | auth | body | notes |
 | --- | --- | --- | --- | --- |

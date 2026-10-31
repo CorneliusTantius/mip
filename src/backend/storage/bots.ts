@@ -36,24 +36,27 @@ export function getBotByName(name: string): Bot | undefined {
 }
 
 export function insertBot(bot: Bot): void {
-  db.prepare("INSERT INTO bots (id, name, persona, provider_id, model, thinking, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+  const now = Date.now();
+  db.prepare("INSERT INTO bots (id, name, persona, provider_id, model, thinking, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
     bot.id,
     bot.name,
     bot.persona,
     bot.providerId,
     bot.model,
     bot.thinking,
-    Date.now(),
+    now,
+    now,
   );
 }
 
 export function updateBot(bot: Bot): void {
-  db.prepare("UPDATE bots SET name = ?, persona = ?, provider_id = ?, model = ?, thinking = ? WHERE id = ?").run(
+  db.prepare("UPDATE bots SET name = ?, persona = ?, provider_id = ?, model = ?, thinking = ?, updated_at = ? WHERE id = ?").run(
     bot.name,
     bot.persona,
     bot.providerId,
     bot.model,
     bot.thinking,
+    Date.now(),
     bot.id,
   );
 }

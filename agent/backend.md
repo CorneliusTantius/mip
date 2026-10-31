@@ -5,9 +5,10 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 ## http/
 - `http/server.ts` — entry point. `handle` (:11): static → `/mcp` → router → 404. `createServer` (:26) listens. Errors: `AppError` status, else 500.
 - `http/router.ts` — `Route` (:13), `get/post/put/patch/del` (:21-25), `matchRoute` (:28). Patterns: `:name` captures one decoded segment. First match wins. Touchpoint: `server.ts`, `routes/*`.
-- `http/respond.ts` — `Reply` (:4), `ok` (:9), `created` (:10), `accepted` (:12), `ack` (:14, `{ok:true}`), `notFound` (:15), `sendJson` (:18), `readJson` (:24, empty body → `{}`). Touchpoints: all routes, `mcp.ts`.
+- `http/respond.ts` — `Reply` (:4), `ok` (:9), `created` (:10), `accepted` (:12), `ack` (:14, `{ok:true}`), `notFound` (:15), `sendJson` (:18), `readJson` (:24, empty body → `{}`), `requireJson` (refuses non-JSON with 415). Touchpoints: all routes, `mcp.ts`.
 - `http/routes/index.ts` — `routes` (:13). Concatenates the domain route lists. Add a new domain here.
-- `http/routes/system.ts` — `systemRoutes` (:16), `requireJson` (:9, refuses non-JSON with 415). `POST /api/system/update` pulls, `POST /api/system/restart` restarts.
+- `http/routes/system.ts` — `systemRoutes` (:6). `POST /api/system/update` pulls, `POST /api/system/restart` restarts. Both need JSON (`requireJson`).
+- `http/routes/sync.ts` — `syncRoutes`. The GitHub sign-in and sync runs, all JSON for writes. Lines in `api.md`.
 - `http/routes/{sessions,runs,personas,bots,room,repos,memory,providers}.ts` — one `Route[]` each. Handlers are small: read body → call an `app/*` function → return a `Reply`. Lines: see `api.md`.
 - `http/mcp.ts` — `handleMcp` (:7). JSON-RPC 2.0 for `initialize`, `tools/list`, `tools/call`. 401 without a live run token. Touchpoints: Claude CLI (via `adapters/claude-cli.ts` `mcpConfig`), `app/tools`.
 - `http/static.ts` — `serveStatic` (:18). Serves `dist/frontend` (path check keeps requests inside it). Misses return false.
@@ -15,7 +16,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 ## app/ (use cases)
 - `app/config.ts` — `HOST` (:2), `PORT` (:3, env `MIP_PORT`).
 - `app/errors.ts` — `AppError(status, message)` (:2), `errorMessage` (:11). Thrown by app code; mapped to HTTP by `server.ts`.
-- `app/git.ts` — `runGit(args)` (:5). Runs git with `GIT_TERMINAL_PROMPT=0`. Rejects with git's `fatal:`/`error:` line. Touchpoints: `repos.ts`.
+- `app/git.ts` — `runGit(args, env?)` (:7). Runs git with `GIT_TERMINAL_PROMPT=0`. `env` adds variables for one call (sync sends its token that way). Rejects with git's `fatal:`/`error:` line. Touchpoints: `repos.ts`, `sync/repo.ts`.
 - `app/names.ts` — `pickAgentName(taken)` (:51). Norse names, no repeats among open chats. Touchpoints: `sessions.ts createChat`.
 - `app/providers.ts` — provider registry (:9-12). `hasProvider` (:14), `findProvider` (:18, 404 when unknown), `listProviders` (:25), `signIn` (:50), `answerSignIn` (:54), `signOut` (:58). Touchpoints: `http/routes/providers.ts`, `sessions.ts`, `bots.ts`, `runs.ts`, `room.ts`.
 - `app/sessions.ts` — chats. `listChats` (:9), `createChat` (:14), `getChat` (:22, `{session, messages, activeRunId}`), `updateChat` (:29), `deleteChat` (:59), `requireSession` (:66). Touchpoints: `routes/sessions.ts`.
@@ -34,6 +35,11 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `app/tools/workspace.ts` — `workspacePath` (:6), `workspaceFor` (:11, creates), `removeWorkspace` (:18), `inWorkspace` (:23, refuses paths outside).
 
 - `app/system.ts` — `ROOT` (:8, the checkout, three folders above the built file), `RESTART_LOG` (:10, `MIP_HOME/restart.log`), `pullLatest` (:14, `git pull --ff-only`), `restartMip` (:20, detached shell: wait for this process, `npm install`, `npm run build`, then start the server; it starts even if the build fails).
+- `app/sync/engine.ts` — GitHub sync. `syncStatus`, `saveClientId`, `connect` (device code, background `finishConnect`), `disconnect`, `startSync` (background run), `syncWith(remote)` (one sync, also used by the tests). Touchpoints: `routes/sync.ts`.
+- `app/sync/github.ts` — `readConfig`/`writeConfig` (`sync/github.json`, mode 0600), `requestDeviceCode`, `pollForToken`, `githubLogin`, `ensureRepo` (creates a private `dotmip`, refuses a public one), `repoUrl`, `authEnv` (the token, only in git's environment).
+- `app/sync/repo.ts` — the local clone in `sync/dotmip`. `fetchRepo`, `readTree`, `writeTree` (one JSON file per record), `commitAndPush` (returns `rejected` when `main` moved).
+- `app/sync/snapshot.ts` — `readLocal` (the database as a snapshot), `applySnapshot` (writes only what differs; a refused removal stays).
+- `app/sync/merge.ts` — pure, no I/O. `Snapshot` and the record types, `keyOf`, `mergeSnapshots`, `countChanges`, `sameRecord`, `sortKeys`, `unionMessages`. Tested by `merge.test.mjs`.
 
 ## adapters/
 - `adapters/contract.ts` — `AgentEvent` (:4), `ToolResult` (:12), `ToolContext` (:18), `ToolSpec` (:24), `ThinkingLevel` (:33), `ModelOption` (:36), `RunOptions` (:44), `ProviderCapabilities` (:64), `AuthState` (:72), `SignInMethod` (:79), `SignInTarget` (:82), `SignInPrompt` (:90), `SignInProgress` (:97), `AgentProvider` (:104).
@@ -44,7 +50,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 
 ## storage/
 - `storage/db.ts` — `db` (:8, the one connection), `Row` type (:11), schema (:13-92), `hasColumn` (:95), migrations (:100-111), startup recovery (:114-115).
-- `storage/paths.ts` — `MIP_HOME` (:6), `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `ensureMipDirs` (:12).
+- `storage/paths.ts` — `MIP_HOME` (:6), `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `ensureMipDirs`.
 - `storage/personas.ts` — `Persona` (:4), `listPersonas`, `getPersona`, `insertPersona`, `updatePersona`, `setDefaultPersona` (:35), `deletePersona`.
 - `storage/sessions.ts` — `Session` (:5), `Message` (:21), `createSession`, `listSessions`, `getSession`, `countSessionsWithPersona`, `listMessages`, `addMessage`, `renameSession`, `setSessionSettings`, `saveProviderSession` (:85), `deleteSession`.
 - `storage/runs.ts` — `createRun`, `getRun`, `activeRunForSession` (:13), `setRunStatus`, `appendRunEvent` (:21), `listRunEvents`.
@@ -52,6 +58,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `storage/repos.ts` — `Repo` (:4), `listRepos`, `getRepo`, `getRepoByName`, `insertRepo`, `setRepoStatus`, `deleteRepo`.
 - `storage/bots.ts` — `Bot` (:4), `listBots`, `getBot`, `getBotByName`, `insertBot`, `updateBot`, `deleteBot`.
 - `storage/room.ts` — `RoomMessage` (:4), `addRoomMessage` (:17), `roomMessagesAfter` (:25).
+- `storage/sync.ts` — the rows GitHub sync reads and writes: `read*Rows` and `write*Row` for personas, bots, notes, chats (with `readMessageRows`/`insertMessageRow`), and room messages. `remove*Row` returns false where the database must keep the row (a default or used persona, a chat with a running run).
 
 ## Rules that hold across the backend
 - App code throws `AppError` for client mistakes. Routes don't catch.

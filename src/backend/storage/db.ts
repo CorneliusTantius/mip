@@ -109,6 +109,20 @@ for (const column of ["model", "thinking"]) {
     db.exec(`ALTER TABLE sessions ADD COLUMN ${column} TEXT`);
   }
 }
+// Databases made before GitHub sync need change times. Existing rows start at their creation time.
+if (!hasColumn("personas", "updated_at")) {
+  db.exec("ALTER TABLE personas ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0");
+  db.exec("UPDATE personas SET updated_at = created_at");
+}
+if (!hasColumn("bots", "updated_at")) {
+  db.exec("ALTER TABLE bots ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0");
+  db.exec("UPDATE bots SET updated_at = created_at");
+}
+// Renames and setting changes move this, not updated_at, so the chat list order stays the same.
+if (!hasColumn("sessions", "meta_updated_at")) {
+  db.exec("ALTER TABLE sessions ADD COLUMN meta_updated_at INTEGER NOT NULL DEFAULT 0");
+  db.exec("UPDATE sessions SET meta_updated_at = updated_at");
+}
 
 // Startup recovery. A run or clone cut off by a server restart can't finish, so it is marked as failed.
 db.prepare("UPDATE runs SET status = 'error' WHERE status = 'running'").run();

@@ -40,7 +40,15 @@ function toSession(row: Row): Session {
 
 export function createSession(providerId: string, personaId: string, title: string): Session {
   const id = randomUUID();
-  db.prepare("INSERT INTO sessions (id, provider_id, persona_id, title, updated_at) VALUES (?, ?, ?, ?, ?)").run(id, providerId, personaId, title, Date.now());
+  const now = Date.now();
+  db.prepare("INSERT INTO sessions (id, provider_id, persona_id, title, updated_at, meta_updated_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+    id,
+    providerId,
+    personaId,
+    title,
+    now,
+    now,
+  );
   return getSession(id)!;
 }
 
@@ -58,7 +66,8 @@ export function countSessionsWithPersona(personaId: string): number {
 }
 
 export function listMessages(sessionId: string): Message[] {
-  const rows = db.prepare("SELECT role, text, tools, error FROM messages WHERE session_id = ? ORDER BY id").all(sessionId) as Row[];
+  // Sent time first. Messages synced from another machine are inserted later, so the insert order is not always the chat order.
+  const rows = db.prepare("SELECT role, text, tools, error FROM messages WHERE session_id = ? ORDER BY created_at, id").all(sessionId) as Row[];
   return rows.map((row) => ({ role: row.role, text: row.text, tools: JSON.parse(row.tools), error: row.error }));
 }
 
@@ -74,11 +83,11 @@ export function addMessage(sessionId: string, message: Message): void {
 }
 
 export function renameSession(id: string, title: string): void {
-  db.prepare("UPDATE sessions SET title = ? WHERE id = ?").run(title, id);
+  db.prepare("UPDATE sessions SET title = ?, meta_updated_at = ? WHERE id = ?").run(title, Date.now(), id);
 }
 
 export function setSessionSettings(id: string, model: string | null, thinking: string | null): void {
-  db.prepare("UPDATE sessions SET model = ?, thinking = ? WHERE id = ?").run(model, thinking, id);
+  db.prepare("UPDATE sessions SET model = ?, thinking = ?, meta_updated_at = ? WHERE id = ?").run(model, thinking, Date.now(), id);
 }
 
 // Called when a run ends. Stores the provider's session id, so the next message resumes that conversation.

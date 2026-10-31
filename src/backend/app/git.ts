@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
 
 // Runs git with the user's own config and credentials. Prompts are off, so a clone that needs a password fails
-// with a message instead of waiting for input. Resolves with git's output. Rejects with the error git reports.
-export function runGit(args: string[]): Promise<string> {
+// with a message instead of waiting for input. env adds variables for this call only. Resolves with git's output.
+// Rejects with the error git reports.
+export function runGit(args: string[], env: NodeJS.ProcessEnv = {}): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn("git", args, { env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("git", args, { env: { ...process.env, GIT_TERMINAL_PROMPT: "0", ...env }, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));

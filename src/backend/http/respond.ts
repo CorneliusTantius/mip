@@ -1,4 +1,13 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { AppError } from "../app/errors.js";
+
+// Requests that run git or npm, or that change the sync account, must be JSON. A page on another site can send a JSON
+// request only after a preflight, and this server does not answer preflights, so only the dashboard can reach them.
+export function requireJson(req: IncomingMessage): void {
+  if (!String(req.headers["content-type"] ?? "").includes("application/json")) {
+    throw new AppError(415, "send this request as JSON");
+  }
+}
 
 // What a route returns: the status code and the JSON body to send.
 export interface Reply {

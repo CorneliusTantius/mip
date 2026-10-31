@@ -6,8 +6,8 @@ Owner = the storage module that reads and writes the table. Only that module wri
 
 | table | columns | primary key / constraints | owner | written by |
 | --- | --- | --- | --- | --- |
-| `personas` | id, name, system_prompt, is_default (0/1), created_at | id | `storage/personas.ts` | `app/personas.ts` |
-| `sessions` | id, provider_id, provider_session_id (nullable), persona_id (default `'default'`), title, updated_at, model (nullable), thinking (nullable) | id | `storage/sessions.ts` | `app/sessions.ts`, `app/runs.ts` |
+| `personas` | id, name, system_prompt, is_default (0/1), created_at, updated_at | id | `storage/personas.ts` | `app/personas.ts` |
+| `sessions` | id, provider_id, provider_session_id (nullable), persona_id (default `'default'`), title, updated_at, meta_updated_at (title and settings), model (nullable), thinking (nullable) | id | `storage/sessions.ts` | `app/sessions.ts`, `app/runs.ts` |
 | `messages` | id (autoincrement), session_id, role (`user`/`assistant`), text, tools (JSON array of names), error (nullable), created_at | id | `storage/sessions.ts` | `app/runs.ts`, `app/sessions.ts` (delete) |
 | `runs` | id, session_id, status (`running`/`done`/`error`), started_at | id | `storage/runs.ts` (+ `sessions.ts` delete) | `app/runs.ts`, `db.ts` (recovery) |
 | `run_events` | run_id, seq, event (JSON `AgentEvent`) | (run_id, seq) | `storage/runs.ts` (+ `sessions.ts` delete) | `app/runs.ts` |
@@ -15,7 +15,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `notes_fts` | title, body, note_id (UNINDEXED) — FTS5 virtual table | — | `storage/notes.ts` | `saveNote`, `deleteNote` |
 | `note_links` | from_id, to_title (NOCASE) | (from_id, to_title) | `storage/notes.ts` | `saveNote` |
 | `note_tags` | note_id, tag | (note_id, tag) | `storage/notes.ts` | `saveNote` |
-| `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), created_at | id | `storage/bots.ts` | `app/bots.ts` |
+| `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), created_at, updated_at | id | `storage/bots.ts` | `app/bots.ts` |
 | `room_messages` | id (autoincrement), kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, created_at | id | `storage/room.ts` | `app/room.ts` |
 | `repos` | id, name (UNIQUE), url, status (`cloning`/`ready`/`error`), error (nullable), created_at | id | `storage/repos.ts` | `app/repos.ts`, `db.ts` (recovery) |
 
@@ -27,6 +27,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 - Bot names are unique ignoring case. Bot messages in `room_messages` keep `author_name`, so they stay readable after the bot is deleted.
 - Exactly one persona has `is_default = 1` (`setDefaultPersona`, `storage/personas.ts:35`). The built-in `default` persona cannot be deleted.
 - Repo names are unique. The name is also the folder name in `repos/` and in each workspace.
+- GitHub sync merges by change times, so every write sets them: `personas.updated_at`, `bots.updated_at`, `notes.updated_at`, `sessions.meta_updated_at` (title and settings), and `created_at` on messages and room messages. A write that skips one is lost in a merge (`app/sync/merge.ts`).
 
 ## Files outside SQLite
 | path | created by | content |
@@ -35,6 +36,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `MIP_HOME/workspaces/<sessionId>/` | `app/tools/workspace.ts` `workspaceFor` | chat files and `<name>/` repo copies |
 | `MIP_HOME/sessions/claude/` | `adapters/claude-cli.ts` (`CLAUDE_CONFIG_DIR`) | CLI login, transcripts |
 | `MIP_HOME/sessions/pi/` | `adapters/pi.ts` | Pi sessions |
+| `MIP_HOME/sync/` | `app/sync/*` | `github.json` (client ID and token, mode 0600), `base.json` (state at the last sync), `state.json` (last run), `dotmip/` (local clone of the GitHub repo) |
 
 ## Identifiers
 - Chats, personas, bots, notes, repos, runs: UUID strings (`randomUUID`), except the built-in persona `default`.

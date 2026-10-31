@@ -133,3 +133,25 @@ export interface NoteDetail {
   backlinks: string[];
   tags: string[];
 }
+
+// One sync run: what it pulled and pushed, and the notes for records that both sides changed.
+export interface SyncRun {
+  at: number;
+  ok: boolean;
+  message: string;
+  pulled: number;
+  pushed: number;
+  notes: string[];
+}
+
+// The GitHub sync: the connection, the device code while a sign-in waits, and the last run.
+export interface SyncStatus {
+  clientId: string | null;
+  connected: boolean;
+  login: string | null;
+  repo: string | null;
+  device: { userCode: string; verificationUri: string; expiresAt: number } | null;
+  running: boolean;
+  error: string | null;
+  lastSync: SyncRun | null;
+}
