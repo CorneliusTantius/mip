@@ -28,7 +28,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 
 ## App.tsx
 - `App` (:22) owns: settings open, memory open, memory start note, memory version (bumped after a memory save or delete).
-- Layout (grid `main`, children in this order, which `styles.css:62-65` depends on):
+- Layout (grid `main`, children in this order):
   1. `div.navbar` — title and gear (opens `SettingsDialog`).
   2. `div` `col-span-12 h-[min(44rem,80vh)] xl:col-span-8` → `ChatCard`.
   3. `div` `col-span-12 h-[min(40rem,80vh)] xl:col-span-4 xl:h-[min(44rem,80vh)]` → `BotsCard`.
@@ -121,7 +121,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 ## Styling and theme
 - `styles.css` — Nord theme tokens in `@plugin "daisyui/theme"` (:95). Dark only.
 - Card glow: `.glow` (:132) uses `--glow` for a 0.5px border (55%), the outer glow (45%), and a 5% tint over the card's background. Colors: `.glow-frost` (:138, chat), `.glow-violet` (:141, bots), `.glow-green` (:145, memory), `.glow-orange` (:143, repos), `.glow-yellow` (:144, tasks), `.glow-blue` (:140, activity), `.glow-teal` (:139, skills), `.glow-red` (:142, MCP).
-- Entrance animations (`styles.css:40-70`) are keyed by DOM position (`main > div:nth-child(3|4) > .card`). Keep the grid's child order.
+- Card entrances: `ui/Card.tsx` draws a random duration (0.4–1.2 s) and delay (0–0.5 s) for each card on mount, and sets them as `--enter-duration` and `--enter-delay`. `styles.css` `.card` reads them, so the order changes on every page load.
 - Native `<dialog>` modals. Focus outlines are off (`styles.css` top).
 
 ## Gotchas

@@ -47,7 +47,7 @@ API regression check (used in the 2026-10-31 refactor): record each route's stat
 1. Create `src/frontend/features/<name>/<Name>Card.tsx` with `Card` and `CardBody` from `ui/Card.tsx`. Pick a `glow` color.
 2. A new color needs a `.glow-<name>` rule in `styles.css` (see `:132-145`).
 3. Put state in a hook next to the card. Fetch only through `api`.
-4. Add the card to `App.tsx` in the grid, in the position you want. Mind the `styles.css:62-65` position rules.
+4. Add the card to `App.tsx` in the grid, in the position you want. Entrance timing comes from `Card`, so nothing else is needed.
 5. Dialogs: use `Modal` (controlled by `open`). Confirmations: use `ConfirmDialog`.
 6. Cross-card changes: call `announce(name)` in `api/events.ts`, and listen with `useAnnouncement`.
 
@@ -67,7 +67,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - Runs left `running` by a crash are marked `error` on the next start (`storage/db.ts:114`). Clones left `cloning` are marked `error` too.
 - Bash tool is not sandboxed. It runs with the user's permissions.
 - The status row under the bots transcript must keep `h-5 flex-none` (`BotsCard.tsx`), or the transcript jumps.
-- Card animations are keyed to grid child positions (`styles.css:62-65`). Reordering the grid changes the entrance animation.
+- Card entrance timing is random per mount (`ui/Card.tsx`), so the order changes on every page load. Don't add position-based animation delays. Set `--enter-delay` on the element instead.
 - The memory graph's degree-based sizing and the note count count only nodes with a note (`MemoryCard.tsx`).
 - The room is one conversation at a time (`app/room.ts:14`). A second post while busy gets 409.
 - `git` runs with `GIT_TERMINAL_PROMPT=0` (`app/git.ts`). A clone that needs a password fails instead of waiting.

@@ -18,7 +18,6 @@ const SIDES = "px-4 xl:px-4.75";
 const MEDIUM = "col-span-12 md:col-span-6";
 
 // The page: a header, then one scrolling grid of cards. Each card sits in a grid cell, and the cells keep their order.
-// styles.css staggers the card animations by these positions, so reordering cells changes the entrance.
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [memoryOpen, setMemoryOpen] = useState(false);

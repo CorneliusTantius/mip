@@ -62,4 +62,4 @@ On startup, `storage/db.ts:114-115` marks runs left `running` as `error`, and re
 - Preact 11, daisyUI 5, Tailwind 4, Vite 8. Dark Nord theme in `styles.css`.
 - No global store. State lives in feature hooks and components. Cards tell each other about changes with window events (`api/events.ts`).
 - Every HTTP call goes through `api/client.ts`. Every dashboard card is a `Card` in `ui/Card.tsx`, with one glow color.
-- Page layout is `App.tsx`, one scrolling `main` grid. Animation delays in `styles.css:62-65` depend on the grid's child positions.
+- Page layout is `App.tsx`, one scrolling `main` grid. Each card's entrance timing is random per page load, set by `ui/Card.tsx`.

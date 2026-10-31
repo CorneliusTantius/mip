@@ -59,10 +59,14 @@ select::picker(select) {
 }
 
 .navbar { animation: mip-drop 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
-.card { animation: mip-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
-.grid > .card:nth-child(2) { animation-delay: 80ms; }
-main > div:nth-child(3) > .card { animation-delay: 160ms; }
-main > div:nth-child(4) > .card { animation-delay: 240ms; }
+/* Each card's timing is set on the element by ui/Card.tsx, so the order cards appear in changes on every page load. */
+.card {
+  animation-name: mip-rise;
+  animation-duration: var(--enter-duration, 0.6s);
+  animation-delay: var(--enter-delay, 0s);
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  animation-fill-mode: backwards;
+}
 .chat { animation: mip-pop 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
 .card li,
 dialog li { animation: mip-slide 0.35s ease-out backwards; }
