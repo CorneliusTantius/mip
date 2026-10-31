@@ -1,12 +1,13 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { findTool, TOOLS, workspaceForToken } from "../app/tools/index.js";
+import { sendJson } from "./respond.js";
 
 // Tool calls from the Claude CLI. It speaks the Model Context Protocol, which is JSON-RPC 2.0 over HTTP.
 // The bearer token picks the run, and so the workspace the calls work in.
 export async function handleMcp(req: IncomingMessage, res: ServerResponse, message: any): Promise<void> {
   const token = req.headers.authorization?.replace(/^Bearer /, "");
   const workspace = workspaceForToken(token);
-  if (!workspace) return json(res, 401, { error: "unauthorized" });
+  if (!workspace) return sendJson(res, 401, { error: "unauthorized" });
 
   const { id, method, params } = message;
   // Notifications have no id, and get no reply body.
@@ -32,15 +33,11 @@ export async function handleMcp(req: IncomingMessage, res: ServerResponse, messa
   }
 }
 
+// JSON-RPC replies always use HTTP 200. Failures are reported inside the body.
 function reply(res: ServerResponse, id: unknown, result: unknown): void {
-  json(res, 200, { jsonrpc: "2.0", id, result });
+  sendJson(res, 200, { jsonrpc: "2.0", id, result });
 }
 
 function replyError(res: ServerResponse, id: unknown, code: number, message: string): void {
-  json(res, 200, { jsonrpc: "2.0", id, error: { code, message } });
-}
-
-function json(res: ServerResponse, status: number, data: unknown): void {
-  res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-  res.end(JSON.stringify(data));
+  sendJson(res, 200, { jsonrpc: "2.0", id, error: { code, message } });
 }
