@@ -1,13 +1,13 @@
 // Checks the sync merge: which side wins, what is kept, and what is reported. Run after a build: node src/backend/app/sync/merge.test.mjs
 // The tests import the compiled module from dist, so they need `npm run build:backend` first.
 import assert from "node:assert/strict";
-import { countChanges, emptySnapshot, indexBy, keyOf, mergeSnapshots } from "../../../../dist/backend/app/sync/merge.js";
+import { countChanges, emptySnapshot, indexBy, keyOf, mergeSnapshots, snapshotFromSaved } from "../../../../dist/backend/app/sync/merge.js";
 
 const note = (title, body, updatedAt) => ({ title, body, links: [], tags: [], updatedAt });
 const withNotes = (...notes) => ({ ...emptySnapshot(), notes: indexBy(notes, keyOf.note) });
 const msg = (createdAt, text, role = "user") => ({ createdAt, role, text, tools: [], error: null });
 const agent = (id, title, updatedAt, messages) => ({ id, title, providerId: "pi", personaId: "default", model: null, thinking: null, updatedAt, messages });
-const withChats = (...chats) => ({ ...emptySnapshot(), chats: indexBy(chats, keyOf.agent) });
+const withAgents = (...agents) => ({ ...emptySnapshot(), agents: indexBy(agents, keyOf.agent) });
 
 // Only one side changed: that side's version is taken, and nothing is reported.
 {
@@ -71,24 +71,24 @@ const withChats = (...chats) => ({ ...emptySnapshot(), chats: indexBy(chats, key
 // Chats: messages from both sides are kept once each, oldest first. The newer settings win.
 {
   const shared = msg(10, "hello");
-  const base = withChats(agent("c1", "Agent", 10, [shared]));
-  const local = withChats(agent("c1", "Agent", 20, [shared, msg(20, "from laptop", "assistant")]));
-  const remote = withChats(agent("c1", "Agent", 15, [shared, msg(15, "from desktop", "assistant")]));
+  const base = withAgents(agent("c1", "Agent", 10, [shared]));
+  const local = withAgents(agent("c1", "Agent", 20, [shared, msg(20, "from laptop", "assistant")]));
+  const remote = withAgents(agent("c1", "Agent", 15, [shared, msg(15, "from desktop", "assistant")]));
   const { merged, notes } = mergeSnapshots(base, local, remote);
   assert.deepEqual(
-    merged.chats.c1.messages.map((m) => m.text),
+    merged.agents.c1.messages.map((m) => m.text),
     ["hello", "from desktop", "from laptop"],
   );
-  assert.equal(merged.chats.c1.updatedAt, 20);
+  assert.equal(merged.agents.c1.updatedAt, 20);
   assert.equal(notes.length, 1);
 }
 
 // An agent deleted on GitHub while it changed here is kept, with its new messages.
 {
-  const base = withChats(agent("c1", "Agent", 10, [msg(10, "hello")]));
-  const local = withChats(agent("c1", "Agent", 30, [msg(10, "hello"), msg(30, "still here")]));
+  const base = withAgents(agent("c1", "Agent", 10, [msg(10, "hello")]));
+  const local = withAgents(agent("c1", "Agent", 30, [msg(10, "hello"), msg(30, "still here")]));
   const { merged } = mergeSnapshots(base, local, emptySnapshot());
-  assert.equal(merged.chats.c1.messages.length, 2);
+  assert.equal(merged.agents.c1.messages.length, 2);
 }
 
 // The room keeps both sides' messages, since none are edited or removed.
@@ -109,5 +109,8 @@ const withChats = (...chats) => ({ ...emptySnapshot(), chats: indexBy(chats, key
   assert.equal(countChanges(merged, same), 0);
   assert.equal(countChanges(same, withNotes(note("Ideas", "v2", 2))), 1);
 }
+
+// A snapshot saved before the rename kept its agents under chats. Reading it gives them under agents.
+assert.deepEqual(Object.keys(snapshotFromSaved({ chats: indexBy([agent("c1", "Agent", 10, [])], keyOf.agent) }).agents), ["c1"]);
 
 console.log("merge tests passed");

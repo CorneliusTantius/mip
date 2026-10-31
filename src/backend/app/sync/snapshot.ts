@@ -7,7 +7,7 @@ export function readLocal(): Snapshot {
     personas: indexBy(store.readPersonaRows(), keyOf.persona),
     bots: indexBy(store.readBotRows(), keyOf.bot),
     notes: indexBy(store.readNoteRows(), keyOf.note),
-    chats: indexBy(
+    agents: indexBy(
       store.readAgentRows().map((agent) => ({ ...agent, messages: store.readMessageRows(agent.id) })),
       keyOf.agent,
     ),
@@ -21,7 +21,7 @@ export function applySnapshot(local: Snapshot, target: Snapshot): void {
   applyPart(local.personas, target.personas, store.writePersonaRow, (persona) => store.removePersonaRow(persona.id));
   applyPart(local.bots, target.bots, store.writeBotRow, (bot) => store.removeBotRow(bot.name));
   applyPart(local.notes, target.notes, store.writeNoteRow, (note) => store.removeNoteRow(note.title));
-  applyPart(local.chats, target.chats, writeAgent, (agent) => store.removeAgentRow(agent.id));
+  applyPart(local.agents, target.agents, writeAgent, (agent) => store.removeAgentRow(agent.id));
   // Room messages are only added, as the merge keeps both sides' messages. They go in sent order, so the room reads in time.
   const added = Object.keys(target.room)
     .filter((key) => local.room[key] === undefined)

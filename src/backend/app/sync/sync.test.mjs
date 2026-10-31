@@ -3,7 +3,7 @@
 // Each machine is a separate Node process with its own MIP_HOME, so each has its own database, as on two real machines.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -38,11 +38,11 @@ function run() {
     return JSON.parse(stdout.trim().split("\n").pop());
   }
 
-  // What a machine shows after a sync: its notes by title, and its chats with their messages.
+  // What a machine shows after a sync: its notes by title, and its agents with their messages.
   const READ = `
-    const chats = agents.listAgents().map((s) => ({ id: s.id, title: s.title, messages: agents.listMessages(s.id).map((m) => m.text) }));
+    const found = agents.listAgents().map((s) => ({ id: s.id, title: s.title, messages: agents.listMessages(s.id).map((m) => m.text) }));
     const noteBody = (title) => notes.getNoteByTitle(title)?.body ?? null;
-    return { chats, ideas: noteBody("Ideas"), temp: noteBody("Temp") };
+    return { agents: found, ideas: noteBody("Ideas"), temp: noteBody("Temp") };
   `;
   const withRun = (run) => `const run = ${run}; ${READ.replace("return {", "return { run,")}`;
 
@@ -66,7 +66,7 @@ function run() {
   assert.equal(second.run.ok, true);
   assert.equal(second.ideas, "from A");
   assert.equal(second.temp, "delete me");
-  assert.deepEqual(second.chats.map((c) => c.messages), [["hello from A"]]);
+  assert.deepEqual(second.agents.map((a) => a.messages), [["hello from A"]]);
 
   // Machine B edits the note and adds a message, then syncs.
   machine(b, `
@@ -87,14 +87,14 @@ function run() {
   assert.equal(third.ideas, "from A later", "the later edit wins the note");
   assert.equal(third.temp, null, "the delete on A reaches GitHub");
   assert.ok(third.run.notes.some((note) => /Ideas/.test(note)), "the conflict is reported in the sync log");
-  assert.deepEqual(third.chats[0].messages, ["hello from A", "hi from B", "from A again"], "both sides' messages are kept once, in order");
+  assert.deepEqual(third.agents[0].messages, ["hello from A", "hi from B", "from A again"], "both sides' messages are kept once, in order");
 
   // Machine B syncs again. It takes A's note and the delete, and keeps its own message.
   const fourth = machine(b, withRun("await engine.syncWith(remote)"));
   assert.equal(fourth.run.ok, true);
   assert.equal(fourth.ideas, "from A later");
   assert.equal(fourth.temp, null);
-  assert.deepEqual(fourth.chats[0].messages, ["hello from A", "hi from B", "from A again"]);
+  assert.deepEqual(fourth.agents[0].messages, ["hello from A", "hi from B", "from A again"]);
 
   // Nothing changed since the last run: the sync reports that and pushes nothing.
   const fifth = machine(b, "return await engine.syncWith(remote);");
@@ -115,9 +115,49 @@ function run() {
   // The repo holds one file per record, under readable names, and no secrets.
   const files = lsTree(bare);
   assert.match(files, /notes\/ideas\.json/);
-  assert.match(files, /chats\/.*\.json/);
+  assert.match(files, /agents\/.*\.json/);
   assert.match(files, /room\.json/);
-  assert.doesNotMatch(files, /agents\/|auth|github\.json|token/i);
+  assert.doesNotMatch(files, /sessions\/|auth|github\.json|token/i);
+
+  // A repo and a saved base written before the rename keep their agents under chats. Here the repo is moved back to that
+  // layout by hand, and machine E's base is rewritten the same way. A new machine reads the agent from chats/, and the
+  // sync writes agents/ and removes chats/. Then E, still holding the agent, sees the delete through its legacy base.
+  const legacyRepo = { url: bareRepo("legacy-remote.git"), env: {}, repo: "test/legacy" };
+  const e = join(root, "machine-e");
+  const f = join(root, "machine-f");
+  machine(e, `
+    notes.saveNote({ id: "n-keep", title: "Keep", body: "stays" }, [], []);
+    const agent = agents.insertAgent("pi", "default", "Old");
+    agents.addMessage(agent.id, { role: "user", text: "old chat", tools: [], error: null });
+    return await engine.syncWith(remote);
+  `, legacyRepo);
+  moveFolder(legacyRepo.url, "agents", "chats");
+  const baseFile = join(e, "sync", "base.json");
+  const saved = JSON.parse(readFileSync(baseFile, "utf8"));
+  saved.snapshot.chats = saved.snapshot.agents;
+  delete saved.snapshot.agents;
+  writeFileSync(baseFile, JSON.stringify(saved));
+
+  const fresh = machine(f, `
+    const run = await engine.syncWith(remote);
+    return { run, agents: agents.listAgents().map((a) => ({ id: a.id, title: a.title, messages: agents.listMessages(a.id).map((m) => m.text) })) };
+  `, legacyRepo);
+  assert.equal(fresh.run.ok, true);
+  assert.deepEqual(fresh.agents.map((a) => a.title), ["Old"], "the agent is read from the legacy chats folder");
+  assert.deepEqual(fresh.agents[0].messages, ["old chat"]);
+  assert.match(lsTree(legacyRepo.url), /agents\/.*\.json/, "the sync writes the agents folder");
+  assert.doesNotMatch(lsTree(legacyRepo.url), /(^|\n)chats\//, "the legacy chats folder is removed");
+
+  machine(f, `
+    agents.deleteAgent(${JSON.stringify(fresh.agents[0].id)});
+    return await engine.syncWith(remote);
+  `, legacyRepo);
+  const stale = machine(e, `
+    const run = await engine.syncWith(remote);
+    return { run, agents: agents.listAgents().map((a) => a.title) };
+  `, legacyRepo);
+  assert.equal(stale.run.ok, true);
+  assert.deepEqual(stale.agents, [], "the delete reaches machine E through its legacy base");
 
   console.log("sync tests passed");
 }
@@ -126,6 +166,15 @@ function bareRepo(name) {
   const path = join(root, name);
   execFileSync("git", ["init", "--bare", "-b", "main", path], { stdio: "ignore" });
   return path;
+}
+
+// Renames a folder on the main branch of a bare repo, the way an older version of mip laid the repo out.
+function moveFolder(repo, from, to) {
+  const clone = join(root, `clone-${to}`);
+  execFileSync("git", ["clone", "-q", repo, clone], { stdio: "ignore" });
+  execFileSync("git", ["-C", clone, "mv", from, to]);
+  execFileSync("git", ["-C", clone, "-c", "user.name=test", "-c", "user.email=test@localhost", "commit", "-q", "-m", `move ${from} to ${to}`]);
+  execFileSync("git", ["-C", clone, "push", "-q", "origin", "HEAD:refs/heads/main"]);
 }
 
 function lsTree(repo) {

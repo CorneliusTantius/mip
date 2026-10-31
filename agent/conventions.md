@@ -108,7 +108,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - A write to a synced table must set its change time (see `data-model.md`). A write that skips it is lost in a GitHub sync merge.
 - mip never stores the GitHub token. Each sync gets it from `gh auth token` and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
 - Sync refuses a public `dotmip` repo, and it refuses an empty database when the last sync had data.
-- The synced repo keeps the names `chats/` (folder) and `chats` (part) from before the agent rename. Other machines read them, so they change only with a migration on every machine. The code uses `agent` for everything else.
+- The synced repo's folder is `agents/`. A repo or saved `base.json` from before the rename keeps its agents under `chats`, and sync still reads it. A machine on an older version that syncs after the change sees its chats missing and deletes them, so upgrade every machine before syncing.
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
 - Tool guidance lives in each tool's `guide`, never in a persona. The built-in persona keeps identity and style only. An unedited copy of the old built-in persona is updated at startup; an edited one is left alone.
 - A skill can be created from a form or imported from a folder. Both paths check the same header rules. Create never replaces an installed skill, and import asks for review first.

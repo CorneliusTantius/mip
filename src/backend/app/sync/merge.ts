@@ -59,18 +59,23 @@ export interface Snapshot {
   personas: Record<string, PersonaRecord>;
   bots: Record<string, BotRecord>;
   notes: Record<string, NoteRecord>;
-  chats: Record<string, AgentRecord>;
+  agents: Record<string, AgentRecord>;
   room: Record<string, RoomRecord>;
 }
 
-export const PARTS = ["personas", "bots", "notes", "chats", "room"] as const;
+export const PARTS = ["personas", "bots", "notes", "agents", "room"] as const;
 
 export function emptySnapshot(): Snapshot {
-  return { personas: {}, bots: {}, notes: {}, chats: {}, room: {} };
+  return { personas: {}, bots: {}, notes: {}, agents: {}, room: {} };
 }
 
 export function isEmptySnapshot(snapshot: Snapshot): boolean {
   return PARTS.every((part) => Object.keys(snapshot[part]).length === 0);
+}
+
+// A snapshot saved before the rename kept its agents under chats. The other parts did not change name.
+export function snapshotFromSaved(saved: Partial<Snapshot> & { chats?: Snapshot["agents"] }): Snapshot {
+  return { ...emptySnapshot(), ...saved, agents: saved.agents ?? saved.chats ?? {} };
 }
 
 // The key that identifies a record on every machine. Bots and notes are keyed by name, without case, as the database does.
@@ -189,7 +194,7 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     personas: mergeKind(personaKind, base.personas, local.personas, remote.personas, notes),
     bots: mergeKind(botKind, base.bots, local.bots, remote.bots, notes),
     notes: mergeKind(noteKind, base.notes, local.notes, remote.notes, notes),
-    chats: mergeKind(agentKind, base.chats, local.chats, remote.chats, notes),
+    agents: mergeKind(agentKind, base.agents, local.agents, remote.agents, notes),
     // Room messages are never edited or deleted, so both sides' messages are kept.
     room: { ...remote.room, ...local.room },
   };

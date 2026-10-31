@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SYNC_DIR } from "../../storage/paths.js";
 import { AppError, errorMessage } from "../errors.js";
-import { countChanges, emptySnapshot, isEmptySnapshot, mergeSnapshots, type Snapshot } from "./merge.js";
+import { countChanges, emptySnapshot, isEmptySnapshot, mergeSnapshots, snapshotFromSaved, type Snapshot } from "./merge.js";
 import { authEnv, ensureRepo, gitHubAccount, listAccounts, pickAccount, REPO_NAME, repoUrl, type Account } from "./github.js";
 import { commitAndPush, fetchRepo, readTree, writeTree } from "./repo.js";
 import { applySnapshot, readLocal } from "./snapshot.js";
@@ -132,8 +132,8 @@ function summarize(pulled: number, pushed: number, merged: number): string {
 
 function readBase(repo: string): Snapshot {
   if (!existsSync(BASE_FILE)) return emptySnapshot();
-  const saved = JSON.parse(readFileSync(BASE_FILE, "utf8")) as { repo?: string; snapshot?: Snapshot };
-  return saved.repo === repo && saved.snapshot ? saved.snapshot : emptySnapshot();
+  const saved = JSON.parse(readFileSync(BASE_FILE, "utf8")) as { repo?: string; snapshot?: Parameters<typeof snapshotFromSaved>[0] };
+  return saved.repo === repo && saved.snapshot ? snapshotFromSaved(saved.snapshot) : emptySnapshot();
 }
 
 function writeBase(snapshot: Snapshot, repo: string): void {

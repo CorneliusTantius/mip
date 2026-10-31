@@ -9,7 +9,9 @@ import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type NoteRe
 // here by hand are overwritten by the next sync.
 export const REPO_DIR = join(SYNC_DIR, "dotmip");
 // One folder per part. The room is one file, a list in order, since its messages are only ever added.
-const FOLDERS = ["personas", "bots", "notes", "chats"] as const;
+const FOLDERS = ["personas", "bots", "notes", "agents"] as const;
+// Folders that older versions wrote. They are removed on every sync, once the records have moved to their new folder.
+const LEGACY_FOLDERS = ["chats"] as const;
 const ROOM_FILE = "room.json";
 const README = `# dotmip
 
@@ -18,7 +20,7 @@ Data synced from mip. mip writes this repo; edits made here are overwritten by t
 - personas/: personas, one file each
 - bots/: bots, one file each
 - notes/: memory notes, one file each
-- chats/: chats with their messages, one file each
+- agents/: agents with their messages, one file each
 - room.json: the messages from the bots room, in order
 
 Not stored here: provider logins, repository clones, and agent workspaces.
@@ -58,19 +60,24 @@ export function readTree(): Snapshot {
     personas: indexBy(readFolder<PersonaRecord>("personas"), keyOf.persona),
     bots: indexBy(readFolder<BotRecord>("bots"), keyOf.bot),
     notes: indexBy(readFolder<NoteRecord>("notes"), keyOf.note),
-    chats: indexBy(readFolder<AgentRecord>("chats"), keyOf.agent),
+    agents: indexBy(readFolder<AgentRecord>(agentsFolder()), keyOf.agent),
     room: indexBy(existsSync(join(REPO_DIR, ROOM_FILE)) ? readJson<RoomRecord[]>(ROOM_FILE) : [], keyOf.room),
   };
 }
 
+// A repo written before the rename keeps its agents in chats/. They are read from there until a sync writes agents/.
+function agentsFolder(): string {
+  return !existsSync(join(REPO_DIR, "agents")) && existsSync(join(REPO_DIR, "chats")) ? "chats" : "agents";
+}
+
 // Replaces the repo's data files with the snapshot. Files the snapshot no longer has are removed.
 export function writeTree(snapshot: Snapshot): void {
-  for (const folder of FOLDERS) rmSync(join(REPO_DIR, folder), { recursive: true, force: true });
+  for (const folder of [...FOLDERS, ...LEGACY_FOLDERS]) rmSync(join(REPO_DIR, folder), { recursive: true, force: true });
   rmSync(join(REPO_DIR, ROOM_FILE), { force: true });
   writeRecords("personas", snapshot.personas);
   writeRecords("bots", snapshot.bots);
   writeRecords("notes", snapshot.notes);
-  writeRecords("chats", snapshot.chats);
+  writeRecords("agents", snapshot.agents);
   writeJson(ROOM_FILE, Object.keys(snapshot.room).sort().map((key) => snapshot.room[key]));
   writeFileSync(join(REPO_DIR, "README.md"), README);
 }
