@@ -119,7 +119,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 
 ## Styling and theme
 - `styles.css` — Nord theme tokens in `@plugin "daisyui/theme"` (:95). Dark only.
-- Card glow: `.glow` (:132) uses `--glow` for border (55%), outer glow (45%), and a 7% tint over the card's background. Colors: `.glow-frost` (:138, chat), `.glow-violet` (:141, bots), `.glow-green` (:145, memory), `.glow-orange` (:143, repos), `.glow-yellow` (:144, tasks), `.glow-blue` (:140, activity), `.glow-teal` (:139, skills), `.glow-red` (:142, MCP).
+- Card glow: `.glow` (:132) uses `--glow` for the outer glow (45%) and a 5% tint, with no border line over the card's background. Colors: `.glow-frost` (:138, chat), `.glow-violet` (:141, bots), `.glow-green` (:145, memory), `.glow-orange` (:143, repos), `.glow-yellow` (:144, tasks), `.glow-blue` (:140, activity), `.glow-teal` (:139, skills), `.glow-red` (:142, MCP).
 - Entrance animations (`styles.css:40-70`) are keyed by DOM position (`main > div:nth-child(3|4) > .card`). Keep the grid's child order.
 - Native `<dialog>` modals. Focus outlines are off (`styles.css` top).
 
