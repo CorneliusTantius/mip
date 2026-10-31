@@ -1,4 +1,4 @@
-import { createSession, deleteSession, getSession, listMessages, listRepliesWithCalls, listSessions, renameSession, setSessionSettings, type Session } from "../storage/sessions.js";
+import { createSession, deleteSession, getSession, listMessages, listSessions, renameSession, setSessionSettings, type Session } from "../storage/sessions.js";
 import { enabledSkillNames } from "../storage/skills.js";
 import { AppError } from "./errors.js";
 import { pickAgentName } from "./names.js";
@@ -11,13 +11,6 @@ import { enabledSkills, setChatSkills } from "./skills/registry.js";
 // Every chat, with the names of the skills it has enabled.
 export function listChats(): (Session & { skills: string[] })[] {
   return listSessions().map((session) => ({ ...session, skills: enabledSkillNames(session.id) }));
-}
-
-// The tool calls of recent replies, newest first, each with its chat. Each call is listed on its own.
-export function recentToolCalls(limit = 50) {
-  return listRepliesWithCalls(limit)
-    .flatMap((reply) => reply.calls.map((call) => ({ chatId: reply.sessionId, chatTitle: reply.title, createdAt: reply.createdAt, ...call })))
-    .slice(0, limit);
 }
 
 // A new chat gets a random agent name that no other chat has. The persona is fixed for the chat's life.

@@ -1,16 +1,14 @@
 import type { ToolCall } from "../api/types";
 import { prettyJson, toolLabel } from "./toolName";
 
-// One tool call's name, input, and result. Shared by the chat's tool-call dialog and the Tool calls card, which already shows the name.
-export function ToolCallDetails({ call, showName = true }: { call: ToolCall; showName?: boolean }) {
+// One tool call's name, input, and result. Used by the chat's tool-call dialog.
+export function ToolCallDetails({ call }: { call: ToolCall }) {
   return (
     <div className="flex flex-col gap-2">
-      {showName && (
-        <div className="flex items-center gap-2">
-          <strong className="text-sm">{toolLabel(call.name)}</strong>
-          {call.isError && <span className="badge badge-error badge-sm">error</span>}
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        <strong className="text-sm">{toolLabel(call.name)}</strong>
+        {call.isError && <span className="badge badge-error badge-sm">error</span>}
+      </div>
       <Block label="Input" text={prettyJson(call.input)} />
       <Block label="Result" text={call.output === null ? "No result came back." : call.output || "(empty)"} />
     </div>

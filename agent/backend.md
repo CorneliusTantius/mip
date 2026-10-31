@@ -9,6 +9,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `http/routes/index.ts` — `routes` (:13). Concatenates the domain route lists. Add a new domain here.
 - `http/routes/system.ts` — `systemRoutes` (:6). `POST /api/system/update` pulls, `POST /api/system/restart` restarts. Both need JSON (`requireJson`).
 - `http/routes/sync.ts` — `syncRoutes`. The gh accounts, the account choice, and the sync runs, all JSON for writes. Lines in `api.md`.
+- `http/routes/tools.ts` — `toolRoutes`. `GET /api/tools`, the registry, read only.
 - `http/routes/skills.ts` — `skillRoutes`. The installed skills, their text, removal, and the two-step import. Lines in `api.md`.
 - `http/routes/{sessions,runs,personas,bots,room,repos,memory,providers}.ts` — one `Route[]` each. Handlers are small: read body → call an `app/*` function → return a `Reply`. Lines: see `api.md`.
 - `http/mcp.ts` — `handleMcp` (:7). JSON-RPC 2.0 for `initialize`, `tools/list`, `tools/call`. 401 without a live run token. Touchpoints: Claude CLI (via `adapters/claude-cli.ts` `mcpConfig`), `app/tools`.
@@ -29,7 +30,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `app/memory.ts` — notes. `LINK` (:6), `TAG` (:7), `parseLinks`/`parseTags` (private), `writeNote` (:24), `readNote` (:36), `searchMemory` (:43), `memoryList` (:50), `memoryGraph` (:55), `forgetNote` (:76), `recallFor` (:83). Touchpoints: `routes/memory.ts`, `runs.ts`, `tools/memory.ts`.
 - `app/repos.ts` — repositories. `CLONE_LINK` (:12), `FOLDER_NAME` (:14), `HOST_LINK` (:16), `withScheme` (:18), `repoNameFromUrl` (private), `requireRepo` (private), `branchOf` (private), `listRepoCards` (:46), `pullAllRepos` (:61), `addRepo` (:78), `copyRepoToChat` (:102), `removeRepo` (:120), `repoNote` (:128). Touchpoints: `routes/repos.ts`, `runs.ts`, `tools/workspace.ts`.
 - `app/tool-calls.ts` — `ToolCallLog` (`start` and `finish`, matched by id), `MAX_TEXT` (8000). Records a reply's calls for `messages.calls`. Tested by `tool-calls.test.mjs`.
-- `app/tools/index.ts` — `guarded`, `TOOLS` (the one registry), `CHAT_TOOLS` (all of it), `BOT_TOOLS` (none for now), `RunContext` (folder, chat, tool list), `registerRun(context)` (returns the token), `releaseRun`, `runContextForToken` (what `http/mcp.ts` uses to check a call).
+- `app/tools/index.ts` — `guarded`, `TOOLS` (the one registry), `CHAT_TOOLS` (all of it), `BOT_TOOLS` (none for now), `RunContext` (folder, chat, tool list), `registerRun(context)` (returns the token), `releaseRun`, `runContextForToken` (what `http/mcp.ts` uses to check a call), `describeTools` (the registry for `GET /api/tools`).
 - `app/tools/skills.ts` — `skillReadTool` and `skillFileTool`. Both need the run's chat, and both check it has the skill enabled.
 - `app/skills/format.ts` — pure rules: `parseSkill` (the SKILL.md header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
 - `app/skills/registry.ts` — the installed skills: `listSkills` (valid skills, and folders that are not), `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt` (the list in the system prompt), `setChatSkills`, `removeSkill`.

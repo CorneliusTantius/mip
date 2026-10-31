@@ -15,7 +15,7 @@ try {
   const { confirmImport, discardImport, stageImport } = await import(`${DIST}app/skills/imports.js`);
   const { enabledSkill, listSkills, loadSkill, readSkillFile, removeSkill, setChatSkills, skillsPrompt } = await import(`${DIST}app/skills/registry.js`);
   const { enabledSkillNames } = await import(`${DIST}storage/skills.js`);
-  const { BOT_TOOLS, CHAT_TOOLS, TOOLS, registerRun, releaseRun, runContextForToken } = await import(`${DIST}app/tools/index.js`);
+  const { BOT_TOOLS, CHAT_TOOLS, TOOLS, describeTools, registerRun, releaseRun, runContextForToken } = await import(`${DIST}app/tools/index.js`);
   const { SKILLS_DIR } = await import(`${DIST}storage/paths.js`);
   const { createSkill } = await import(`${DIST}app/skills/create.js`);
 
@@ -112,6 +112,12 @@ try {
   assert.deepEqual(runContextForToken(token).tools, []);
   releaseRun(token);
   assert.equal(runContextForToken(token), undefined, "a released token opens nothing");
+
+  // The registry lists every tool with the kinds of run that may use it: chats get all of them, bots none.
+  const described = describeTools();
+  assert.equal(described.length, TOOLS.length);
+  assert.ok(described.every((tool) => tool.chat === true && tool.bot === false));
+  assert.equal(described.find((tool) => tool.name === "skill_read").description, TOOLS.find((tool) => tool.name === "skill_read").description);
 
   // A folder in the registry that is not a valid skill is reported, not hidden.
   mkdirSync(join(SKILLS_DIR, "broken"), { recursive: true });

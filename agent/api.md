@@ -98,8 +98,8 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 | POST | /api/skills/imports/:importId/confirm | :25 | 200 | `SkillDetail`. Replaces a skill with the same name | 404 no such import; 415 |
 | DELETE | /api/skills/imports/:importId | :30 | 200 | `{ok:true}`. Drops the staged import | |
 
-## Tool calls — `routes/sessions.ts`
-`GET /api/tool-calls` returns `{calls}`: the tool calls of recent replies across every chat, newest first, at most 50. Each item is `{chatId, chatTitle, createdAt, name, input, output, isError}`. `input` is JSON text, and `output` is the result text or `null` when none came back. Long text is cut at 8000 characters with a marker. A message's `calls` (in `GET /api/sessions/:id`) has the same fields without the chat. Replies saved before details were recorded have `calls: []`, and their `tools` names still show.
+## Tools — `routes/tools.ts`
+`GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, inputSchema, chat, bot}`. `chat` and `bot` say whether that kind of run may use the tool. Chats get every tool, and bots get none for now.
 
 ## Sessions — enabled skills
 `GET /api/sessions/:sessionId` also returns `skills`, the names the chat has enabled. Replace them with:

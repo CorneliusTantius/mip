@@ -59,11 +59,13 @@ export interface Session {
   skills?: string[];
 }
 
-// A tool call from any chat's recent replies, with the chat it came from.
-export interface RecentCall extends ToolCall {
-  chatId: string;
-  chatTitle: string;
-  createdAt: number;
+// A tool in the registry, and which kinds of run may use it.
+export interface ToolInfo {
+  name: string;
+  description: string;
+  inputSchema: { properties?: Record<string, { type?: string; description?: string }>; required?: string[] };
+  chat: boolean;
+  bot: boolean;
 }
 
 // One tool call in a reply. The id is only known while the reply streams. The input is JSON text.

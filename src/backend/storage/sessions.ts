@@ -83,16 +83,6 @@ export function listMessages(sessionId: string): Message[] {
   return rows.map((row) => ({ role: row.role, text: row.text, tools: JSON.parse(row.tools), calls: JSON.parse(row.calls), error: row.error }));
 }
 
-// Replies that made tool calls, newest first, each with the chat it belongs to.
-export function listRepliesWithCalls(limit: number): { sessionId: string; title: string; createdAt: number; calls: ToolCall[] }[] {
-  const rows = db
-    .prepare(
-      "SELECT m.session_id AS session_id, s.title AS title, m.created_at AS created_at, m.calls AS calls FROM messages m JOIN sessions s ON s.id = m.session_id WHERE m.role = 'assistant' AND m.calls != '[]' ORDER BY m.created_at DESC, m.id DESC LIMIT ?",
-    )
-    .all(limit) as Row[];
-  return rows.map((row) => ({ sessionId: row.session_id, title: row.title, createdAt: row.created_at, calls: JSON.parse(row.calls) }));
-}
-
 export function addMessage(sessionId: string, message: NewMessage): void {
   db.prepare("INSERT INTO messages (session_id, role, text, tools, calls, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
     sessionId,

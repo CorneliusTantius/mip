@@ -10,6 +10,7 @@ import { sessionRoutes } from "./sessions.js";
 import { skillRoutes } from "./skills.js";
 import { syncRoutes } from "./sync.js";
 import { systemRoutes } from "./system.js";
+import { toolRoutes } from "./tools.js";
 
 // Every API route, grouped by domain. Each route is matched by its method and path, so the order does not change behavior.
 // The Claude CLI's tool endpoint (/mcp) and the web build are served outside this list, in http/server.ts.
@@ -24,5 +25,6 @@ export const routes: Route[] = [
   ...memoryRoutes,
   ...syncRoutes,
   ...skillRoutes,
+  ...toolRoutes,
   ...systemRoutes,
 ];

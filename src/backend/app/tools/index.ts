@@ -58,3 +58,14 @@ export function releaseRun(token: string): void {
 export function runContextForToken(token: string | undefined): RunContext | undefined {
   return token ? runs.get(token) : undefined;
 }
+
+// What the registry offers, for the dashboard: each tool with its description and input, and which kinds of run may use it.
+export function describeTools() {
+  return TOOLS.map((tool) => ({
+    name: tool.name,
+    description: tool.description,
+    inputSchema: tool.inputSchema,
+    chat: CHAT_TOOLS.includes(tool),
+    bot: BOT_TOOLS.includes(tool),
+  }));
+}

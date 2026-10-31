@@ -1,4 +1,4 @@
-// Checks tool-call recording and listing: each call keeps its input and result, long text is cut, and the list is newest first.
+// Checks tool-call recording: each call keeps its input and result, a result is matched by id, and long text is cut.
 // Run after a build: node src/backend/app/tool-calls.test.mjs. It sets MIP_HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -13,7 +13,6 @@ process.env.MIP_HOME = join(root, "mip-home");
 try {
   const { MAX_TEXT, ToolCallLog } = await import(`${DIST}app/tool-calls.js`);
   const sessions = await import(`${DIST}storage/sessions.js`);
-  const { recentToolCalls } = await import(`${DIST}app/sessions.js`);
 
   // A log keeps each call's input, and attaches its result by the call's id. An unknown id is ignored.
   const log = new ToolCallLog();
@@ -50,23 +49,6 @@ try {
   assert.equal(messages[1].calls.length, 2);
   assert.equal(messages[1].calls[0].name, "mcp__mip__bash");
   assert.deepEqual(messages[1].tools, ["bash", "skill_read"]);
-
-  // The list is newest first, and each call is listed on its own with its chat.
-  const second = sessions.createSession("claude-cli", "default", "Second chat");
-  sessions.addMessage(second.id, {
-    role: "assistant",
-    text: "later",
-    tools: ["read"],
-    calls: [{ name: "read", input: "{}", output: "ok", isError: false }],
-    error: null,
-  });
-  const recent = recentToolCalls(10);
-  assert.equal(recent.length, 3);
-  assert.equal(recent[0].name, "read");
-  assert.equal(recent[0].chatTitle, "Second chat");
-  assert.equal(recent[0].chatId, second.id);
-  assert.equal(recent[1].chatTitle, "Test chat");
-  assert.equal(recentToolCalls(2).length, 2, "the limit applies to the calls shown");
 
   console.log("tool-call tests passed");
 } finally {

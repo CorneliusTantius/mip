@@ -120,7 +120,7 @@ Each chat picks its skills with its **Skills** button. A chat can read only the 
 
 ## Tool calls
 
-Each reply keeps the tool calls it made, with their inputs and results. Click **View tool calls** at the bottom of a reply to read them. The **Tool calls** card on the dashboard lists the latest calls across every chat. Replies from before this was recorded show only the tool names. Tool calls stay on this machine and are not synced to GitHub.
+Each reply keeps the tool calls it made, with their inputs and results. Click **View tool calls** at the bottom of a reply to read them. The **Tools** card on the dashboard lists every tool the agents can use, and whether chats and bots may use each. Replies from before this was recorded show only the tool names. Tool calls stay on this machine and are not synced to GitHub.
 
 ## Tools
 
@@ -186,7 +186,7 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/sync` | GitHub sync status: the gh accounts, the one in use, and the last run |
 | PUT | `/api/sync/account` | Choose the gh account sync uses. Body: `{ login }` |
 | POST | `/api/sync/run` | Start a sync in the background. Poll `GET /api/sync` for the result |
-| GET | `/api/tool-calls` | Tool calls from recent replies across every chat, with their inputs and results |
+| GET | `/api/tools` | The tool registry: each tool, and whether chats and bots may use it |
 | GET | `/api/skills` | Installed skills, and any folders that could not be read |
 | GET | `/api/skills/:name` | One skill with its instructions |
 | DELETE | `/api/skills/:name` | Remove a skill from mip and from every chat |

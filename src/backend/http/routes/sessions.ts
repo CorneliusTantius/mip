@@ -1,4 +1,4 @@
-import { chooseChatSkills, createChat, deleteChat, getChat, listChats, recentToolCalls, updateChat } from "../../app/sessions.js";
+import { chooseChatSkills, createChat, deleteChat, getChat, listChats, updateChat } from "../../app/sessions.js";
 import { ack, created, ok, readJson } from "../respond.js";
 import { del, get, patch, post, put, type Route } from "../router.js";
 
@@ -9,7 +9,6 @@ export const sessionRoutes: Route[] = [
     const body = await readJson(req);
     return created(createChat(body.providerId, body.personaId));
   }),
-  get("/api/tool-calls", () => ok({ calls: recentToolCalls() })),
   get("/api/sessions/:sessionId", ({ params }) => ok(getChat(params.sessionId))),
   patch("/api/sessions/:sessionId", async ({ req, params }) => ok(await updateChat(params.sessionId, await readJson(req)))),
   put("/api/sessions/:sessionId/skills", async ({ req, params }) => {

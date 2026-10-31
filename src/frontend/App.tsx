@@ -6,7 +6,7 @@ import { RepositoriesCard } from "./features/repos/RepositoriesCard";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
 import { PlaceholderCard } from "./features/upcoming/PlaceholderCard";
 import { SkillsCard } from "./features/skills/SkillsCard";
-import { ToolCallsCard } from "./features/toolcalls/ToolCallsCard";
+import { ToolsCard } from "./features/tools/ToolsCard";
 import { Icon } from "./ui/Icon";
 import { Starfield } from "./ui/Starfield";
 
@@ -52,7 +52,7 @@ export function App() {
         <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-5">
           <PlaceholderCard title="Tasks" summary="No tasks yet." glow="yellow" />
           <PlaceholderCard title="Activity" summary="No activity yet." glow="blue" />
-          <ToolCallsCard />
+          <ToolsCard />
           <SkillsCard />
           <PlaceholderCard title="MCP" summary="MCP servers that add tools to the agents. None connected yet." glow="red" />
         </div>
