@@ -59,7 +59,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 
 ## Gotchas (read before changing these areas)
 - Two copies of the default persona id: `api/constants.ts:4` and `src/backend/app/personas.ts:7`.
-- Native `confirm()` is used in `SignInPanel.tsx` (sign-out) and `PersonasTab.tsx` (delete). The rest of the app uses `ConfirmDialog`. Prefer `ConfirmDialog` for new code.
+- Native `confirm()` is still used in `SignInPanel.tsx` (sign-out). The rest of the app uses `ConfirmDialog`. Prefer `ConfirmDialog` for new code.
 - Pi's `capabilities` says `tools: false, mcp: false` (`adapters/pi.ts:117`). Pi still gets the app tools, because `runs.ts` passes `TOOLS` to every provider and Pi maps them in `run`. The flags are informational; they are not checked before a run.
 - Room turns get no memory recall and no repository note. Only runs (`app/runs.ts`) build the system prompt that way.
 - `POST /api/memory` answers 200, while other creates answer 201. This is kept for the dashboard.

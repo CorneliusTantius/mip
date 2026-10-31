@@ -1,11 +1,11 @@
 import { useState } from "preact/hooks";
 import { Modal } from "../../ui/Modal";
-import { PersonasTab } from "./PersonasTab";
 import { ProviderTab } from "./ProviderTab";
+import { UpdateTab } from "./UpdateTab";
 
-// Settings: the provider sign-ins, and the personas. It opens from the gear in the header.
+// Settings: the provider sign-ins, and updating mip. Personas are managed from the chat card. It opens from the gear in the header.
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [tab, setTab] = useState<"provider" | "config">("provider");
+  const [tab, setTab] = useState<"provider" | "update">("provider");
 
   return (
     <Modal open={open} onClose={onClose} closeButton glass boxClassName="flex h-[min(36rem,80vh)] max-w-4xl flex-col">
@@ -18,13 +18,13 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
             </button>
           </li>
           <li>
-            <button className={tab === "config" ? "menu-active" : ""} onClick={() => setTab("config")}>
-              Config
+            <button className={tab === "update" ? "menu-active" : ""} onClick={() => setTab("update")}>
+              Update
             </button>
           </li>
         </ul>
         <div key={tab} className="mip-fade min-h-0 min-w-0 flex-1 overflow-y-auto pr-1">
-          {tab === "provider" ? <ProviderTab open={open} /> : <PersonasTab />}
+          {tab === "provider" ? <ProviderTab open={open} /> : <UpdateTab />}
         </div>
       </div>
     </Modal>

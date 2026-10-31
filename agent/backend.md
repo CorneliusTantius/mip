@@ -7,6 +7,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `http/router.ts` — `Route` (:13), `get/post/put/patch/del` (:21-25), `matchRoute` (:28). Patterns: `:name` captures one decoded segment. First match wins. Touchpoint: `server.ts`, `routes/*`.
 - `http/respond.ts` — `Reply` (:4), `ok` (:9), `created` (:10), `accepted` (:12), `ack` (:14, `{ok:true}`), `notFound` (:15), `sendJson` (:18), `readJson` (:24, empty body → `{}`). Touchpoints: all routes, `mcp.ts`.
 - `http/routes/index.ts` — `routes` (:13). Concatenates the domain route lists. Add a new domain here.
+- `http/routes/system.ts` — `systemRoutes` (:16), `requireJson` (:9, refuses non-JSON with 415). `POST /api/system/update` pulls, `POST /api/system/restart` restarts.
 - `http/routes/{sessions,runs,personas,bots,room,repos,memory,providers}.ts` — one `Route[]` each. Handlers are small: read body → call an `app/*` function → return a `Reply`. Lines: see `api.md`.
 - `http/mcp.ts` — `handleMcp` (:7). JSON-RPC 2.0 for `initialize`, `tools/list`, `tools/call`. 401 without a live run token. Touchpoints: Claude CLI (via `adapters/claude-cli.ts` `mcpConfig`), `app/tools`.
 - `http/static.ts` — `serveStatic` (:18). Serves `dist/frontend` (path check keeps requests inside it). Misses return false.
@@ -31,6 +32,8 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `app/tools/bash.ts` — `bashTool` (:7). `spawn("bash", ["-c", cmd], {cwd: workspace})`. Output keeps last 50 KB. Timeout default 120 s. Not sandboxed.
 - `app/tools/memory.ts` — `memorySearchTool` (:6), `memoryReadTool` (:21), `memoryEditTool` (:46). Only existing notes can be edited.
 - `app/tools/workspace.ts` — `workspacePath` (:6), `workspaceFor` (:11, creates), `removeWorkspace` (:18), `inWorkspace` (:23, refuses paths outside).
+
+- `app/system.ts` — `ROOT` (:8, the checkout, three folders above the built file), `RESTART_LOG` (:10, `MIP_HOME/restart.log`), `pullLatest` (:14, `git pull --ff-only`), `restartMip` (:20, detached shell: wait for this process, `npm install`, `npm run build`, then start the server; it starts even if the build fails).
 
 ## adapters/
 - `adapters/contract.ts` — `AgentEvent` (:4), `ToolResult` (:12), `ToolContext` (:18), `ToolSpec` (:24), `ThinkingLevel` (:33), `ModelOption` (:36), `RunOptions` (:44), `ProviderCapabilities` (:64), `AuthState` (:72), `SignInMethod` (:79), `SignInTarget` (:82), `SignInPrompt` (:90), `SignInProgress` (:97), `AgentProvider` (:104).

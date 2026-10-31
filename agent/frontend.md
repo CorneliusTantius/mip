@@ -46,6 +46,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 | `useChatSessions.ts` | `useChatSessions` (:10) | Providers, personas, chats, open chat id, new-chat choices. `refresh` (announces `CHATS_CHANGED`), `loadPersonas` (:32, listens `PERSONAS_CHANGED`), `create`, `rename`, `changeSettings`, `remove` (:69). |
 | `useTranscript.ts` | `useTranscript` (:11) | Messages, busy, following run. `applyEvent` (:23), `follow` (:31, polls events every 600 ms), `load` (:61), `send` (:70), `clear` (:81). |
 | `SessionList.tsx` | `SessionList` (:33) | Sidebar: provider/persona selects, New session, list with inline rename, delete button. Backdrop on phones. |
+| `PersonasDialog.tsx` | `PersonasDialog` (:15) | Manage personas, opened by the chat sidebar's Manage personas button. Pick, edit, set default, delete (confirm). Announces `PERSONAS_CHANGED`. Modal in the frost glow. |
 | `ChatHeader.tsx` | `ChatHeader` (:4) | Title, persona and provider badges, toggle button. |
 | `Transcript.tsx` | `Transcript` (:5) | Message bubbles; scrolls to the newest; tool names as badges; dots while the reply is empty. |
 | `Composer.tsx` | `Composer` (:17) | Model and thinking dropdowns, message box. Owns the draft. |
@@ -81,10 +82,10 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 ## features/settings/
 | file | export (line) | state / job |
 | --- | --- | --- |
-| `SettingsDialog.tsx` | `SettingsDialog` (:7) | Tabs: Provider, Config. |
+| `SettingsDialog.tsx` | `SettingsDialog` (:7) | Tabs: Provider, Update. Personas are managed from the chat card. |
 | `ProviderTab.tsx` | `ProviderTab` (:13) | Provider and service selects, capability badges, sign-in panel, Connected list. Polls 2 s while open (`POLL_MS` :9). |
 | `SignInPanel.tsx` | `runSignInAction` (:9), `confirmSignOut` (:14), `SignInPanel` (:19) | Sign-in buttons, output, answer box. Actions: `sign-in`, `answer`, `sign-out`. Uses native `confirm()`. |
-| `PersonasTab.tsx` | `PersonasTab` (:12) | Persona select (last option adds one), name, system prompt, Set as default, Delete. Announces `PERSONAS_CHANGED`. Uses native `confirm()`. |
+| `UpdateTab.tsx` | `UpdateTab` (:18), local `reloadWhenBack` (:6) | Settings → Update. Pull latest (`POST /api/system/update`) shows git's output. Restart (`POST /api/system/restart`) then polls `/api/providers` until the server answers, and reloads the page. |
 
 ## features/upcoming/
 - `PlaceholderCard.tsx` — `PlaceholderCard` (:6). Tasks, Activity, Skills, and MCP. No data yet. The Open button shows a dialog with the placeholder note.
@@ -105,7 +106,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 | repos, chats, link, pulls, pulling, remove confirm | `RepositoriesCard` |
 | providers, selected service | `ProviderTab` |
 | answer text | `SignInOutput` (inside `SignInPanel.tsx`) |
-| personas, selected persona, name, prompt | `PersonasTab` |
+| personas, selected persona, name, prompt, delete confirm | `PersonasDialog` (in `features/chat/`) |
 | settings tab | `SettingsDialog` |
 | settings open, memory open, memory start note, memory version | `App` |
 

@@ -3,6 +3,7 @@ import { errorText } from "../../api/client";
 import type { Session } from "../../api/types";
 import { Card, ExpandButton } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
+import { PersonasDialog } from "./PersonasDialog";
 import { ChatHeader } from "./ChatHeader";
 import { Composer } from "./Composer";
 import { SessionList } from "./SessionList";
@@ -20,6 +21,7 @@ export function ChatCard() {
   const transcript = useTranscript(() => chats.refresh());
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [pendingDelete, setPendingDelete] = useState<Session>();
+  const [managingPersonas, setManagingPersonas] = useState(false);
   const [deleteError, setDeleteError] = useState<string>();
 
   // Opens the newest chat on first load.
@@ -74,6 +76,7 @@ export function ChatCard() {
             onNewProviderId={chats.setNewProviderId}
             onNewPersonaId={chats.setNewPersonaId}
             onCreate={createChat}
+            onManagePersonas={() => setManagingPersonas(true)}
             onOpen={openChat}
             onRename={chats.rename}
             onDelete={askDelete}
@@ -102,6 +105,8 @@ export function ChatCard() {
           </div>
         </div>
       </div>
+
+      <PersonasDialog open={managingPersonas} onClose={() => setManagingPersonas(false)} />
 
       <ConfirmDialog
         open={!!pendingDelete}

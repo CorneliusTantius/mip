@@ -24,6 +24,7 @@ interface SessionListProps {
   onNewProviderId: (id: string) => void;
   onNewPersonaId: (id: string) => void;
   onCreate: () => void;
+  onManagePersonas: () => void;
   onOpen: (id: string) => void;
   onRename: (id: string, title: string) => void;
   onDelete: (session: Session) => void;
@@ -42,6 +43,7 @@ export function SessionList({
   onNewProviderId,
   onNewPersonaId,
   onCreate,
+  onManagePersonas,
   onOpen,
   onRename,
   onDelete,
@@ -82,6 +84,9 @@ export function SessionList({
         </select>
         <button className="btn btn-primary btn-sm" disabled={providers.length === 0} onClick={onCreate}>
           + New session
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={onManagePersonas}>
+          Manage personas
         </button>
 
         <ul className="flex flex-col gap-1">

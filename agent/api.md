@@ -77,6 +77,14 @@ Name rule: starts with a letter, 2–24 letters, digits, `-` or `_`; unique, cas
 | POST | /api/providers/:providerId/targets/:targetId/sign-out | :10 | 200 | `{ok:true}` | 404 |
 | POST | /api/providers/:providerId/targets/:targetId/<other> | :10 | 404 | `{error:"not found"}` | |
 
+## System — `routes/system.ts`
+Both need `Content-Type: application/json`, or they return 415. A page on another site can't send that without a preflight, which this server doesn't answer.
+
+| method | path | handler | status | body | notes |
+| --- | --- | --- | --- | --- | --- |
+| POST | /api/system/update | :17 | 200 | `{output}` (git's output, from `app/system.ts` `pullLatest`) | `git pull --ff-only` in the checkout. Non-fast-forward or git errors come back as `error`. |
+| POST | /api/system/restart | :22 | 202 | `{restarting: true}` | The server exits about 300 ms later. A detached shell waits, runs `npm install` and `npm run build` (output to `MIP_HOME/restart.log`), then starts the server again. |
+
 ## Tool endpoint — `http/server.ts:11` and `http/mcp.ts:7`
 | method | path | auth | body | notes |
 | --- | --- | --- | --- | --- |

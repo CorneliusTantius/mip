@@ -26,7 +26,16 @@ npm run build
 npm run serve
 ```
 
-Open http://127.0.0.1:3000. The gear icon opens Settings, where you sign providers in and out. Set `CLAUDE_BIN` if `claude` isn't on your PATH.
+Open http://127.0.0.1:3000. The gear icon opens Settings, where you sign providers in and out, and update mip (see Updating). Set `CLAUDE_BIN` if `claude` isn't on your PATH.
+
+## Updating
+
+Settings → **Update** has two buttons:
+
+- **Pull latest** fetches the newest commits on this checkout's branch (fast-forward only) and shows git's output.
+- **Restart** installs dependencies, builds, and starts the server again. The page reloads when the server answers. Its output goes to `~/.mip/restart.log`. If the build fails, the server still starts on the last good build, and the log shows the error.
+
+Both run git and npm on this machine, so the server accepts them only as JSON requests.
 
 ## Configuration
 
@@ -45,7 +54,7 @@ Each chat has a name, a persona, a model, a thinking level, and its own workspac
 **Personas**
 
 - A persona is a name and a system prompt. The prompt replaces each provider's own default prompt.
-- Create, edit, and delete personas in Settings, under Config. They're stored in SQLite.
+- Manage personas from the chat card's **Manage personas** button. Create, edit, and delete them there. They're stored in SQLite.
 - The built-in **Default** is a general assistant that also handles coding, and it explains the app's tools. It can be edited but never deleted. Its text in `src/backend/app/personas.ts` is written to the database only when the database is created. Later changes are made in Settings.
 - One persona is the default for new chats. Pick one and click "Set as default".
 - A persona can't be deleted while chats use it.
@@ -151,6 +160,8 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | POST | `/api/repos` | Clone a link. Body: `{ url }`. Returns 202, and the repository shows `cloning` until done |
 | DELETE | `/api/repos/:id` | Remove a repository's master clone |
 | POST | `/api/repos/:id/copies` | Copy a repository into a chat. Body: `{ sessionId }` |
+| POST | `/api/system/update` | Pull the latest commits (fast-forward only). JSON request only |
+| POST | `/api/system/restart` | Install, build, and restart the server. JSON request only |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 
 ## Storage

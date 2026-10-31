@@ -79,6 +79,8 @@
 | src/backend/app/sessions.ts | 22 | function | getChat |
 | src/backend/app/sessions.ts | 29 | function | updateChat |
 | src/backend/app/sessions.ts | 59 | function | deleteChat |
+| src/backend/app/system.ts | 14 | function | pullLatest |
+| src/backend/app/system.ts | 20 | function | restartMip |
 | src/backend/app/tools/bash.ts | 7 | const | bashTool |
 | src/backend/app/tools/files.ts | 10 | const | readTool |
 | src/backend/app/tools/files.ts | 33 | const | writeTool |
@@ -116,7 +118,7 @@
 | src/backend/http/router.ts | 25 | const | del |
 | src/backend/http/router.ts | 28 | function | matchRoute |
 | src/backend/http/routes/bots.ts | 6 | const | botRoutes |
-| src/backend/http/routes/index.ts | 13 | const | routes |
+| src/backend/http/routes/index.ts | 14 | const | routes |
 | src/backend/http/routes/memory.ts | 8 | const | memoryRoutes |
 | src/backend/http/routes/personas.ts | 6 | const | personaRoutes |
 | src/backend/http/routes/providers.ts | 7 | const | providerRoutes |
@@ -124,6 +126,7 @@
 | src/backend/http/routes/room.ts | 6 | const | roomRoutes |
 | src/backend/http/routes/runs.ts | 6 | const | runRoutes |
 | src/backend/http/routes/sessions.ts | 6 | const | sessionRoutes |
+| src/backend/http/routes/system.ts | 16 | const | systemRoutes |
 | src/backend/http/static.ts | 18 | function | serveStatic |
 | src/backend/storage/bots.ts | 4 | interface | Bot |
 | src/backend/storage/bots.ts | 24 | function | listBots |
@@ -221,10 +224,11 @@
 | src/frontend/features/bots/mentions.ts | 19 | function | suggestions |
 | src/frontend/features/bots/mentions.ts | 27 | function | completeMention |
 | src/frontend/features/bots/useRoom.ts | 18 | function | useRoom |
-| src/frontend/features/chat/ChatCard.tsx | 18 | function | ChatCard |
+| src/frontend/features/chat/ChatCard.tsx | 19 | function | ChatCard |
 | src/frontend/features/chat/ChatHeader.tsx | 5 | function | ChatHeader |
 | src/frontend/features/chat/Composer.tsx | 17 | function | Composer |
-| src/frontend/features/chat/SessionList.tsx | 33 | function | SessionList |
+| src/frontend/features/chat/PersonasDialog.tsx | 15 | function | PersonasDialog |
+| src/frontend/features/chat/SessionList.tsx | 34 | function | SessionList |
 | src/frontend/features/chat/Transcript.tsx | 5 | function | Transcript |
 | src/frontend/features/chat/useChatSessions.ts | 10 | function | useChatSessions |
 | src/frontend/features/chat/useTranscript.ts | 11 | function | useTranscript |
@@ -238,12 +242,12 @@
 | src/frontend/features/memory/graph-layout.ts | 27 | function | layoutGraph |
 | src/frontend/features/repos/RepoRow.tsx | 21 | function | RepoRow |
 | src/frontend/features/repos/RepositoriesCard.tsx | 16 | function | RepositoriesCard |
-| src/frontend/features/settings/PersonasTab.tsx | 12 | function | PersonasTab |
 | src/frontend/features/settings/ProviderTab.tsx | 13 | function | ProviderTab |
 | src/frontend/features/settings/SettingsDialog.tsx | 7 | function | SettingsDialog |
 | src/frontend/features/settings/SignInPanel.tsx | 9 | function | runSignInAction |
 | src/frontend/features/settings/SignInPanel.tsx | 14 | function | confirmSignOut |
 | src/frontend/features/settings/SignInPanel.tsx | 19 | function | SignInPanel |
+| src/frontend/features/settings/UpdateTab.tsx | 18 | function | UpdateTab |
 | src/frontend/features/upcoming/PlaceholderCard.tsx | 6 | function | PlaceholderCard |
 | src/frontend/ui/Card.tsx | 6 | type | Glow |
 | src/frontend/ui/Card.tsx | 44 | function | Card |
