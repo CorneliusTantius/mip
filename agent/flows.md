@@ -126,7 +126,7 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 - **Recording.** `runs.ts` `execute` keeps a `ToolCallLog` (`app/tool-calls.ts`). A `tool_call` event starts a call with its input as JSON text. A `tool_result` event attaches its output and error flag, matched by the call's id. The reply saves the list in `messages.calls` with the tool names. Text longer than 8000 characters is cut with a marker.
 - **Reply button.** `Transcript.tsx` puts "View tool calls (n)" at the bottom of a reply that used tools. `ToolCallsDialog.tsx` lists each call's input and result with `ui/ToolCallDetails.tsx`. A reply saved before details were recorded lists its names only.
 - **Live.** `useTranscript.ts` builds the same list while a reply streams, from `tool_call` and `tool_result` events.
-- **Tools card.** `features/tools/ToolsCard.tsx` lists the tool registry from `GET /api/tools`: each tool with whether chats and bots may use it. Collapsed, it shows four. Expanded, each tool opens to its description and inputs.
+- **Tools card.** `features/tools/ToolsCard.tsx` lists the tool registry from `GET /api/tools`: each tool with whether chats and bots may use it. The All / Chat / Bot pill filters the list, the same way as the Skills card. Collapsed, it shows four. Expanded, each tool opens to its description and inputs.
 - **Not synced.** Tool details stay on the machine that ran them. The GitHub sync carries tool names but not calls.
 
 ## 18. Tool search

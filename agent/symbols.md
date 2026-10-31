@@ -382,7 +382,7 @@
 | src/frontend/features/skills/ImportSkillDialog.tsx | 8 | function | ImportSkillDialog |
 | src/frontend/features/skills/SkillsCard.tsx | 12 | function | SkillsCard |
 | src/frontend/features/skills/useSkills.ts | 6 | function | useSkills |
-| src/frontend/features/tools/ToolsCard.tsx | 12 | function | ToolsCard |
+| src/frontend/features/tools/ToolsCard.tsx | 20 | function | ToolsCard |
 | src/frontend/features/upcoming/PlaceholderCard.tsx | 6 | function | PlaceholderCard |
 | src/frontend/ui/Card.tsx | 6 | type | Glow |
 | src/frontend/ui/Card.tsx | 44 | function | Card |

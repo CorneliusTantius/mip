@@ -7,8 +7,16 @@ import { ErrorAlert } from "../../ui/ErrorAlert";
 // How many tools the collapsed card lists.
 const PREVIEW = 4;
 
-// The tool registry: every tool the agents can use, and which kinds of run may use each. Collapsed, the card lists the first few.
-// Expanded, each tool opens to its description and its inputs.
+// Which kind of run the list is for: every tool, the tools chats can use, or the tools bots can use.
+type Scope = "all" | "chat" | "bot";
+const SCOPES: [Scope, string][] = [
+  ["all", "All"],
+  ["chat", "Chat"],
+  ["bot", "Bot"],
+];
+
+// The tool registry: every tool the agents can use, and which kinds of run may use each. The pill picks the kind of run.
+// Collapsed, the card lists the first few. Expanded, each tool opens to its description and inputs.
 export function ToolsCard() {
   return (
     <Card glow="orange">
@@ -20,18 +28,33 @@ export function ToolsCard() {
 function ToolsBody() {
   const { expanded } = useCardExpansion();
   const [tools, setTools] = useState<ToolInfo[]>([]);
+  const [scope, setScope] = useState<Scope>("all");
   const [error, setError] = useState<string>();
 
   useEffect(() => {
     api.get<{ tools: ToolInfo[] }>("/api/tools").then((data) => setTools(data.tools), (err) => setError(errorText(err)));
   }, []);
 
-  const shown = expanded ? tools : tools.slice(0, PREVIEW);
+  // The tools the pill shows. Chat means chats can use it, and bot means bots can.
+  const scoped = tools.filter((tool) => scope === "all" || (scope === "chat" ? tool.chat : tool.bot));
+  const shown = expanded ? scoped : scoped.slice(0, PREVIEW);
 
   return (
     <CardBody title="Tools" className={expanded ? "min-h-0 flex-1" : ""} actions={<ExpandButton />}>
+      <div className="join self-start">
+        {SCOPES.map(([key, label]) => (
+          <button key={key} className={`join-item btn btn-xs ${scope === key ? "btn-active" : ""}`} onClick={() => setScope(key)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
       {tools.length === 0 ? (
         <p className="py-4 text-center text-sm opacity-60">{error ? "" : "Loading tools…"}</p>
+      ) : scoped.length === 0 ? (
+        <p className="py-4 text-center text-sm opacity-60">
+          {scope === "bot" ? "No tools are open to bots yet. Bot turns have no workspace or run token, so they have no tools." : "No tools for this view."}
+        </p>
       ) : (
         <ul className={expanded ? "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto" : "flex flex-col gap-1"}>
           {shown.map((tool) => (
@@ -39,13 +62,13 @@ function ToolsBody() {
           ))}
         </ul>
       )}
-      {!expanded && tools.length > PREVIEW && <p className="text-xs opacity-60">{tools.length - PREVIEW} more. Expand to see all.</p>}
+      {!expanded && scoped.length > PREVIEW && <p className="text-xs opacity-60">{scoped.length - PREVIEW} more. Expand to see all.</p>}
       <ErrorAlert message={error} />
     </CardBody>
   );
 }
 
-// One tool in the list, with where it may be used. Expanded, it opens to the tool's description and inputs.
+// One tool in the list, with how it is offered and where it may be used. Expanded, it opens to the tool's description and inputs.
 function ToolRow({ tool, expandable }: { tool: ToolInfo; expandable: boolean }) {
   const summary = (
     <span className="flex min-w-0 items-center gap-2 text-sm">
