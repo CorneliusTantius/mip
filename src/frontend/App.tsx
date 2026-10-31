@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { Chat } from "./Chat";
 import { Memory } from "./Memory";
+import { BotsCard } from "./BotsCard";
 import { MemoryCard } from "./MemoryCard";
 import { RepositoriesCard } from "./RepositoriesCard";
 import { Settings } from "./Settings";
@@ -61,6 +62,9 @@ export function App() {
               </div>
             </section>
           ))}
+        </div>
+        <div className="col-span-12">
+          <BotsCard />
         </div>
         <div className={SIZE.medium}>
           <MemoryCard version={memoryVersion} onOpen={openMemory} onSeeMore={() => openMemory()} />

@@ -60,6 +60,23 @@ db.exec(`
     event TEXT NOT NULL,
     PRIMARY KEY (run_id, seq)
   );
+  CREATE TABLE IF NOT EXISTS bots (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    persona TEXT NOT NULL,
+    provider_id TEXT NOT NULL,
+    model TEXT,
+    thinking TEXT,
+    created_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS room_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    bot_id TEXT,
+    author_name TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS repos (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -386,4 +403,95 @@ export function setRepoStatus(id: string, status: Repo["status"], error: string 
 
 export function deleteRepo(id: string): void {
   db.prepare("DELETE FROM repos WHERE id = ?").run(id);
+}
+
+// Bots: named agents that share one room. Their replies come from their provider.
+export interface Bot {
+  id: string;
+  name: string;
+  persona: string;
+  providerId: string;
+  model: string | null;
+  thinking: string | null;
+}
+
+function toBot(row: Row): Bot {
+  return {
+    id: row.id,
+    name: row.name,
+    persona: row.persona,
+    providerId: row.provider_id,
+    model: row.model ?? null,
+    thinking: row.thinking ?? null,
+  };
+}
+
+export function listBots(): Bot[] {
+  return (db.prepare("SELECT * FROM bots ORDER BY name COLLATE NOCASE").all() as Row[]).map(toBot);
+}
+
+export function getBot(id: string): Bot | undefined {
+  const row = db.prepare("SELECT * FROM bots WHERE id = ?").get(id) as Row | undefined;
+  return row && toBot(row);
+}
+
+export function getBotByName(name: string): Bot | undefined {
+  const row = db.prepare("SELECT * FROM bots WHERE name = ?").get(name) as Row | undefined;
+  return row && toBot(row);
+}
+
+export function insertBot(bot: Bot): void {
+  db.prepare("INSERT INTO bots (id, name, persona, provider_id, model, thinking, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+    bot.id,
+    bot.name,
+    bot.persona,
+    bot.providerId,
+    bot.model,
+    bot.thinking,
+    Date.now(),
+  );
+}
+
+export function updateBot(bot: Bot): void {
+  db.prepare("UPDATE bots SET name = ?, persona = ?, provider_id = ?, model = ?, thinking = ? WHERE id = ?").run(
+    bot.name,
+    bot.persona,
+    bot.providerId,
+    bot.model,
+    bot.thinking,
+    bot.id,
+  );
+}
+
+export function deleteBot(id: string): void {
+  db.prepare("DELETE FROM bots WHERE id = ?").run(id);
+}
+
+// The shared room. Messages keep their author's name, so they stay readable after a bot is deleted.
+export interface RoomMessage {
+  id: number;
+  kind: "user" | "bot" | "system";
+  botId: string | null;
+  authorName: string;
+  text: string;
+  createdAt: number;
+}
+
+function toRoomMessage(row: Row): RoomMessage {
+  return { id: row.id, kind: row.kind, botId: row.bot_id ?? null, authorName: row.author_name, text: row.text, createdAt: row.created_at };
+}
+
+export function addRoomMessage(message: Omit<RoomMessage, "id" | "createdAt">): RoomMessage {
+  const result = db
+    .prepare("INSERT INTO room_messages (kind, bot_id, author_name, text, created_at) VALUES (?, ?, ?, ?, ?)")
+    .run(message.kind, message.botId, message.authorName, message.text, Date.now());
+  return toRoomMessage(db.prepare("SELECT * FROM room_messages WHERE id = ?").get(Number(result.lastInsertRowid)) as Row);
+}
+
+// Messages after a sequence id, oldest first. With afterId 0, the latest messages.
+export function roomMessagesAfter(afterId: number, limit: number): RoomMessage[] {
+  if (afterId > 0) {
+    return (db.prepare("SELECT * FROM room_messages WHERE id > ? ORDER BY id LIMIT ?").all(afterId, limit) as Row[]).map(toRoomMessage);
+  }
+  return (db.prepare("SELECT * FROM (SELECT * FROM room_messages ORDER BY id DESC LIMIT ?) ORDER BY id").all(limit) as Row[]).map(toRoomMessage);
 }

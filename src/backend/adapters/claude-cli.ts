@@ -264,6 +264,8 @@ export class ClaudeCliProvider implements AgentProvider {
         ...options.tools.map((tool) => `mcp__mip__${tool.name}`),
       );
     }
+    // A run with an empty tool list gets no tools at all, not Claude Code's built-in ones.
+    if (options.tools?.length === 0) args.push("--tools", "");
     if (options.model) args.push("--model", options.model);
     if (options.thinking) args.push("--effort", options.thinking);
     // Replaces Claude Code's default prompt. Snapshot off re-renders it on every run, so resumed chats pick up changes.

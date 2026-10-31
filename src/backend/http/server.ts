@@ -5,6 +5,8 @@ import { AppError, errorMessage } from "../app/errors.js";
 import { forgetNote, memoryGraph, memoryList, readNote, writeNote } from "../app/memory.js";
 import { allPersonas, createPersona, editPersona, makeDefaultPersona, removePersona } from "../app/personas.js";
 import { answerSignIn, listProviders, signIn, signOut } from "../app/providers.js";
+import { allBots, createBot, editBot, removeBot } from "../app/bots.js";
+import { postToRoom, roomMessages, roomStatus } from "../app/room.js";
 import { addRepo, copyRepoToChat, listRepoCards, pullAllRepos, removeRepo } from "../app/repos.js";
 import { readRun, startRun } from "../app/runs.js";
 import { createChat, deleteChat, getChat, listChats, updateChat } from "../app/sessions.js";
@@ -45,6 +47,27 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   }
   if (method === "GET" && parts[0] === "api" && parts[1] === "runs" && parts[3] === "events" && parts.length === 4) {
     return sendJson(res, 200, readRun(parts[2], Number(url.searchParams.get("after") ?? 0)));
+  }
+
+  // Bots: named agents that share one room. Create, edit, and delete them here.
+  if (url.pathname === "/api/bots") {
+    if (method === "GET") return sendJson(res, 200, { bots: allBots() });
+    if (method === "POST") return sendJson(res, 201, await createBot(await readJson(req)));
+  }
+  if (parts[0] === "api" && parts[1] === "bots" && parts.length === 3) {
+    if (method === "PUT") return sendJson(res, 200, await editBot(parts[2], await readJson(req)));
+    if (method === "DELETE") {
+      removeBot(parts[2]);
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+
+  // The shared room. Read it with ?after=<last message id you have>. Post with /api/room/messages.
+  if (method === "GET" && url.pathname === "/api/room") {
+    return sendJson(res, 200, { messages: roomMessages(Number(url.searchParams.get("after") ?? 0)), ...roomStatus() });
+  }
+  if (method === "POST" && url.pathname === "/api/room/messages") {
+    return sendJson(res, 202, postToRoom(await readJson(req)));
   }
 
   // Repositories: paste a clone link to add one, copy one into a chat, or remove a clone.

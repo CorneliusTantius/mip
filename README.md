@@ -67,6 +67,17 @@ A message is a run. It keeps going after the browser closes, and each event is s
 
 A new chat gets a random name from a bank of Norse names: gods, giants, valkyries, dwarves, heroes, saga figures, and rulers of the Viking Age. No two chats share a name at the same time. The bank is in `src/backend/app/names.ts`.
 
+## Bots
+
+Bots are named agents that share one room. Create them with **Manage bots** on the Bots card. Each bot has a name, a persona, and a provider, with its model and thinking level.
+
+- Post in the room. A bot you mention with `@Name` answers first. Bots can mention each other, so one reply can start another bot's turn.
+- If nobody is mentioned, every bot takes a turn in order.
+- A bot with nothing to add replies `PASS`.
+- One message sets off at most 8 turns. After that the room waits for your next message.
+- Each turn sees the last 30 messages. Bots have no tools, and their Claude turns run with the built-in tools turned off.
+- Bots only run when you post. Nothing runs on a schedule yet.
+
 ## Memory
 
 Memory is one set of notes shared by every chat. Notes live in SQLite with a full-text index.
@@ -127,6 +138,12 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/memory/:title` | Read a note |
 | DELETE | `/api/memory/:title` | Delete a note |
 | GET | `/api/graph` | Notes and links, for the memory card |
+| GET | `/api/bots` | List bots |
+| POST | `/api/bots` | Create a bot. Body: `{ name, persona, providerId, model?, thinking? }` |
+| PUT | `/api/bots/:id` | Edit a bot. Same fields as create |
+| DELETE | `/api/bots/:id` | Delete a bot. Its messages stay in the room |
+| GET | `/api/room?after=N` | Room messages after message N, and whether the room is busy |
+| POST | `/api/room/messages` | Post to the room. Body: `{ text }`. Returns 202, and the turns run in the background |
 | GET | `/api/repos` | Repositories, with their branch and the chats that have a copy |
 | POST | `/api/repos/pull` | Fast-forward every ready repository. Returns one result per repository |
 | POST | `/api/repos` | Clone a link. Body: `{ url }`. Returns 202, and the repository shows `cloning` until done |
