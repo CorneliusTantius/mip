@@ -35,9 +35,9 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `app/tools/workspace.ts` — `workspacePath` (:6), `workspaceFor` (:11, creates), `removeWorkspace` (:18), `inWorkspace` (:23, refuses paths outside).
 
 - `app/system.ts` — `ROOT` (:8, the checkout, three folders above the built file), `RESTART_LOG` (:10, `MIP_HOME/restart.log`), `pullLatest` (:14, `git pull --ff-only`), `restartMip` (:20, detached shell: wait for this process, `npm install`, `npm run build`, then start the server; it starts even if the build fails).
-- `app/sync/engine.ts` — GitHub sync. `syncStatus`, `saveClientId`, `connect` (device code, background `finishConnect`), `disconnect`, `startSync` (background run), `syncWith(remote)` (one sync, also used by the tests). Touchpoints: `routes/sync.ts`.
-- `app/sync/github.ts` — `readConfig`/`writeConfig` (`sync/github.json`, mode 0600), `requestDeviceCode`, `pollForToken`, `githubLogin`, `ensureRepo` (creates a private `dotmip`, refuses a public one), `repoUrl`, `authEnv` (the token, only in git's environment).
-- `app/sync/repo.ts` — the local clone in `sync/dotmip`. `fetchRepo`, `readTree`, `writeTree` (one JSON file per record), `commitAndPush` (returns `rejected` when `main` moved).
+- `app/sync/engine.ts` — GitHub sync. `syncStatus` (account and last run), `startSync` (background run), `syncWith({url, env, repo})` (one sync, also used by the tests). The merge base is kept per repo in `base.json`. Touchpoints: `routes/sync.ts`.
+- `app/sync/github.ts` — `ghToken` (runs `gh auth token`, the only source of the token), `gitHubAccount` (login from `GET /user`), `ensureRepo` (creates a private `dotmip`, refuses a public one), `repoUrl`, `authEnv` (the token, only in git's environment).
+- `app/sync/repo.ts` — the local clone in `sync/dotmip`. `fetchRepo` (re-clones when the URL changes), `readTree`, `writeTree` (one JSON file per record), `commitAndPush` (returns `rejected` when `main` moved).
 - `app/sync/snapshot.ts` — `readLocal` (the database as a snapshot), `applySnapshot` (writes only what differs; a refused removal stays).
 - `app/sync/merge.ts` — pure, no I/O. `Snapshot` and the record types, `keyOf`, `mergeSnapshots`, `countChanges`, `sameRecord`, `sortKeys`, `unionMessages`. Tested by `merge.test.mjs`.
 

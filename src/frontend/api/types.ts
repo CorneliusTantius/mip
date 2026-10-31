@@ -144,13 +144,10 @@ export interface SyncRun {
   notes: string[];
 }
 
-// The GitHub sync: the connection, the device code while a sign-in waits, and the last run.
+// The GitHub sync: the account the GitHub CLI is signed in to (null when it is not), its repo, and the last run.
 export interface SyncStatus {
-  clientId: string | null;
-  connected: boolean;
   login: string | null;
   repo: string | null;
-  device: { userCode: string; verificationUri: string; expiresAt: number } | null;
   running: boolean;
   error: string | null;
   lastSync: SyncRun | null;

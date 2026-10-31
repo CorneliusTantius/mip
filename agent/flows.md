@@ -110,14 +110,14 @@ Client (`features/bots/useRoom.ts`): polls `GET /api/room?after=<id>` every 1.5 
 ## 15. GitHub sync
 Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync*` (`http/routes/sync.ts`) → `app/sync/engine.ts`.
 
-- **Connect.** The client ID is saved to `sync/github.json`. `connect` asks GitHub for a device code (`requestDeviceCode`, scope `repo`) and returns it at once. In the background `pollForToken` waits for approval, `githubLogin` reads the user, and the token is saved (mode 0600). `base.json` is deleted, since it belongs to the old account.
+- **Account.** `gitHubAccount` runs `gh auth token` and reads the login from `GET /user`. mip stores no token, so each run asks gh again. Settings → Sync shows the login, or the reason in `error` when gh is missing or signed out.
 - **Sync run.** `startSync` runs `runInBackground`: `ensureRepo` checks `dotmip` (creates it private with `auto_init` on a 404, and refuses a public one), then `syncWith` runs:
-  1. `fetchRepo`: clone, or fetch and check out `origin/main`. An empty remote just points HEAD at `main`.
-  2. Read the three snapshots: the remote (`readTree`), the base (`base.json`, the state at the last successful sync), and this machine (`readLocal`).
+  1. `fetchRepo`: clone, or fetch (pruning) and check out `origin/main`. A different URL, meaning another account, makes a fresh clone. An empty remote just points HEAD at `main`.
+  2. Read the three snapshots: the remote (`readTree`), the base (`base.json`, the state at the last successful sync with this repo; another repo's base is ignored), and this machine (`readLocal`).
   3. Refuse when this database is empty but the base had data (wrong `MIP_HOME`).
   4. `mergeSnapshots` (`app/sync/merge.ts`), per record: unchanged on both sides keeps it; changed on one side takes that side; changed on both takes the later change time, except that an edit beats a delete, and a chat keeps both sides' messages. Room messages are the union.
   5. `applySnapshot` writes the merge to the database, `readLocal` reads it back, `writeTree` writes the files, and `commitAndPush` commits and pushes.
   6. A rejected push means `main` moved. The run fetches and merges again, up to three times. On success `base.json` becomes the merged state.
 - **What syncs:** personas, bots, notes, chats with their messages, and the room. **Not:** provider logins (`sessions/`), repo clones, chat workspaces, the default-persona flag, and the provider session id (so a synced chat starts a new model conversation on another machine).
 - **Limits:** the later edit is decided by each machine's clock. A chat with a running run is not deleted by a sync. A persona still used by a chat is not deleted.
-- Tests: `app/sync/merge.test.mjs` (the rules) and `app/sync/sync.test.mjs` (two machines and a local bare repo, through real git). Neither needs GitHub. The GitHub calls (device flow, `ensureRepo`) are checked only by hand, against a real OAuth app.
+- Tests: `app/sync/merge.test.mjs` (the rules) and `app/sync/sync.test.mjs` (two machines and a local bare repo, through real git). Neither needs GitHub. The GitHub calls (`gitHubAccount`, `ensureRepo`) are checked only by hand, with a real `gh` login.

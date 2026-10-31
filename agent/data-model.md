@@ -36,7 +36,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `MIP_HOME/workspaces/<sessionId>/` | `app/tools/workspace.ts` `workspaceFor` | chat files and `<name>/` repo copies |
 | `MIP_HOME/sessions/claude/` | `adapters/claude-cli.ts` (`CLAUDE_CONFIG_DIR`) | CLI login, transcripts |
 | `MIP_HOME/sessions/pi/` | `adapters/pi.ts` | Pi sessions |
-| `MIP_HOME/sync/` | `app/sync/*` | `github.json` (client ID and token, mode 0600), `base.json` (state at the last sync), `state.json` (last run), `dotmip/` (local clone of the GitHub repo) |
+| `MIP_HOME/sync/` | `app/sync/*` | `base.json` (`{repo, snapshot}`: the state at the last sync with that repo), `state.json` (last run), `dotmip/` (local clone of the GitHub repo). No token is stored |
 
 ## Identifiers
 - Chats, personas, bots, notes, repos, runs: UUID strings (`randomUUID`), except the built-in persona `default`.

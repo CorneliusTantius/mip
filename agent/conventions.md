@@ -74,7 +74,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - The room is one conversation at a time (`app/room.ts:14`). A second post while busy gets 409.
 - `git` runs with `GIT_TERMINAL_PROMPT=0` (`app/git.ts`). A clone that needs a password fails instead of waiting.
 - A write to a synced table must set its change time (`data-model.md` invariants). A write that skips it is lost in a GitHub sync merge.
-- The GitHub token is in `MIP_HOME/sync/github.json` (mode 0600). Git gets it only through `authEnv` (`app/sync/github.ts`), never in argv or a config file. Don't log it.
+- mip never stores the GitHub token. Each sync gets it from `gh auth token` (`ghToken`, `app/sync/github.ts`) and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
 - Sync refuses a public `dotmip` repo and an empty database when the last sync had data (`app/sync/engine.ts`).
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
 

@@ -5,7 +5,7 @@
 - Listens on `127.0.0.1` only. `src/backend/app/config.ts:2-3`: `HOST`, `PORT` (env `MIP_PORT`, default 3000).
 - Dev: `npm run dev:frontend` runs Vite on :5173 and proxies `/api` to :3000 (`src/frontend/vite.config.ts`).
 - Restart (Settings → Update) runs in `app/system.ts`: a detached shell waits for this process to exit, runs `npm install` and `npm run build`, then starts the server again.
-- Child processes spawned on demand: `claude` CLI (runs, model list, sign-in, auth status), `git` (clone, pull, rev-parse, and for GitHub sync: fetch and push the `dotmip` repo), `bash -c` (the bash tool), Pi's SDK runs in-process.
+- Child processes spawned on demand: `claude` CLI (runs, model list, sign-in, auth status), `git` (clone, pull, rev-parse, and for GitHub sync: fetch and push the `dotmip` repo), `gh auth token` (GitHub sync), `bash -c` (the bash tool), Pi's SDK runs in-process.
 
 ## Layers
 Dependency direction is one way: `http → app → adapters | storage`, and `storage → db.ts → paths.ts`.
@@ -30,7 +30,7 @@ The imports graph is in `imports.md`. Nothing in `app` imports `http`. `app/prov
 | `sessions/pi/` | Pi session files | `adapters/pi.ts` |
 | `repos/<name>/` | master clones of repositories | `app/repos.ts` |
 | `workspaces/<sessionId>/` | a chat's files, plus its repository copies in `<name>/` | tools, `app/repos.ts` |
-| `sync/` | GitHub sync: `github.json` (client ID, token), `base.json`, `state.json`, `dotmip/` (local clone) | `app/sync/*` |
+| `sync/` | GitHub sync: `base.json`, `state.json`, `dotmip/` (local clone). No token is stored; `gh` provides it | `app/sync/*` |
 
 Deleting a chat removes `workspaces/<id>` (`app/tools/workspace.ts:18`). Provider files are left alone.
 
@@ -42,7 +42,7 @@ Deleting a chat removes `workspaces/<id>` (`app/tools/workspace.ts:18`). Provide
 | Claude auth status (5 s) and model catalog (10 min) | `adapters/claude-cli.ts` | caches |
 | Sign-in attempts | adapters (`signInState` / `signIns`) | progress lines and pending prompt |
 | Client polling state | `features/*` hooks | cleared on page reload |
-| GitHub sync: running flag, pending device code, last error | `app/sync/engine.ts` | a sign-in in progress must be started again after a restart |
+| GitHub sync: running flag | `app/sync/engine.ts` | lost on restart. The last run is kept in `sync/state.json` |
 
 On startup, `storage/db.ts:114-115` marks runs left `running` as `error`, and repo clones left `cloning` as `error`.
 

@@ -24,12 +24,12 @@ Data synced from mip. mip writes this repo; edits made here are overwritten by t
 Not stored here: provider logins, repository clones, and chat workspaces.
 `;
 
-// Brings the local copy to the remote's main branch, creating the copy the first time. Local changes are discarded, since
-// the sync rewrites every file from the database.
+// Brings the local copy to the remote's main branch. The copy is made again when the URL changes (another GitHub account),
+// so refs from the old remote cannot be read as this one's. Local changes are discarded, since the sync rewrites every file.
 export async function fetchRepo(url: string, env: NodeJS.ProcessEnv): Promise<void> {
-  if (existsSync(join(REPO_DIR, ".git"))) {
-    await runGit(["-C", REPO_DIR, "remote", "set-url", "origin", url]);
-    await runGit(["-C", REPO_DIR, "fetch", "origin"], env);
+  const current = existsSync(join(REPO_DIR, ".git")) ? await runGit(["-C", REPO_DIR, "remote", "get-url", "origin"]).catch(() => null) : null;
+  if (current === url) {
+    await runGit(["-C", REPO_DIR, "fetch", "--prune", "origin"], env);
   } else {
     rmSync(REPO_DIR, { recursive: true, force: true });
     mkdirSync(dirname(REPO_DIR), { recursive: true });

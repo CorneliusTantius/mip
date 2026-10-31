@@ -86,17 +86,14 @@ Both need `Content-Type: application/json`, or they return 415. A page on anothe
 | POST | /api/system/restart | :22 | 202 | `{restarting: true}` | The server exits about 300 ms later. A detached shell waits, runs `npm install` and `npm run build` (output to `MIP_HOME/restart.log`), then starts the server again. |
 
 ## Sync — `routes/sync.ts`
-GitHub sync (Settings → Sync). Writes need `Content-Type: application/json`, or they return 415. Background work (the device sign-in and a sync run) is reported by `GET /api/sync`: poll it until `running` is false and `device` is null.
+GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is signed in to on this machine. The run needs `Content-Type: application/json`, or it returns 415. The run is in the background: poll `GET /api/sync` until `running` is false.
 
 | method | path | handler | status | body | errors |
 | --- | --- | --- | --- | --- | --- |
-| GET | /api/sync | :6 | 200 | `SyncStatus`: `{clientId, connected, login, repo, device, running, error, lastSync}` | |
-| PUT | /api/sync/client-id | :7 | 200 | `SyncStatus` (body `{clientId}`) | 400 empty or malformed ID; 415 not JSON |
-| POST | /api/sync/connect | :13 | 202 | `SyncStatus` with `device: {userCode, verificationUri, expiresAt}` | 400 no client ID; 409 a sign-in is waiting; 502 GitHub refused or unreachable |
-| POST | /api/sync/disconnect | :18 | 200 | `{ok:true}` | 415 |
-| POST | /api/sync/run | :24 | 202 | `SyncStatus` with `running: true` | 409 not connected, or a sync is running |
+| GET | /api/sync | :6 | 200 | `SyncStatus`: `{login, repo, running, error, lastSync}` | |
+| POST | /api/sync/run | :7 | 202 | `SyncStatus` with `running: true` | 409 a sync is running, or gh is signed out; 502 GitHub unreachable; 415 not JSON |
 
-`lastSync` is `{at, ok, message, pulled, pushed, notes}`. A failed run has `ok: false` and the reason in `message` (public repo, empty local database, GitHub changed during the run). `error` holds a failed sign-in.
+`login` is null when gh is missing or signed out, and `error` says why. `lastSync` is `{at, ok, message, pulled, pushed, notes}`. A failed run has `ok: false` and the reason in `message` (public repo, empty local database, GitHub changed during the run).
 
 ## Tool endpoint — `http/server.ts:11` and `http/mcp.ts:7`
 | method | path | auth | body | notes |
