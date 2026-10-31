@@ -7,6 +7,8 @@ const SHAPES = {
   edit: <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />,
   trash: <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />,
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  maximize: <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />,
+  minimize: <path d="M9 3v3a2 2 0 0 1-2 2H4M15 3v3a2 2 0 0 0 2 2h3M9 21v-3a2 2 0 0 0-2-2H4M15 21v-3a2 2 0 0 1 2-2h3" />,
   gear: (
     <>
       <circle cx="12" cy="12" r="3" />

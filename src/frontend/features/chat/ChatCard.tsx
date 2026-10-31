@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { errorText } from "../../api/client";
 import type { Session } from "../../api/types";
-import { Card } from "../../ui/Card";
+import { Card, ExpandButton } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ChatHeader } from "./ChatHeader";
 import { Composer } from "./Composer";
@@ -21,6 +21,7 @@ export function ChatCard() {
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [pendingDelete, setPendingDelete] = useState<Session>();
   const [deleteError, setDeleteError] = useState<string>();
+  const [expanded, setExpanded] = useState(false);
 
   // Opens the newest chat on first load.
   useEffect(() => {
@@ -59,7 +60,7 @@ export function ChatCard() {
   const session = chats.current;
 
   return (
-    <Card glow="frost" className="flex h-full shrink-0">
+    <Card glow="frost" className="flex h-full shrink-0" expanded={expanded} onCollapse={() => setExpanded(false)}>
       <div className="card-body min-h-0 flex-1 gap-3 p-4">
         <div className="flex min-h-0 flex-1">
           <SessionList
@@ -84,6 +85,7 @@ export function ChatCard() {
               title={session?.title || "Chat"}
               badges={session && [chats.personaName(session.personaId), chats.providerName(session.providerId)]}
               onToggleSessions={() => setSidebarOpen(!sidebarOpen)}
+              trailing={<ExpandButton expanded={expanded} onToggle={() => setExpanded(!expanded)} />}
             />
             <Transcript
               key={chats.currentId}

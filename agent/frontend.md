@@ -17,7 +17,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 ## ui/
 | file | export (line) | purpose |
 | --- | --- | --- |
-| `ui/Card.tsx` | `Glow` type (:4), `Card` (:7), `CardBody` (:12) | Dashboard card shell: `section.card glow glow-<color> bg-base-200/80`. `CardBody` = title row (title, optional actions) + content. |
+| `ui/Card.tsx` | `Glow` type (:4), `Card` (:7), `CardBody` (:12), `ExpandButton` (after `Card`) | Dashboard card shell: `section.card glow glow-<color> bg-base-200/80`. With `expanded`, the same element becomes a fixed panel over the page (Escape or a backdrop click collapses it). `ExpandButton` is the header toggle. `CardBody` = title row (title, optional actions) + content. |
 | `ui/Modal.tsx` | `Modal` (:18) | Native `<dialog>` opened and closed by the `open` prop. Props: `onClose`, `closeButton` (round X), `boxClassName`. Closes on unmount. |
 | `ui/ConfirmDialog.tsx` | `ConfirmDialog` | Yes/no question with `error` and Cancel/Delete. Built on `Modal`. |
 | `ui/ErrorAlert.tsx` | `ErrorAlert` | Red alert for a message. Renders nothing without a message. |
@@ -34,7 +34,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
   3. `div` `col-span-12 h-[min(40rem,80vh)] xl:col-span-4 xl:h-[min(44rem,80vh)]` → `BotsCard`.
   4. `div` `MEDIUM` → `MemoryCard`.
   5. `div` `MEDIUM` → `RepositoriesCard`.
-  6. `div` `col-span-12 grid md:grid-cols-2 xl:grid-cols-4` → `EmptyCard` Tasks, `EmptyCard` Activity, `PlaceholderCard` Skills, `PlaceholderCard` MCP.
+  6. `div` `col-span-12 grid md:grid-cols-2 xl:grid-cols-4` → `PlaceholderCard` Tasks, Activity, Skills, MCP.
 - Dialogs at the end: `SettingsDialog`, `MemoryDialog`.
 - Breakpoints: md 768px, xl 1280px (Tailwind defaults). Desktops side-by-side for chat and bots.
 - Gaps between cards: `gap-4` (16px), `xl:gap-5` (20px) on the main grid and the bottom row.
@@ -87,8 +87,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 | `PersonasTab.tsx` | `PersonasTab` (:12) | Persona select (last option adds one), name, system prompt, Set as default, Delete. Announces `PERSONAS_CHANGED`. Uses native `confirm()`. |
 
 ## features/upcoming/
-- `EmptyCard.tsx` — `EmptyCard` (:4). Tasks and Activity. No data yet.
-- `PlaceholderCard.tsx` — `PlaceholderCard` (:6). Skills and MCP. Open button shows a dialog with the placeholder note.
+- `PlaceholderCard.tsx` — `PlaceholderCard` (:6). Tasks, Activity, Skills, and MCP. No data yet. The Open button shows a dialog with the placeholder note.
 
 ## Who owns which state
 | state | owner |

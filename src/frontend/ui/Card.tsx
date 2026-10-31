@@ -1,5 +1,6 @@
 import type { ComponentChildren } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { Icon } from "./Icon";
 
 // Each dashboard card has one accent color, so the cards read apart. Each name matches a glow-* class in styles.css.
 export type Glow = "frost" | "teal" | "blue" | "violet" | "red" | "orange" | "yellow" | "green";
@@ -11,13 +12,56 @@ function enterTiming(): string {
   return `--enter-duration: ${duration.toFixed(2)}s; --enter-delay: ${delay.toFixed(2)}s`;
 }
 
+// An expanded card covers the page, above the other cards. Its size comes from the window, not the grid cell.
+const EXPANDED = "fixed inset-3 z-50 flex flex-col md:inset-8";
+
 // A dashboard card: a panel with a glowing border and a slight tint of its accent. Its size comes from the grid cell or from className.
-export function Card({ glow, className = "", children }: { glow: Glow; className?: string; children: ComponentChildren }) {
+// With `expanded`, the same element grows into a large panel over the page, so its state is kept. Escape or a click outside collapses it.
+export function Card({
+  glow,
+  className = "",
+  expanded = false,
+  onCollapse,
+  children,
+}: {
+  glow: Glow;
+  className?: string;
+  expanded?: boolean;
+  onCollapse?: () => void;
+  children: ComponentChildren;
+}) {
   const [timing] = useState(enterTiming);
+
+  useEffect(() => {
+    if (!expanded || !onCollapse) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCollapse();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded, onCollapse]);
+
   return (
-    <section className={`card glow glow-${glow} bg-base-200/80 ${className}`} style={timing}>
-      {children}
-    </section>
+    <>
+      {expanded && <div className="fixed inset-0 z-40 bg-black/50" aria-hidden="true" onClick={onCollapse} />}
+      <section
+        className={`card glow glow-${glow} bg-base-200/80 ${expanded ? EXPANDED : className}`}
+        style={timing}
+        role={expanded ? "dialog" : undefined}
+        aria-modal={expanded || undefined}
+      >
+        {children}
+      </section>
+    </>
+  );
+}
+
+// The header button that grows a card into a large panel, or shrinks it back.
+export function ExpandButton({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  return (
+    <button className="btn btn-ghost btn-sm btn-square" aria-label={expanded ? "Shrink card" : "Expand card"} onClick={onToggle}>
+      <Icon name={expanded ? "minimize" : "maximize"} />
+    </button>
   );
 }
 

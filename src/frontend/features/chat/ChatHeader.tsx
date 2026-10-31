@@ -1,7 +1,19 @@
+import type { ComponentChildren } from "preact";
 import { Icon } from "../../ui/Icon";
 
 // The open chat's title, with its persona and provider as badges. The button on the left opens the chat list on a phone.
-export function ChatHeader({ title, badges, onToggleSessions }: { title: string; badges?: string[]; onToggleSessions: () => void }) {
+export function ChatHeader({
+  title,
+  badges,
+  onToggleSessions,
+  trailing,
+}: {
+  title: string;
+  badges?: string[];
+  onToggleSessions: () => void;
+  // Controls shown at the right end of the header, such as the expand button.
+  trailing?: ComponentChildren;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button className="btn btn-ghost btn-sm btn-square" aria-label="Toggle sessions" onClick={onToggleSessions}>
@@ -17,6 +29,7 @@ export function ChatHeader({ title, badges, onToggleSessions }: { title: string;
           ))}
         </div>
       )}
+      {trailing}
     </div>
   );
 }
