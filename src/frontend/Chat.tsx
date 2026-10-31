@@ -320,7 +320,7 @@ export function Chat() {
               )}
             </div>
 
-            <div ref={log} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+            <div key={currentId} ref={log} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
               {messages.length === 0 && (
                 <p className="m-auto text-sm opacity-60">{currentId ? "Ask something to start." : "Create a session to start."}</p>
               )}

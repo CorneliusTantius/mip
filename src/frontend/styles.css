@@ -35,6 +35,62 @@ select::picker(select) {
   border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent) !important;
 }
 
+/* Motion. Entrances play once when an element appears. They fill backwards only, so an element keeps its own
+   styles (such as hover dimming) when the entrance ends. Lists and dialogs stagger in. */
+@keyframes mip-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mip-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mip-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mip-slide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mip-drop {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.navbar { animation: mip-drop 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+.card { animation: mip-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+.grid > .card:nth-child(2) { animation-delay: 80ms; }
+.grid > .card:nth-child(3) { animation-delay: 160ms; }
+.grid > .card:nth-child(4) { animation-delay: 240ms; }
+.chat { animation: mip-pop 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+.card li,
+dialog li { animation: mip-slide 0.35s ease-out backwards; }
+.card p,
+.card .badge { animation: mip-fade 0.5s ease-out backwards; }
+[role="alert"] { animation: mip-pop 0.3s ease-out backwards; }
+details[open] > .dropdown-content { animation: mip-pop 0.2s ease-out backwards; }
+.mip-fade { animation: mip-fade 0.4s ease-out backwards; }
+
+/* Buttons ease their colors and press down a little when clicked. */
+.btn {
+  transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.btn:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Nord palette, dark only: https://www.nordtheme.com */
 @plugin "daisyui/theme" {
   name: "mip-nord-dark";

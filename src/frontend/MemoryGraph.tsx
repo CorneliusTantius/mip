@@ -99,7 +99,7 @@ export function MemoryGraph({ graph, onOpen }: { graph: GraphData; onOpen: (titl
       onWheel={onWheel}
       onDblClick={() => setView(undefined)}
     >
-      {graph.edges.map((edge) => {
+      {graph.edges.map((edge, i) => {
         const a = positions.get(edge.source)!;
         const b = positions.get(edge.target)!;
         const edgeLit = !hovered || edge.source === hovered || edge.target === hovered;
@@ -111,12 +111,18 @@ export function MemoryGraph({ graph, onOpen }: { graph: GraphData; onOpen: (titl
             x2={b.x}
             y2={b.y}
             strokeWidth={1.5}
-            style={{ stroke: "var(--color-base-content)", strokeOpacity: edgeLit ? 0.35 : 0.06 }}
+            style={{
+              stroke: "var(--color-base-content)",
+              strokeOpacity: edgeLit ? 0.35 : 0.06,
+              transition: "stroke-opacity 0.25s ease",
+              animation: "mip-fade 0.6s ease-out backwards",
+              animationDelay: `${i * 20}ms`,
+            }}
           />
         );
       })}
 
-      {graph.nodes.map((node) => {
+      {graph.nodes.map((node, i) => {
         const p = positions.get(node.id)!;
         const r = 5 + Math.min(node.degree, 10) * 1.5;
         const showLabel = graph.nodes.length <= 30 || node.degree >= 2 || hovered === node.id;
@@ -124,7 +130,12 @@ export function MemoryGraph({ graph, onOpen }: { graph: GraphData; onOpen: (titl
           <g
             key={node.id}
             className="cursor-pointer"
-            style={{ opacity: lit(node.id) ? 1 : 0.2 }}
+            style={{
+              opacity: lit(node.id) ? 1 : 0.2,
+              transition: "opacity 0.25s ease",
+              animation: "mip-fade 0.5s ease-out backwards",
+              animationDelay: `${i * 30}ms`,
+            }}
             onPointerEnter={() => setHovered(node.id)}
             onPointerLeave={() => setHovered(undefined)}
             onClick={() => !dragged.current && onOpen(node.title)}

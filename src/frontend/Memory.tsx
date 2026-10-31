@@ -141,8 +141,8 @@ export function Memory({ open, initial, onClose, onChange }: { open: boolean; in
           <div className="flex w-60 shrink-0 flex-col gap-2 border-r border-base-300 pr-4">
             <input className="input input-sm w-full" placeholder="Search notes" value={query} onInput={(e) => setQuery(e.currentTarget.value)} />
             <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-              {items.map((item) => (
-                <li key={item.id}>
+              {items.map((item, i) => (
+                <li key={item.id} style={{ animationDelay: `${i * 25}ms` }}>
                   <button className={"btn btn-ghost btn-sm h-auto w-full min-w-0 justify-start py-1 text-left font-normal " + (item.title === selected ? "btn-active" : "")} onClick={() => openNote(item.title)}>
                     <span className="min-w-0">
                       <span className="block truncate">{item.title}</span>
@@ -155,7 +155,7 @@ export function Memory({ open, initial, onClose, onChange }: { open: boolean; in
             </ul>
           </div>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
+          <div key={selected ?? "none"} className="mip-fade flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
             {error && <div role="alert" className="alert alert-error"><span>{error}</span></div>}
 
             {editing && (

@@ -67,7 +67,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
               <button className={tab === "config" ? "menu-active" : ""} onClick={() => setTab("config")}>Config</button>
             </li>
           </ul>
-          <div className="min-w-0 flex-1">{tab === "provider" ? <ProviderTab open={open} /> : <ConfigTab />}</div>
+          <div key={tab} className="mip-fade min-w-0 flex-1">{tab === "provider" ? <ProviderTab open={open} /> : <ConfigTab />}</div>
         </div>
       </div>
 
