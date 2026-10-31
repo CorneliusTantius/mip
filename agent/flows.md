@@ -104,5 +104,5 @@ Client (`features/bots/useRoom.ts`): polls `GET /api/room?after=<id>` every 1.5 
 ## 14. Dashboard events and layout
 - Chat list changes → `announce(CHATS_CHANGED)` → repositories card reloads (`api/events.ts`).
 - Persona saved or deleted → `announce(PERSONAS_CHANGED)` → chat list reloads its persona dropdown.
-- Memory saved or deleted → `MemoryDialog` `onChange` → `App` bumps `memoryVersion` → `MemoryCard` reloads its graph.
-- Memory dot clicked → `openMemory(title)` in `App.tsx` → `MemoryDialog` opens that note.
+- Memory saved or deleted → `MemoryManager` `onChanged` → `MemoryBody` reloads its graph (`features/memory/MemoryCard.tsx`).
+- Memory dot clicked → `MemoryBody` sets `startNote` and calls `open()` from `useCardExpansion` → the card expands into `MemoryManager`, which opens that note.

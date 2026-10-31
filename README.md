@@ -90,7 +90,7 @@ Memory is one set of notes shared by every chat. Notes live in SQLite with a ful
 - Agents have three memory tools: `memory_search`, `memory_read`, and `memory_edit`. They can search and read any note, and edit a note that exists. They can't create or delete notes, so memory grows only when you add to it.
 - `memory_edit` replaces one exact piece of a note. It refuses if that text isn't in the note exactly once.
 - The **Memory card** on the main page draws the notes as a graph. Drag to pan, scroll to zoom, double-click to reset, hover a dot to see its links, and click a dot to open its note.
-- **See more** opens the memory screen, where you can search, read, create, edit, and delete notes. Links and backlinks are clickable.
+- Expand the **Memory card** with its expand button to get the memory screen, where you can search, read, create, edit, and delete notes. Links and backlinks are clickable. A click on a dot in the graph expands the card on that note.
 
 ## Tools
 

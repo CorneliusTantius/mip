@@ -35,7 +35,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
   4. `div` `MEDIUM` → `MemoryCard`.
   5. `div` `MEDIUM` → `RepositoriesCard`.
   6. `div` `col-span-12 grid md:grid-cols-2 xl:grid-cols-4` → `PlaceholderCard` Tasks, Activity, Skills, MCP.
-- Dialogs at the end: `SettingsDialog`, `MemoryDialog`.
+- Dialog at the end: `SettingsDialog`.
 - Breakpoints: md 768px, xl 1280px (Tailwind defaults). Desktops side-by-side for chat and bots.
 - Gaps between cards: `gap-4` (16px), `xl:gap-5` (20px) on the main grid and the bottom row.
 
@@ -64,10 +64,10 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 ## features/memory/
 | file | export (line) | state / job |
 | --- | --- | --- |
-| `MemoryCard.tsx` | `MemoryCard` (:9) | Graph card. Fetches `/api/graph` on `version` change. Counts non-missing nodes as notes. |
+| `MemoryCard.tsx` | `MemoryCard`, local `MemoryBody` | One card with two bodies. Collapsed: the graph (fetches `/api/graph`, counts non-missing nodes as notes). Expanded: `MemoryManager`. A graph click sets `startNote` and expands the card. `MemoryBody` reads and changes the expanded state with `useCardExpansion`. |
 | `MemoryGraph.tsx` | `MemoryGraph` (:13) | SVG graph: drag pan, wheel zoom, double-click reset, hover highlights neighbors, click opens note. |
 | `graph-layout.ts` | `layoutGraph` (:27) | Fruchterman–Reingold layout, 300 iterations, deterministic from a circle. Types `GraphNode`, `GraphEdge`, `GraphData`. |
-| `MemoryDialog.tsx` | `MemoryDialog` (:24) | Memory screen: search (200 ms debounce), open note (`openNote` :58, 404 → "create it"), `startNew` (:74), `startEdit` (:82), `save` (:88), `forget` (:101). |
+| `MemoryManager.tsx` | `MemoryManager` | The memory screen, shown inside the expanded memory card: search (200 ms debounce), open note (`openNote`, 404 → "create it"), `startNew`, `startEdit`, `save`, `forget`). |
 | `NoteList.tsx` | `NoteList` (:4) | Search box and list, snippets for matches. |
 | `NoteView.tsx` | `NoteView` (:4) | One note: text, links, backlinks, tags. Links open notes. |
 | `NoteEditor.tsx` | `NoteEditor` (:4) | Title (locked for existing notes) and text. Owns its draft. |
@@ -75,7 +75,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 ## features/repos/
 | file | export (line) | state / job |
 | --- | --- | --- |
-| `RepositoriesCard.tsx` | `RepositoriesCard` (:16) | Clone form, Pull all, list. Reloads on `CHATS_CHANGED`. Polls 1.5 s while any repo is cloning. `clone` (:44), `copy` (:56), `pullAll` (:67), `remove` (:82). |
+| `RepositoriesCard.tsx` | `RepositoriesCard` (:16) | Clone form, Pull all, an expand button (the list scrolls when expanded), list. Reloads on `CHATS_CHANGED`. Polls 1.5 s while any repo is cloning. `clone` (:44), `copy` (:56), `pullAll` (:67), `remove` (:82). |
 | `RepoRow.tsx` | `RepoRow` (:21), local `StatusBadge` | One repo: status, branch, link (credentials hidden), last pull message, copies, copy-to-chat dropdown, Remove. |
 
 ## features/settings/
@@ -100,8 +100,8 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 | room messages, busy, speaking, bots, error | `useRoom` |
 | manage-bots list, bot being edited, delete confirm | `BotsDialog` |
 | bot form draft | `BotEditor` |
-| memory list, query, note, editor, delete confirm, error | `MemoryDialog` |
-| graph data | `MemoryCard` |
+| memory list, query, note, editor, delete confirm, error | `MemoryManager` (mounted only while the card is expanded) |
+| graph data, the note a graph click asked for | `MemoryBody` in `MemoryCard.tsx` |
 | repos, chats, link, pulls, pulling, remove confirm | `RepositoriesCard` |
 | providers, selected service | `ProviderTab` |
 | answer text | `SignInOutput` (inside `SignInPanel.tsx`) |
@@ -114,7 +114,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 - Chat run follow: 600 ms (`useTranscript.ts:6`), only while a run is going.
 - Providers in Settings: 2 s (`ProviderTab.tsx:9`), only while Settings is open.
 - Repos while cloning: 1.5 s (`RepositoriesCard.tsx:12`).
-- Memory search: 200 ms debounce (`MemoryDialog.tsx`, the search effect).
+- Memory search: 200 ms debounce (`MemoryManager.tsx`, the search effect).
 - Window events: `sessions-changed` (chat list changed), `personas-changed` (persona changed). See `api/events.ts`.
 
 ## Styling and theme

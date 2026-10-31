@@ -2,7 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
 import { CHATS_CHANGED } from "../../api/events";
 import type { PullResult, Repo, Session } from "../../api/types";
-import { Card, CardBody } from "../../ui/Card";
+import { Card, CardBody, ExpandButton } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { useAnnouncement, usePolling } from "../../ui/hooks";
@@ -95,11 +95,15 @@ export function RepositoriesCard() {
     <Card glow="orange" className="h-full">
       <CardBody
         title="Repositories"
+        className="min-h-0 flex-1 gap-3"
         actions={
-          <button className="btn btn-sm" disabled={pulling || !repos.some((repo) => repo.status === "ready")} onClick={pullAll}>
-            {pulling && <span className="loading loading-spinner loading-xs" />}
-            Pull all
-          </button>
+          <>
+            <button className="btn btn-sm" disabled={pulling || !repos.some((repo) => repo.status === "ready")} onClick={pullAll}>
+              {pulling && <span className="loading loading-spinner loading-xs" />}
+              Pull all
+            </button>
+            <ExpandButton />
+          </>
         }
       >
         <form className="join w-full" onSubmit={clone}>
@@ -118,7 +122,7 @@ export function RepositoriesCard() {
         {repos.length === 0 ? (
           <p className="py-4 text-center text-sm opacity-60">No repositories yet.</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
             {repos.map((repo) => (
               <RepoRow
                 key={repo.id}

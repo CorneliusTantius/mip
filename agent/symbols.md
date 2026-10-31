@@ -184,7 +184,7 @@
 | src/backend/storage/sessions.ts | 80 | function | setSessionSettings |
 | src/backend/storage/sessions.ts | 85 | function | saveProviderSession |
 | src/backend/storage/sessions.ts | 94 | function | deleteSession |
-| src/frontend/App.tsx | 20 | function | App |
+| src/frontend/App.tsx | 19 | function | App |
 | src/frontend/api/client.ts | 4 | class | ApiError |
 | src/frontend/api/client.ts | 27 | const | api |
 | src/frontend/api/client.ts | 36 | function | errorText |
@@ -228,9 +228,9 @@
 | src/frontend/features/chat/Transcript.tsx | 5 | function | Transcript |
 | src/frontend/features/chat/useChatSessions.ts | 10 | function | useChatSessions |
 | src/frontend/features/chat/useTranscript.ts | 11 | function | useTranscript |
-| src/frontend/features/memory/MemoryCard.tsx | 9 | function | MemoryCard |
-| src/frontend/features/memory/MemoryDialog.tsx | 24 | function | MemoryDialog |
+| src/frontend/features/memory/MemoryCard.tsx | 10 | function | MemoryCard |
 | src/frontend/features/memory/MemoryGraph.tsx | 13 | function | MemoryGraph |
+| src/frontend/features/memory/MemoryManager.tsx | 23 | function | MemoryManager |
 | src/frontend/features/memory/NoteEditor.tsx | 4 | function | NoteEditor |
 | src/frontend/features/memory/NoteList.tsx | 4 | function | NoteList |
 | src/frontend/features/memory/NoteView.tsx | 4 | function | NoteView |
@@ -247,8 +247,9 @@
 | src/frontend/features/upcoming/PlaceholderCard.tsx | 6 | function | PlaceholderCard |
 | src/frontend/ui/Card.tsx | 6 | type | Glow |
 | src/frontend/ui/Card.tsx | 44 | function | Card |
-| src/frontend/ui/Card.tsx | 114 | function | ExpandButton |
-| src/frontend/ui/Card.tsx | 124 | function | CardBody |
+| src/frontend/ui/Card.tsx | 114 | function | useCardExpansion |
+| src/frontend/ui/Card.tsx | 119 | function | ExpandButton |
+| src/frontend/ui/Card.tsx | 129 | function | CardBody |
 | src/frontend/ui/ConfirmDialog.tsx | 5 | function | ConfirmDialog |
 | src/frontend/ui/ErrorAlert.tsx | 2 | function | ErrorAlert |
 | src/frontend/ui/Icon.tsx | 20 | type | IconName |

@@ -3,7 +3,6 @@ import { api, ApiError, errorText } from "../../api/client";
 import type { NoteDetail, NoteItem } from "../../api/types";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
-import { Modal } from "../../ui/Modal";
 import { NoteEditor } from "./NoteEditor";
 import { NoteList } from "./NoteList";
 import { NoteView } from "./NoteView";
@@ -19,9 +18,9 @@ interface EditorState {
 
 let editorIds = 0;
 
-// The memory screen: search, read, create, edit, and delete the shared notes.
-// `initial` is a note to show when the screen opens, such as a dot the user clicked on the graph.
-export function MemoryDialog({ open, initial, onClose, onChange }: { open: boolean; initial?: string; onClose: () => void; onChange?: () => void }) {
+// The memory screen: search, read, create, edit, and delete the shared notes. It fills the expanded memory card.
+// `initialNote` is opened when the screen mounts, such as a dot the user clicked on the graph. `onChanged` runs after a save or delete.
+export function MemoryManager({ initialNote, onChanged }: { initialNote?: string; onChanged: () => void }) {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<NoteItem[]>([]);
   const [note, setNote] = useState<NoteDetail>();
@@ -35,25 +34,16 @@ export function MemoryDialog({ open, initial, onClose, onChange }: { open: boole
   const loadItems = (search: string) =>
     api.get<{ notes: NoteItem[] }>(`/api/memory?q=${encodeURIComponent(search)}`).then((data) => setItems(data.notes));
 
-  // Each time the screen opens, it shows the requested note, or starts empty.
+  // Search as you type. The list waits briefly after each keystroke, and loads once when the screen opens.
   useEffect(() => {
-    if (!open) return;
-    if (initial) {
-      openNote(initial);
-    } else {
-      setEditor(undefined);
-      setSelected(undefined);
-      setNote(undefined);
-      setMissing(undefined);
-    }
-  }, [open]);
-
-  // Search as you type. The list waits briefly after each keystroke.
-  useEffect(() => {
-    if (!open) return;
     const timer = setTimeout(() => loadItems(query), 200);
     return () => clearTimeout(timer);
-  }, [open, query]);
+  }, [query]);
+
+  // Opens the note a graph click asked for, once, when the screen mounts.
+  useEffect(() => {
+    if (initialNote) openNote(initialNote);
+  }, []);
 
   function openNote(title: string) {
     setEditor(undefined);
@@ -94,7 +84,7 @@ export function MemoryDialog({ open, initial, onClose, onChange }: { open: boole
       return setError(errorText(err));
     }
     loadItems(query);
-    onChange?.();
+    onChanged();
     openNote(saved.title);
   }
 
@@ -109,51 +99,49 @@ export function MemoryDialog({ open, initial, onClose, onChange }: { open: boole
     setNote(undefined);
     setSelected(undefined);
     loadItems(query);
-    onChange?.();
+    onChanged();
   }
 
   return (
     <>
-      <Modal open={open} onClose={onClose} closeButton boxClassName="flex h-[min(36rem,80vh)] max-w-4xl flex-col">
-        <div className="mb-4 flex items-center gap-2 pr-10">
-          <h2 className="mr-auto text-lg font-semibold">Memory</h2>
-          <button className="btn btn-primary btn-sm" onClick={() => startNew()}>
-            + New note
-          </button>
+      <div className="flex min-h-0 flex-1 gap-4">
+        <NoteList
+          items={items}
+          selected={selected}
+          query={query}
+          onQuery={setQuery}
+          onOpen={openNote}
+          onNew={() => startNew()}
+        />
+
+        <div key={selected ?? "none"} className="mip-fade flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
+          <ErrorAlert message={error} />
+
+          {editor && (
+            <NoteEditor
+              key={editor.id}
+              title={editor.title}
+              body={editor.body}
+              titleLocked={editor.locked}
+              onSave={save}
+              onCancel={() => setEditor(undefined)}
+            />
+          )}
+
+          {!editor && note && <NoteView note={note} onEdit={startEdit} onDelete={() => setAskingDelete(true)} onOpen={openNote} />}
+
+          {!editor && !note && missing && (
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm opacity-70">No note called "{missing}" yet.</p>
+              <button className="btn btn-sm" onClick={() => startNew(missing)}>
+                Create it
+              </button>
+            </div>
+          )}
+
+          {!editor && !note && !missing && <p className="m-auto text-sm opacity-60">Pick a note, or create one.</p>}
         </div>
-
-        <div className="flex min-h-0 flex-1 gap-4">
-          <NoteList items={items} selected={selected} query={query} onQuery={setQuery} onOpen={openNote} />
-
-          <div key={selected ?? "none"} className="mip-fade flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
-            <ErrorAlert message={error} />
-
-            {editor && (
-              <NoteEditor
-                key={editor.id}
-                title={editor.title}
-                body={editor.body}
-                titleLocked={editor.locked}
-                onSave={save}
-                onCancel={() => setEditor(undefined)}
-              />
-            )}
-
-            {!editor && note && <NoteView note={note} onEdit={startEdit} onDelete={() => setAskingDelete(true)} onOpen={openNote} />}
-
-            {!editor && !note && missing && (
-              <div className="flex flex-col items-start gap-2">
-                <p className="text-sm opacity-70">No note called "{missing}" yet.</p>
-                <button className="btn btn-sm" onClick={() => startNew(missing)}>
-                  Create it
-                </button>
-              </div>
-            )}
-
-            {!editor && !note && !missing && <p className="m-auto text-sm opacity-60">Pick a note, or create one.</p>}
-          </div>
-        </div>
-      </Modal>
+      </div>
 
       <ConfirmDialog
         open={askingDelete}

@@ -7,15 +7,20 @@ export function NoteList({
   query,
   onQuery,
   onOpen,
+  onNew,
 }: {
   items: NoteItem[];
   selected?: string;
   query: string;
   onQuery: (query: string) => void;
   onOpen: (title: string) => void;
+  onNew: () => void;
 }) {
   return (
     <div className="flex w-60 shrink-0 flex-col gap-2 border-r border-base-300 pr-4">
+      <button className="btn btn-primary btn-sm w-full" onClick={onNew}>
+        + New note
+      </button>
       <input className="input input-sm w-full" placeholder="Search notes" value={query} onInput={(e) => onQuery(e.currentTarget.value)} />
       <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
         {items.map((item, i) => (

@@ -19,8 +19,8 @@ const ZOOM_MS = 260;
 const CLOSE_MS = 200;
 const EASING = "cubic-bezier(0.2, 0.7, 0.2, 1)";
 
-// Lets the ExpandButton in a card's header read the expanded state and toggle it.
-const ExpandContext = createContext({ expanded: false, toggle: () => {} });
+// Lets the card's content (its ExpandButton, or a card whose body changes when expanded) read the expanded state and change it.
+const ExpandContext = createContext({ expanded: false, open: () => {}, toggle: () => {} });
 
 // Draws an element from one box and moves it to where it already sits. The element has already changed place, so this only plays the move.
 function zoom(el: HTMLElement, from: DOMRect, to: DOMRect): void {
@@ -95,7 +95,7 @@ export function Card({ glow, className = "", children }: { glow: Glow; className
   useEffect(() => () => window.clearTimeout(closeTimer.current), []);
 
   return (
-    <ExpandContext.Provider value={{ expanded, toggle }}>
+    <ExpandContext.Provider value={{ expanded, open, toggle }}>
       {expanded && <div className={`fixed inset-0 z-40 bg-black/50 ${closing ? "mip-fade-out" : "mip-fade"}`} aria-hidden="true" onClick={close} />}
       <section
         ref={section}
@@ -108,6 +108,11 @@ export function Card({ glow, className = "", children }: { glow: Glow; className
       </section>
     </ExpandContext.Provider>
   );
+}
+
+// For content inside a Card: whether the card is expanded, and a way to expand it. Used when the body changes shape, such as the memory card.
+export function useCardExpansion() {
+  return useContext(ExpandContext);
 }
 
 // The header button that expands its card into a large panel, or shrinks it back. It must sit inside a Card.

@@ -2,7 +2,6 @@ import { useState } from "preact/hooks";
 import { BotsCard } from "./features/bots/BotsCard";
 import { ChatCard } from "./features/chat/ChatCard";
 import { MemoryCard } from "./features/memory/MemoryCard";
-import { MemoryDialog } from "./features/memory/MemoryDialog";
 import { RepositoriesCard } from "./features/repos/RepositoriesCard";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
 import { PlaceholderCard } from "./features/upcoming/PlaceholderCard";
@@ -19,17 +18,6 @@ const MEDIUM = "col-span-12 md:col-span-6";
 // The page: a header, then one scrolling grid of cards. Each card sits in a grid cell, and the cells keep their order.
 export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [memoryOpen, setMemoryOpen] = useState(false);
-  // The note the memory screen opens on, when a dot on the graph was clicked.
-  const [memoryTitle, setMemoryTitle] = useState<string>();
-  // Goes up after each save or delete, so the memory card redraws.
-  const [memoryVersion, setMemoryVersion] = useState(0);
-
-  function openMemory(title?: string) {
-    setMemoryTitle(title);
-    setMemoryOpen(true);
-  }
-
   return (
     <div className="flex h-full flex-col">
       <Starfield />
@@ -52,7 +40,7 @@ export function App() {
         </div>
 
         <div className={MEDIUM}>
-          <MemoryCard version={memoryVersion} onOpen={openMemory} onSeeMore={() => openMemory()} />
+          <MemoryCard />
         </div>
         <div className={MEDIUM}>
           <RepositoriesCard />
@@ -68,7 +56,6 @@ export function App() {
       </main>
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <MemoryDialog open={memoryOpen} initial={memoryTitle} onClose={() => setMemoryOpen(false)} onChange={() => setMemoryVersion((v) => v + 1)} />
     </div>
   );
 }
