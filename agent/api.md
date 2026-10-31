@@ -90,10 +90,11 @@ GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is
 
 | method | path | handler | status | body | errors |
 | --- | --- | --- | --- | --- | --- |
-| GET | /api/sync | :6 | 200 | `SyncStatus`: `{login, repo, running, error, lastSync}` | |
-| POST | /api/sync/run | :7 | 202 | `SyncStatus` with `running: true` | 409 a sync is running, or gh is signed out; 502 GitHub unreachable; 415 not JSON |
+| GET | /api/sync | :8 | 200 | `SyncStatus`: `{accounts, login, repo, running, error, lastSync}` | |
+| PUT | /api/sync/account | :9 | 200 | `SyncStatus` (body `{login}`) | 400 gh is not signed in to that account; 409 a sync is running; 415 not JSON |
+| POST | /api/sync/run | :14 | 202 | `SyncStatus` with `running: true` | 409 a sync is running, or gh is signed out; 502 GitHub unreachable; 415 not JSON |
 
-`login` is null when gh is missing or signed out, and `error` says why. `lastSync` is `{at, ok, message, pulled, pushed, notes}`. A failed run has `ok: false` and the reason in `message` (public repo, empty local database, GitHub changed during the run).
+`accounts` lists every account gh is signed in to, and `login` is the one sync uses (null when there is none). `error` says why when gh is missing or signed out. The chosen account is kept in `sync/state.json`. `lastSync` is `{at, ok, message, pulled, pushed, notes}`. A failed run has `ok: false` and the reason in `message` (public repo, empty local database, GitHub changed during the run).
 
 ## Tool endpoint — `http/server.ts:11` and `http/mcp.ts:7`
 | method | path | auth | body | notes |

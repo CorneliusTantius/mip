@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { SYNC_DIR } from "../../storage/paths.js";
 import { AppError, errorMessage } from "../errors.js";
 import { countChanges, emptySnapshot, isEmptySnapshot, mergeSnapshots, type Snapshot } from "./merge.js";
-import { authEnv, ensureRepo, gitHubAccount, REPO_NAME, repoUrl, type Account } from "./github.js";
+import { authEnv, ensureRepo, gitHubAccount, listAccounts, pickAccount, REPO_NAME, repoUrl, type Account } from "./github.js";
 import { commitAndPush, fetchRepo, readTree, writeTree } from "./repo.js";
 import { applySnapshot, readLocal } from "./snapshot.js";
 
@@ -11,6 +11,7 @@ import { applySnapshot, readLocal } from "./snapshot.js";
 // sides last agreed on) is kept with the repo it came from. A base from another repo is ignored, so switching accounts cannot
 // read the old repo's records as deletions.
 const BASE_FILE = join(SYNC_DIR, "base.json");
+// The chosen account and the last run. The account is a login name, not a secret.
 const STATE_FILE = join(SYNC_DIR, "state.json");
 // A push is rejected when another machine pushed first. The run then fetches and merges again.
 const MAX_ATTEMPTS = 3;
@@ -25,6 +26,8 @@ export interface SyncRun {
 }
 
 export interface SyncStatus {
+  // Every account gh is signed in to, and the one sync uses (null when there is none).
+  accounts: string[];
   login: string | null;
   repo: string | null;
   running: boolean;
@@ -32,35 +35,52 @@ export interface SyncStatus {
   lastSync: SyncRun | null;
 }
 
+const saved = readState();
+let chosen = saved.account;
+let lastSync = saved.lastSync;
 let running = false;
-let lastSync: SyncRun | null = readState();
 
-// The account in use and the last run. The account is asked from gh on each call, so a sign-in or sign-out shows on the next load.
+// The accounts gh has, the one sync uses, and the last run. gh is asked on each call, so a sign-in shows on the next load.
 export async function syncStatus(): Promise<SyncStatus> {
-  try {
-    return statusFor(await gitHubAccount(), null);
-  } catch (err) {
-    return statusFor(null, errorMessage(err));
-  }
-}
-
-function statusFor(account: Account | null, error: string | null): SyncStatus {
+  const { accounts, error } = await listAccounts();
+  const login = pickAccount(accounts, chosen);
   return {
-    login: account?.login ?? null,
-    repo: account ? `${account.login}/${REPO_NAME}` : null,
+    accounts: accounts.map((account) => account.login),
+    login,
+    repo: login ? `${login}/${REPO_NAME}` : null,
     running,
     error,
     lastSync,
   };
 }
 
+// Chooses the account the next sync uses. Each account has its own dotmip repo, so the next sync goes to that repo.
+export async function chooseAccount(login: string): Promise<SyncStatus> {
+  if (running) throw new AppError(409, "Wait for the running sync to finish before switching accounts.");
+  const { accounts } = await listAccounts();
+  if (!accounts.some((account) => account.login === login)) throw new AppError(400, `gh is not signed in to ${login}.`);
+  chosen = login;
+  writeState();
+  return syncStatus();
+}
+
 // Starts a sync in the background. The dashboard polls the status until running is false.
 export async function startSync(): Promise<SyncStatus> {
   if (running) throw new AppError(409, "A sync is already running.");
-  const account = await gitHubAccount();
+  // Set before the first await, so a second request cannot start a sync alongside this one.
   running = true;
+  let account: Account;
+  try {
+    const { accounts } = await listAccounts();
+    const login = pickAccount(accounts, chosen);
+    if (!login) throw new AppError(409, "Sign in with the GitHub CLI first: run `gh auth login` in a terminal.");
+    account = await gitHubAccount(login);
+  } catch (err) {
+    running = false;
+    throw err;
+  }
   void runInBackground(account);
-  return statusFor(account, null);
+  return syncStatus();
 }
 
 async function runInBackground(account: Account): Promise<void> {
@@ -121,12 +141,13 @@ function writeBase(snapshot: Snapshot, repo: string): void {
   writeFileSync(BASE_FILE, JSON.stringify({ repo, snapshot }));
 }
 
-function readState(): SyncRun | null {
-  if (!existsSync(STATE_FILE)) return null;
-  return (JSON.parse(readFileSync(STATE_FILE, "utf8")) as { lastSync: SyncRun | null }).lastSync;
+function readState(): { account: string | null; lastSync: SyncRun | null } {
+  if (!existsSync(STATE_FILE)) return { account: null, lastSync: null };
+  const data = JSON.parse(readFileSync(STATE_FILE, "utf8")) as { account?: string | null; lastSync?: SyncRun | null };
+  return { account: data.account ?? null, lastSync: data.lastSync ?? null };
 }
 
 function writeState(): void {
   mkdirSync(SYNC_DIR, { recursive: true });
-  writeFileSync(STATE_FILE, JSON.stringify({ lastSync }));
+  writeFileSync(STATE_FILE, JSON.stringify({ account: chosen, lastSync }));
 }

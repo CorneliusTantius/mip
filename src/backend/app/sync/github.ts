@@ -1,33 +1,76 @@
 import { execFile } from "node:child_process";
 import { AppError, errorMessage } from "../errors.js";
 
-// GitHub access for sync. The account is the one the GitHub CLI (gh) is signed in to on this machine. Each sync asks gh for
+// GitHub access for sync. The accounts are the ones the GitHub CLI (gh) is signed in to on this machine. Each sync asks gh for
 // the token and never stores it, so mip has no OAuth app, no client ID, and no token file.
 export const REPO_NAME = "dotmip";
-const WEB = "https://github.com";
+const HOST = "github.com";
+const WEB = `https://${HOST}`;
 const API = "https://api.github.com";
 // A GitHub call that runs longer than this fails, so the dashboard does not wait on a dead network.
 const TIMEOUT_MS = 10_000;
+
+export interface GhAccount {
+  login: string;
+  active: boolean;
+}
 
 export interface Account {
   login: string;
   token: string;
 }
 
-// The token of the account gh is signed in to. Rejects with a message for the user when gh is missing or signed out.
-export function ghToken(): Promise<string> {
+// Reads gh's text output for the accounts signed in to github.com. This gh version has no JSON form for `auth status`.
+// A login gh could not verify is skipped, and so is its "Active account" line.
+export function parseAccounts(text: string): GhAccount[] {
+  const accounts: GhAccount[] = [];
+  let current: GhAccount | undefined;
+  for (const line of text.split("\n")) {
+    const signedIn = /Logged in to github\.com account (\S+)/.exec(line);
+    if (signedIn) {
+      current = { login: signedIn[1], active: false };
+      accounts.push(current);
+    } else if (/Failed to log in to github\.com account/.test(line)) {
+      current = undefined;
+    } else if (current && /Active account: true/.test(line)) {
+      current.active = true;
+    }
+  }
+  return accounts;
+}
+
+// The accounts gh is signed in to, or the reason there are none. Never rejects: the dashboard shows the reason.
+export function listAccounts(): Promise<{ accounts: GhAccount[]; error: string | null }> {
+  return new Promise((resolve) => {
+    execFile("gh", ["auth", "status", "--hostname", HOST], (err, stdout, stderr) => {
+      const accounts = parseAccounts(`${stdout}\n${stderr}`);
+      if (accounts.length) resolve({ accounts, error: null });
+      else if ((err as NodeJS.ErrnoException | null)?.code === "ENOENT") resolve({ accounts, error: "Install the GitHub CLI (gh) to sync." });
+      else resolve({ accounts, error: "Sign in with the GitHub CLI first: run `gh auth login` in a terminal." });
+    });
+  });
+}
+
+// The login sync uses: the one chosen in Settings while gh still has it, otherwise gh's active account.
+export function pickAccount(accounts: GhAccount[], chosen: string | null): string | null {
+  const found = accounts.find((account) => account.login === chosen) ?? accounts.find((account) => account.active) ?? accounts[0];
+  return found?.login ?? null;
+}
+
+// The token for one account, from gh. Rejects with a message for the user when that account has no token.
+export function ghToken(login: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile("gh", ["auth", "token"], (err, stdout) => {
+    execFile("gh", ["auth", "token", "--hostname", HOST, "--user", login], (err, stdout) => {
       const token = stdout.trim();
-      if (err || !token) reject(new AppError(409, "Sign in with the GitHub CLI first: run `gh auth login` in a terminal."));
+      if (err || !token) reject(new AppError(409, `gh has no token for ${login}. Run \`gh auth login\` for that account.`));
       else resolve(token);
     });
   });
 }
 
-// The signed-in account, with its token. Throws when gh is missing or signed out, or when GitHub does not answer.
-export async function gitHubAccount(): Promise<Account> {
-  const token = await ghToken();
+// The account's token, checked against GitHub. Throws when the token is stale or GitHub does not answer.
+export async function gitHubAccount(login: string): Promise<Account> {
+  const token = await ghToken(login);
   const res = await api("GET", "/user", token);
   if (!res.ok) throw new AppError(502, await githubError(res));
   return { login: (await res.json()).login, token };

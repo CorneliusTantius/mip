@@ -144,8 +144,9 @@ export interface SyncRun {
   notes: string[];
 }
 
-// The GitHub sync: the account the GitHub CLI is signed in to (null when it is not), its repo, and the last run.
+// The GitHub sync: the accounts the GitHub CLI is signed in to, the one sync uses (null when there is none), its repo, and the last run.
 export interface SyncStatus {
+  accounts: string[];
   login: string | null;
   repo: string | null;
   running: boolean;

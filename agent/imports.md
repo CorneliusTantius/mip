@@ -26,6 +26,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/runs.ts | src/backend/adapters/contract.ts, src/backend/storage/runs.ts, src/backend/storage/sessions.ts, src/backend/app/config.ts, src/backend/app/errors.ts, src/backend/app/memory.ts, src/backend/app/personas.ts, src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/tools/index.ts, src/backend/app/tools/workspace.ts | src/backend/app/sessions.ts, src/backend/http/routes/runs.ts |
 | src/backend/app/sessions.ts | src/backend/storage/sessions.ts, src/backend/app/errors.ts, src/backend/app/names.ts, src/backend/app/personas.ts, src/backend/app/providers.ts, src/backend/app/tools/workspace.ts, src/backend/app/runs.ts | src/backend/http/routes/sessions.ts |
 | src/backend/app/sync/engine.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/github.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts | src/backend/http/routes/sync.ts |
+| src/backend/app/sync/github.test.mjs | - | - |
 | src/backend/app/sync/github.ts | src/backend/app/errors.ts | src/backend/app/sync/engine.ts |
 | src/backend/app/sync/merge.test.mjs | - | - |
 | src/backend/app/sync/merge.ts | - | src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts |

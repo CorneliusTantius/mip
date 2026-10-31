@@ -1,27 +1,48 @@
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { useSync } from "./useSync";
 
-// Sync keeps mip's data in a private dotmip repo on the GitHub account the GitHub CLI is signed in to on this machine.
+// Sync keeps mip's data in a private dotmip repo on a GitHub account that the GitHub CLI is signed in to on this machine.
 // mip never stores a token. Each sync asks gh for one.
 export function SyncTab() {
-  const { status, error, run } = useSync();
+  const { status, error, run, chooseAccount } = useSync();
   const running = !!status?.running;
+  const accounts = status?.accounts ?? [];
 
   return (
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-2">
-        <h3 className="font-semibold">GitHub</h3>
+        <h3 className="font-semibold">GitHub account</h3>
         <p className="text-sm opacity-70">
-          Sync keeps your chats, notes, personas, and bots in a private repo named dotmip. It uses the account that the GitHub CLI (gh) is
-          signed in to here. Repository clones, chat files, and provider logins stay on this machine.
+          Sync keeps your chats, notes, personas, and bots in a private repo named dotmip. It uses an account the GitHub CLI (gh) is signed in
+          to. Repository clones, chat files, and provider logins stay on this machine.
         </p>
-        {status?.login ? (
+
+        {accounts.length > 1 ? (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="opacity-70">Account</span>
+            <select
+              className="select select-sm"
+              value={status?.login ?? ""}
+              disabled={running}
+              onChange={(e) => chooseAccount((e.target as HTMLSelectElement).value)}
+            >
+              {accounts.map((login) => (
+                <option key={login} value={login}>
+                  {login}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs opacity-60">Each account has its own dotmip repo. The next sync goes to the account you choose here.</span>
+          </label>
+        ) : status?.login ? (
           <p className="text-sm">
-            Signed in as <strong>{status.login}</strong>. Data syncs to <code>{status.repo}</code>.
+            Signed in as <strong>{status.login}</strong>.
           </p>
-        ) : (
-          <p className="text-sm opacity-70">
-            Not signed in. Run <code>gh auth login</code> in a terminal, then reopen Settings.
+        ) : null}
+
+        {status?.repo && (
+          <p className="text-sm">
+            Data syncs to <code>{status.repo}</code>.
           </p>
         )}
       </section>

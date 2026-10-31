@@ -5,7 +5,7 @@
 - Listens on `127.0.0.1` only. `src/backend/app/config.ts:2-3`: `HOST`, `PORT` (env `MIP_PORT`, default 3000).
 - Dev: `npm run dev:frontend` runs Vite on :5173 and proxies `/api` to :3000 (`src/frontend/vite.config.ts`).
 - Restart (Settings → Update) runs in `app/system.ts`: a detached shell waits for this process to exit, runs `npm install` and `npm run build`, then starts the server again.
-- Child processes spawned on demand: `claude` CLI (runs, model list, sign-in, auth status), `git` (clone, pull, rev-parse, and for GitHub sync: fetch and push the `dotmip` repo), `gh auth token` (GitHub sync), `bash -c` (the bash tool), Pi's SDK runs in-process.
+- Child processes spawned on demand: `claude` CLI (runs, model list, sign-in, auth status), `git` (clone, pull, rev-parse, and for GitHub sync: fetch and push the `dotmip` repo), `gh auth status` and `gh auth token` (GitHub sync), `bash -c` (the bash tool), Pi's SDK runs in-process.
 
 ## Layers
 Dependency direction is one way: `http → app → adapters | storage`, and `storage → db.ts → paths.ts`.

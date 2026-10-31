@@ -13,6 +13,7 @@
     npm run typecheck
     npm run build
     node src/backend/app/room-engine.test.mjs
+    node src/backend/app/sync/github.test.mjs
     node src/backend/app/sync/merge.test.mjs
     node src/backend/app/sync/sync.test.mjs
 For behavior: restart the server after `build:backend` (`npm run build:backend`, then stop and start `dist/backend/http/server.js`). Frontend-only changes: `npm run build:frontend` is enough; the server reads `dist/frontend` on each request.

@@ -51,7 +51,7 @@ The Claude CLI runs without `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so i
 
 Settings → **Sync** keeps your chats, notes, personas, and bots in a private repo named `dotmip` on your GitHub account. Repository clones, chat files, and provider logins stay on this machine.
 
-1. Sign in to the GitHub CLI once on this machine: `gh auth login`. Sync uses that account. mip never stores a token.
+1. Sign in to the GitHub CLI once on this machine: `gh auth login`. Sync uses one of the accounts it is signed in to. If there is more than one, pick the account in Settings → Sync. mip never stores a token.
 2. Click **Sync now** in Settings → Sync. It creates `dotmip` if it does not exist, pulls changes, merges them with this machine, and pushes the result.
 
 When both machines edited the same note, persona, bot, or chat setting, the newer edit wins. The sync log says so. Messages from both sides are kept, and an edit beats a delete. A chat that is running is not deleted by a sync. The clocks on both machines must be right.
@@ -173,7 +173,8 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | POST | `/api/repos/:id/copies` | Copy a repository into a chat. Body: `{ sessionId }` |
 | POST | `/api/system/update` | Pull the latest commits (fast-forward only). JSON request only |
 | POST | `/api/system/restart` | Install, build, and restart the server. JSON request only |
-| GET | `/api/sync` | GitHub sync status: the gh account in use, and the last run |
+| GET | `/api/sync` | GitHub sync status: the gh accounts, the one in use, and the last run |
+| PUT | `/api/sync/account` | Choose the gh account sync uses. Body: `{ login }` |
 | POST | `/api/sync/run` | Start a sync in the background. Poll `GET /api/sync` for the result |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 

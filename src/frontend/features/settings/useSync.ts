@@ -35,5 +35,14 @@ export function useSync() {
     }
   }
 
-  return { status, error, run };
+  async function chooseAccount(login: string) {
+    setError(undefined);
+    try {
+      setStatus(await api.put<SyncStatus>("/api/sync/account", { login }));
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
+
+  return { status, error, run, chooseAccount };
 }
