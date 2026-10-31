@@ -92,7 +92,9 @@ Every provider gets the same seven tools, defined in `src/backend/app/tools/`: `
 
 The **Repositories** card on the main page clones git repositories, and gives each chat its own copy.
 
-- Paste a clone link: `https://`, `ssh://`, `git@host:path`, or any form git accepts. mip clones it with your own `git` into `~/.mip/repos/<name>`, so private repositories work when your git can reach them. The folder name comes from the link.
+- Paste a clone link: `https://`, `ssh://`, `git@host:path`, or any form git accepts. A link with no scheme, such as `github.com/owner/repo`, is taken as https. mip clones it with your own `git` into `~/.mip/repos/<name>`, so private repositories work when your git can reach them. The folder name comes from the link.
+- Each repository shows the branch it has checked out.
+- **Pull all** brings every ready repository up to the latest commit on its branch. It only fast-forwards, so it never makes a merge commit. Each row then says whether it was updated, was already up to date, or what stopped the pull. Chats' copies are separate clones, so they aren't pulled.
 - The list shows each repository, its status, and the chats that have a copy. Choose a chat under "Copy to a chat" to give it one.
 - A copy is a separate clone in that chat's workspace, at `~/.mip/workspaces/<chat id>/<name>`. Its `origin` is the real link, so pushes go to that remote.
 - Each run tells the agent which repositories are in its workspace.
@@ -125,7 +127,8 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/memory/:title` | Read a note |
 | DELETE | `/api/memory/:title` | Delete a note |
 | GET | `/api/graph` | Notes and links, for the memory card |
-| GET | `/api/repos` | Repositories, with the chats that have a copy |
+| GET | `/api/repos` | Repositories, with their branch and the chats that have a copy |
+| POST | `/api/repos/pull` | Fast-forward every ready repository. Returns one result per repository |
 | POST | `/api/repos` | Clone a link. Body: `{ url }`. Returns 202, and the repository shows `cloning` until done |
 | DELETE | `/api/repos/:id` | Remove a repository's master clone |
 | POST | `/api/repos/:id/copies` | Copy a repository into a chat. Body: `{ sessionId }` |

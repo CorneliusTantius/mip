@@ -40,15 +40,47 @@ function requireRepo(id: string): Repo {
   return repo;
 }
 
-// Every repository, with the chats that have their own copy of it.
-export function listRepoCards() {
+// The branch a ready repository has checked out. "detached" when it isn't on a branch.
+async function branchOf(repo: Repo): Promise<string | null> {
+  if (repo.status !== "ready") return null;
+  try {
+    const branch = await runGit(["-C", join(REPOS_DIR, repo.name), "rev-parse", "--abbrev-ref", "HEAD"]);
+    return branch === "HEAD" ? "detached" : branch;
+  } catch {
+    return null;
+  }
+}
+
+// Every repository, with its branch, and the chats that have their own copy of it.
+export async function listRepoCards() {
   const chats = listSessions();
-  return listRepos().map((repo) => ({
-    ...repo,
-    copies: chats
-      .filter((chat) => existsSync(join(workspacePath(chat.id), repo.name, ".git")))
-      .map((chat) => ({ sessionId: chat.id, title: chat.title })),
-  }));
+  return Promise.all(
+    listRepos().map(async (repo) => ({
+      ...repo,
+      branch: await branchOf(repo),
+      copies: chats
+        .filter((chat) => existsSync(join(workspacePath(chat.id), repo.name, ".git")))
+        .map((chat) => ({ sessionId: chat.id, title: chat.title })),
+    })),
+  );
+}
+
+// Brings every ready repository up to date with its upstream. Fast-forward only, so no merge commits appear.
+// Chats' copies are separate clones and are not pulled. Returns one result per repository.
+export async function pullAllRepos(): Promise<{ id: string; name: string; ok: boolean; message: string }[]> {
+  const results = [];
+  for (const repo of listRepos().filter((r) => r.status === "ready")) {
+    const dir = join(REPOS_DIR, repo.name);
+    try {
+      const before = await runGit(["-C", dir, "rev-parse", "HEAD"]);
+      await runGit(["-C", dir, "pull", "--ff-only"]);
+      const after = await runGit(["-C", dir, "rev-parse", "HEAD"]);
+      results.push({ id: repo.id, name: repo.name, ok: true, message: before === after ? "already up to date" : "updated to the latest commit" });
+    } catch (err) {
+      results.push({ id: repo.id, name: repo.name, ok: false, message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  return results;
 }
 
 // Starts a clone in the background, into the repos folder. The repository shows as "cloning" until git finishes.

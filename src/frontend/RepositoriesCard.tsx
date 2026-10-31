@@ -14,6 +14,8 @@ interface Repo {
   url: string;
   status: "cloning" | "ready" | "error";
   error: string | null;
+  // The checked-out branch. Null while cloning or after a failed clone.
+  branch: string | null;
   copies: Copy[];
 }
 
@@ -48,6 +50,9 @@ export function RepositoriesCard() {
   const [link, setLink] = useState("");
   const [error, setError] = useState<string>();
   const [removing, setRemoving] = useState<Repo>();
+  const [pulling, setPulling] = useState(false);
+  // What the last Pull all did to each repository, by id.
+  const [pulls, setPulls] = useState<Record<string, { ok: boolean; message: string }>>({});
   const cloning = repos.some((repo) => repo.status === "cloning");
 
   const load = () =>
@@ -96,6 +101,18 @@ export function RepositoriesCard() {
     load();
   }
 
+  // Brings every ready repository up to its branch's latest commit, and shows what happened on each row.
+  async function pullAll() {
+    setError(undefined);
+    setPulling(true);
+    const res = await fetch("/api/repos/pull", { method: "POST" });
+    const data = await res.json();
+    setPulling(false);
+    if (!res.ok) return setError(data.error);
+    setPulls(Object.fromEntries(data.results.map((r: { id: string; ok: boolean; message: string }) => [r.id, { ok: r.ok, message: r.message }])));
+    load();
+  }
+
   async function remove() {
     if (!removing) return;
     const res = await fetch(`/api/repos/${removing.id}`, { method: "DELETE" });
@@ -107,7 +124,13 @@ export function RepositoriesCard() {
   return (
     <section className="card h-full bg-base-200/80">
       <div className="card-body gap-3">
-        <h2 className="card-title">Repositories</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="card-title mr-auto">Repositories</h2>
+          <button className="btn btn-sm" disabled={pulling || !repos.some((repo) => repo.status === "ready")} onClick={pullAll}>
+            {pulling && <span className="loading loading-spinner loading-xs" />}
+            Pull all
+          </button>
+        </div>
 
         <form className="join w-full" onSubmit={clone}>
           <input
@@ -139,6 +162,7 @@ export function RepositoriesCard() {
                   <div className="flex min-w-0 items-center gap-2">
                     <span className="shrink-0 font-medium">{repo.name}</span>
                     <Status status={repo.status} />
+                    {repo.branch && <span className="badge badge-sm badge-outline font-mono">{repo.branch}</span>}
                     <span className="min-w-0 flex-1 truncate text-xs opacity-60" title={withoutCredentials(repo.url)}>
                       {withoutCredentials(repo.url)}
                     </span>
@@ -147,6 +171,7 @@ export function RepositoriesCard() {
                     </button>
                   </div>
                   {repo.status === "error" && <p className="text-xs text-error">{repo.error}</p>}
+                  {pulls[repo.id] && <p className={`text-xs ${pulls[repo.id].ok ? "opacity-70" : "text-error"}`}>{pulls[repo.id].message}</p>}
                   <div className="flex flex-wrap items-center gap-1.5">
                     {repo.copies.map((copied) => (
                       <span key={copied.sessionId} className="badge badge-outline max-w-40 truncate" title={copied.title}>
