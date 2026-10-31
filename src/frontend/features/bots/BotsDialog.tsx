@@ -46,7 +46,7 @@ export function BotsDialog({ open, onClose }: { open: boolean; onClose: () => vo
 
   return (
     <>
-      <Modal open={open} onClose={onClose} closeButton boxClassName="flex h-[min(36rem,80vh)] max-w-3xl flex-col">
+      <Modal open={open} onClose={onClose} closeButton glow="violet" boxClassName="flex h-[min(36rem,80vh)] max-w-3xl flex-col">
         <div className="mb-4 flex items-center gap-2 pr-10">
           <h2 className="mr-auto text-lg font-semibold">{editing === undefined ? "Bots" : editing === "new" ? "New bot" : `Edit ${editing.name}`}</h2>
           {editing === undefined && (

@@ -8,7 +8,7 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
   const [tab, setTab] = useState<"provider" | "config">("provider");
 
   return (
-    <Modal open={open} onClose={onClose} closeButton boxClassName="flex h-[min(36rem,80vh)] max-w-4xl flex-col">
+    <Modal open={open} onClose={onClose} closeButton glass boxClassName="flex h-[min(36rem,80vh)] max-w-4xl flex-col">
       <h2 className="mb-4 text-lg font-semibold">Settings</h2>
       <div className="flex min-h-0 flex-1 gap-4">
         <ul className="menu w-36 shrink-0 gap-1 border-r border-base-300 p-0 pr-3">

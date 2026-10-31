@@ -18,7 +18,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 | file | export (line) | purpose |
 | --- | --- | --- |
 | `ui/Card.tsx` | `Glow` type (:6), `Card` (:44), `ExpandButton` (:114), `CardBody` (:124), `zoom` (private, FLIP-style move) | Dashboard card shell: `section.card glow glow-<color> bg-base-200/80`. Owns the expanded state. Expanding zooms the same element from its grid cell into a fixed panel, and the backdrop fades. Closing holds the panel 200 ms, then shrinks back. Escape, a backdrop click, or `ExpandButton` (reads the state from context) closes it. Reduced motion skips the zoom. `CardBody` = title row (title, optional actions) + content. |
-| `ui/Modal.tsx` | `Modal` (:18) | Native `<dialog>` opened and closed by the `open` prop. Props: `onClose`, `closeButton` (round X), `boxClassName`. Closes on unmount. |
+| `ui/Modal.tsx` | `Modal` (:24) | Native `<dialog>` opened and closed by the `open` prop. Props: `onClose`, `closeButton` (round X), `glow` (accent, default frost), `glass` (liquid glass: the dialog blurs and dims the page, and the panel is translucent with a light rim; used by Settings), `boxClassName`. The panel is the same glowing panel as a card. Closes on unmount. |
 | `ui/ConfirmDialog.tsx` | `ConfirmDialog` | Yes/no question with `error` and Cancel/Delete. Built on `Modal`. |
 | `ui/ErrorAlert.tsx` | `ErrorAlert` | Red alert for a message. Renders nothing without a message. |
 | `ui/Icon.tsx` | `SHAPES` (:4), `Icon`, `IconName` | Named SVG icons: `close`, `menu`, `edit`, `trash`, `chevronDown`, `gear`. |

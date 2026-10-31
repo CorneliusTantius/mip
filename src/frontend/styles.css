@@ -145,8 +145,33 @@ details[open] > .dropdown-content { animation: mip-pop 0.2s ease-out backwards; 
   background-color: color-mix(in oklab, var(--glow) 5%, color-mix(in oklab, var(--color-base-200) 80%, transparent));
 }
 /* An expanded card is a panel over the page, so its background is solid. */
-.glow[aria-modal="true"] {
+.glow[aria-modal="true"],
+/* Dialogs are the same panel, so they share the solid background too. */
+.modal-box.glow {
   background-color: color-mix(in oklab, var(--glow) 5%, var(--color-base-200));
+}
+
+/* Liquid glass (Modal's glass option). The dialog blurs and dims everything behind it. The panel is translucent,
+   with a soft gradient and a light rim, so it reads as a pane of glass over the blurred page. */
+/* The blur sits on the native backdrop, not on the dialog. A filtered dialog would hide the page from the panel's own blur. */
+.liquid-dialog {
+  background-color: transparent;
+}
+.liquid-dialog::backdrop {
+  display: block;
+  background-color: oklch(0% 0 0 / 0.3);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+.liquid-glass {
+  background:
+    linear-gradient(145deg, color-mix(in oklab, white 14%, transparent), color-mix(in oklab, white 2%, transparent) 60%),
+    color-mix(in oklab, var(--color-base-200) 78%, transparent);
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid color-mix(in oklab, white 16%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 22%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, white 5%, transparent),
+    0 30px 70px -24px rgb(0 0 0 / 0.6);
 }
 .glow-frost { --glow: #88c0d0; }
 .glow-teal { --glow: #8fbcbb; }

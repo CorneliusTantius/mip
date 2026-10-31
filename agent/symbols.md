@@ -254,7 +254,7 @@
 | src/frontend/ui/ErrorAlert.tsx | 2 | function | ErrorAlert |
 | src/frontend/ui/Icon.tsx | 20 | type | IconName |
 | src/frontend/ui/Icon.tsx | 22 | function | Icon |
-| src/frontend/ui/Modal.tsx | 18 | function | Modal |
+| src/frontend/ui/Modal.tsx | 24 | function | Modal |
 | src/frontend/ui/OptionDropdown.tsx | 4 | interface | DropdownOption |
 | src/frontend/ui/OptionDropdown.tsx | 11 | function | OptionDropdown |
 | src/frontend/ui/Starfield.tsx | 17 | function | Starfield |

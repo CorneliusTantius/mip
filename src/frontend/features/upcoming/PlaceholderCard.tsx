@@ -17,7 +17,7 @@ export function PlaceholderCard({ title, summary, glow }: { title: string; summa
         </div>
       </CardBody>
 
-      <Modal open={open} onClose={() => setOpen(false)}>
+      <Modal open={open} onClose={() => setOpen(false)} glow={glow}>
         <h3 className="text-lg font-semibold">{title}</h3>
         <p className="py-4 opacity-70">{summary} This is a placeholder, so nothing here works yet.</p>
         <div className="modal-action">
