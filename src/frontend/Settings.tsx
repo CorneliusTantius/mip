@@ -49,7 +49,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
 
   return (
     <dialog ref={dialog} className="modal" onClose={onClose}>
-      <div className="modal-box relative max-w-4xl">
+      <div className="modal-box relative flex h-[min(36rem,80vh)] max-w-4xl flex-col">
         <form method="dialog">
           <button className="btn btn-sm btn-circle btn-ghost absolute right-3 top-3" aria-label="Close">
             <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
@@ -58,7 +58,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
           </button>
         </form>
         <h2 className="mb-4 text-lg font-semibold">Settings</h2>
-        <div className="flex gap-4">
+        <div className="flex min-h-0 flex-1 gap-4">
           <ul className="menu w-36 shrink-0 gap-1 border-r border-base-300 p-0 pr-3">
             <li>
               <button className={tab === "provider" ? "menu-active" : ""} onClick={() => setTab("provider")}>Provider</button>
@@ -67,7 +67,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
               <button className={tab === "config" ? "menu-active" : ""} onClick={() => setTab("config")}>Config</button>
             </li>
           </ul>
-          <div key={tab} className="mip-fade min-w-0 flex-1">{tab === "provider" ? <ProviderTab open={open} /> : <ConfigTab />}</div>
+          <div key={tab} className="mip-fade min-h-0 min-w-0 flex-1 overflow-y-auto pr-1">{tab === "provider" ? <ProviderTab open={open} /> : <ConfigTab />}</div>
         </div>
       </div>
 
