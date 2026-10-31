@@ -1,77 +1,81 @@
 # Backend modules
 
-Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what it touches.
+Each entry gives the file, its job, its main exports, and who calls it. Line numbers are in `symbols.md`, which is generated.
 
 ## http/
-- `http/server.ts` — entry point. `handle` (:11): static → `/mcp` → router → 404. `createServer` (:26) listens. Errors: `AppError` status, else 500.
-- `http/router.ts` — `Route` (:13), `get/post/put/patch/del` (:21-25), `matchRoute` (:28). Patterns: `:name` captures one decoded segment. First match wins. Touchpoint: `server.ts`, `routes/*`.
-- `http/respond.ts` — `Reply` (:4), `ok` (:9), `created` (:10), `accepted` (:12), `ack` (:14, `{ok:true}`), `notFound` (:15), `sendJson` (:18), `readJson` (:24, empty body → `{}`), `requireJson` (refuses non-JSON with 415). Touchpoints: all routes, `mcp.ts`.
-- `http/routes/index.ts` — `routes` (:13). Concatenates the domain route lists. Add a new domain here.
-- `http/routes/system.ts` — `systemRoutes` (:6). `POST /api/system/update` pulls, `POST /api/system/restart` restarts. Both need JSON (`requireJson`).
-- `http/routes/sync.ts` — `syncRoutes`. The gh accounts, the account choice, and the sync runs, all JSON for writes. Lines in `api.md`.
-- `http/routes/tools.ts` — `toolRoutes`. `GET /api/tools`, the registry, read only.
-- `http/routes/skills.ts` — `skillRoutes`. The installed skills, their text, removal, and the two-step import. Lines in `api.md`.
-- `http/routes/{sessions,runs,personas,bots,room,repos,memory,providers}.ts` — one `Route[]` each. Handlers are small: read body → call an `app/*` function → return a `Reply`. Lines: see `api.md`.
-- `http/mcp.ts` — `handleMcp` (:7). JSON-RPC 2.0 for `initialize`, `tools/list`, `tools/call`. 401 without a live run token. Touchpoints: Claude CLI (via `adapters/claude-cli.ts` `mcpConfig`), `app/tools`.
-- `http/static.ts` — `serveStatic` (:18). Serves `dist/frontend` (path check keeps requests inside it). Misses return false.
+- `server.ts`: entry point. `handle` tries static files, then `/mcp`, then the router, then 404. Errors: `AppError` gives its status, anything else gives 500.
+- `router.ts`: `get`, `post`, `put`, `patch`, `del`, and `matchRoute`. `:name` captures one decoded path segment. The first match wins.
+- `respond.ts`: `Reply` and the helpers `ok`, `created`, `accepted`, `ack`, `notFound`, `sendJson`, `readJson` (an empty body reads as `{}`), and `requireJson` (415 for a non-JSON request, used by routes that act on this machine).
+- `mcp.ts`: `handleMcp`. JSON-RPC 2.0 for the Claude CLI: `initialize`, `tools/list`, and `tools/call`. Both list and call use the run's offered tools. Without a live run token it answers 401.
+- `static.ts`: serves `dist/frontend`, and keeps every path inside it.
+- `routes/index.ts`: concatenates the domain route lists. A new domain is added here.
+- `routes/<domain>.ts`: one `Route[]` per domain: `sessions`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
 
-## app/ (use cases)
-- `app/config.ts` — `HOST` (:2), `PORT` (:3, env `MIP_PORT`).
-- `app/errors.ts` — `AppError(status, message)` (:2), `errorMessage` (:11). Thrown by app code; mapped to HTTP by `server.ts`.
-- `app/git.ts` — `runGit(args, env?)` (:7). Runs git with `GIT_TERMINAL_PROMPT=0`. `env` adds variables for one call (sync sends its token that way). Rejects with git's `fatal:`/`error:` line. Touchpoints: `repos.ts`, `sync/repo.ts`.
-- `app/names.ts` — `pickAgentName(taken)` (:51). Norse names, no repeats among open chats. Touchpoints: `sessions.ts createChat`.
-- `app/providers.ts` — provider registry (:9-12). `hasProvider` (:14), `findProvider` (:18, 404 when unknown), `listProviders` (:25), `signIn` (:50), `answerSignIn` (:54), `signOut` (:58). Touchpoints: `http/routes/providers.ts`, `sessions.ts`, `bots.ts`, `runs.ts`, `room.ts`.
-- `app/sessions.ts` — chats. `listChats` (:9), `createChat` (:14), `getChat` (:22, `{session, messages, activeRunId}`), `updateChat` (:29), `deleteChat` (:59), `requireSession` (:66). Touchpoints: `routes/sessions.ts`.
-- `app/runs.ts` — a turn in a chat. `startRun` (:16), `readRun` (:37), `activeRunId` (:42), `execute` (:56, the background loop). Touchpoints: `routes/runs.ts`, `tools/index.ts registerRun`, `memory.ts recallFor`, `repos.ts repoNote`, `personas.ts personaPrompt`.
-- `app/room.ts` — the shared room. `MAX_TURNS` (:9), `HISTORY` (:10), `MAX_TEXT` (:11), `roomStatus` (:17), `roomMessages` (:22), `postToRoom` (:28), `runTurn` (:67). Touchpoints: `routes/room.ts`, `room-engine.ts`, `bots.ts`.
-- `app/room-engine.ts` — pure turn-taking, no storage. `mentionedBots` (:9), `isSilent` (:20), `converseRoom` (:39). Tested by `room-engine.test.mjs` (fake bots).
-- `app/bots.ts` — bot CRUD and validation. `NAME` regex (:7), `MAX_PERSONA` (:8), `allBots` (:10), `createBot` (:14), `editBot` (:20), `removeBot` (:26), `checkFields` (:32). Model and thinking are checked against the provider's live catalog.
-- `app/personas.ts` — `DEFAULT_PERSONA_ID` (:7), `DEFAULT_SYSTEM_PROMPT` (:10), seed (:29-32), `allPersonas` (:34), `defaultPersona` (:38), `hasPersona` (:42), `personaPrompt` (:47), `createPersona` (:51), `editPersona` (:57), `makeDefaultPersona` (:64), `removePersona` (:70). Built-in `default` cannot be deleted.
-- `app/memory.ts` — notes. `LINK` (:6), `TAG` (:7), `parseLinks`/`parseTags` (private), `writeNote` (:24), `readNote` (:36), `searchMemory` (:43), `memoryList` (:50), `memoryGraph` (:55), `forgetNote` (:76), `recallFor` (:83). Touchpoints: `routes/memory.ts`, `runs.ts`, `tools/memory.ts`.
-- `app/repos.ts` — repositories. `CLONE_LINK` (:12), `FOLDER_NAME` (:14), `HOST_LINK` (:16), `withScheme` (:18), `repoNameFromUrl` (private), `requireRepo` (private), `branchOf` (private), `listRepoCards` (:46), `pullAllRepos` (:61), `addRepo` (:78), `copyRepoToChat` (:102), `removeRepo` (:120), `repoNote` (:128). Touchpoints: `routes/repos.ts`, `runs.ts`, `tools/workspace.ts`.
-- `app/tool-calls.ts` — `ToolCallLog` (`start` and `finish`, matched by id), `MAX_TEXT` (8000). Records a reply's calls for `messages.calls`. Tested by `tool-calls.test.mjs`.
-- `app/tools/search.ts` — `toolSearchTool` and `toolCallTool`, the two tools that find and run deferred tools; `searchTools` (matching, pure); `TOOL_SEARCH_HINT` (the system prompt line). Tested by `tool-search.test.mjs`.
-- `app/tools/index.ts` — `guarded`, `BASIC_TOOLS`, `DEFERRED_TOOLS`, `TOOLS` (the one registry), `CHAT_TOOLS` and `CHAT_DEFERRED`, `BOT_TOOLS` and `BOT_DEFERRED` (both empty), `RunContext` (folder, chat, offered list, deferred list), `registerRun(context)` (returns the token), `releaseRun`, `runContextForToken` (what `http/mcp.ts` uses to check a call), `describeTools` (the registry for `GET /api/tools`).
-- `app/tools/skills.ts` — `skillReadTool` and `skillFileTool`. Both need the run's chat, and both check it has the skill enabled.
-- `app/skills/format.ts` — pure rules: `parseSkill` (the SKILL.md header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
-- `app/skills/registry.ts` — the installed skills: `listSkills` (valid skills, and folders that are not), `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt` (the list in the system prompt), `setChatSkills`, `removeSkill`.
-- `app/skills/create.ts` — `createSkill(input)`: writes a skill from a form after the same checks as an import. Never replaces an installed skill. Tested by `skills.test.mjs`.
-- `app/skills/imports.ts` — the two-step install. `stageImport` copies and checks a folder into `skills/.staging/<id>`, and `confirmImport` moves it into place. `discardImport` drops it. Tested by `skills.test.mjs`.
-- `app/tools/result.ts` — `ok` (:4), `fail` (:5). Tool result helpers.
-- `app/tools/files.ts` — `readTool` (:10, offset/limit, 2000 lines / 50 KB cap), `writeTool` (:33), `editTool` (:52, exact unique `oldText`). All use `inWorkspace`.
-- `app/tools/bash.ts` — `bashTool` (:7). `spawn("bash", ["-c", cmd], {cwd: workspace})`. Output keeps last 50 KB. Timeout default 120 s. Not sandboxed.
-- `app/tools/memory.ts` — `memorySearchTool` (:6), `memoryReadTool` (:21), `memoryEditTool` (:46). Only existing notes can be edited.
-- `app/tools/workspace.ts` — `workspacePath` (:6), `workspaceFor` (:11, creates), `removeWorkspace` (:18), `inWorkspace` (:23, refuses paths outside).
+## app/: use cases
+Flat files, one per domain:
+- `config.ts`: `HOST` and `PORT` (from `MIP_PORT`).
+- `errors.ts`: `AppError(status, message)` and `errorMessage`.
+- `git.ts`: `runGit(args, env?)`. Prompts are off, so a clone that needs a password fails instead of waiting. `env` adds variables for one call.
+- `names.ts`: `pickAgentName`. Norse names, with no repeats among open chats.
+- `system.ts`: `pullLatest` (`git pull --ff-only`) and `restartMip` (a detached shell that waits, runs `npm install` and `npm run build`, then starts the server).
+- `sessions.ts`: chats. `listChats` (with each chat's enabled skill names), `createChat`, `getChat` (session, messages, active run, skills), `updateChat`, `chooseChatSkills`, `deleteChat`.
+- `runs.ts`: a turn in a chat. `startRun` and `readRun` for the routes, and `execute`, the background loop. It builds the system prompt, streams the provider's events into the run, records the tool calls, and saves the reply.
+- `personas.ts`: the built-in persona. Its prompt holds identity and style only. `DEFAULT_PERSONA_ID`, `personaPrompt`, and the create, edit, default, and remove functions.
+- `bots.ts`: bot create, edit, and remove, and the name rule. Model and thinking are checked against the provider's live catalog.
+- `providers.ts`: the provider registry (`claude-cli`, `pi`), `findProvider`, `listProviders`, and sign-in, answer, and sign-out.
+- `memory.ts`: shared notes. Write, read, search, list, graph, forget, and `recallFor` (the notes that match a message, added to the system prompt).
+- `repos.ts`: repository clones, pull all, copies into chats, and `repoNote`.
 
-- `app/system.ts` — `ROOT` (:8, the checkout, three folders above the built file), `RESTART_LOG` (:10, `MIP_HOME/restart.log`), `pullLatest` (:14, `git pull --ff-only`), `restartMip` (:20, detached shell: wait for this process, `npm install`, `npm run build`, then start the server; it starts even if the build fails).
-- `app/sync/engine.ts` — GitHub sync. `syncStatus` (accounts, the one in use, last run), `chooseAccount` (saved to `state.json`), `startSync` (background run), `syncWith({url, env, repo})` (one sync, also used by the tests). The merge base is kept per repo in `base.json`. Touchpoints: `routes/sync.ts`.
-- `app/sync/github.ts` — `parseAccounts` and `pickAccount` (pure, tested by `github.test.mjs`), `listAccounts` (reads `gh auth status`), `ghToken(login)` (runs `gh auth token --user`, the only source of the token), `gitHubAccount(login)` (checks the token with `GET /user`), `ensureRepo` (creates a private `dotmip`, refuses a public one), `repoUrl`, `authEnv` (the token, only in git's environment).
-- `app/sync/repo.ts` — the local clone in `sync/dotmip`. `fetchRepo` (re-clones when the URL changes), `readTree`, `writeTree` (one JSON file per record), `commitAndPush` (returns `rejected` when `main` moved).
-- `app/sync/snapshot.ts` — `readLocal` (the database as a snapshot), `applySnapshot` (writes only what differs; a refused removal stays).
-- `app/sync/merge.ts` — pure, no I/O. `Snapshot` and the record types, `keyOf`, `mergeSnapshots`, `countChanges`, `sameRecord`, `sortKeys`, `unionMessages`. Tested by `merge.test.mjs`.
+## app/room/: the bots room
+- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus`, `runTurn`. A bot turn gets `BOT_TOOLS` and no workspace yet.
+- `engine.ts`: pure turn-taking: `mentionedBots`, `isSilent`, `converseRoom`. Tested by `engine.test.mjs`.
+
+## app/tools/: the tool registry
+- `index.ts`: the registry. `BASIC_TOOLS`, `DEFERRED_TOOLS`, `TOOLS`, `CHAT_TOOLS`, `CHAT_DEFERRED`, `BOT_TOOLS`, `BOT_DEFERRED`. Also `RunContext`, `registerRun`, `releaseRun`, `runContextForToken`, `describeTools` (for `GET /api/tools`), and `toolGuidesPrompt`.
+- `search.ts`: `toolSearchTool`, `toolCallTool`, and the pure `searchTools`. Tested by `tool-search.test.mjs`.
+- `calls.ts`: `ToolCallLog`. It records a reply's calls, matching results to calls by id, and cuts long text. Tested by `calls.test.mjs`.
+- `files.ts`: `read`, `write`, `edit`. Paths go through `inWorkspace`.
+- `bash.ts`: `bash`. The working directory is the workspace. Output keeps the last 50 KB. The default timeout is 120 seconds. Not sandboxed.
+- `memory.ts`: `memory_search`, `memory_read`, `memory_edit`. Only existing notes can be edited.
+- `skills.ts`: `skill_read` and `skill_file`. Both need the chat to have enabled the skill.
+- `workspace.ts`: `workspacePath`, `workspaceFor`, `removeWorkspace`, `inWorkspace`.
+- `result.ts`: `ok` and `fail`.
+- `guides.test.mjs`: checks that every tool has a guide and that the guides reach the prompt.
+
+## app/skills/: installed skills
+- `format.ts`: pure rules. `parseSkill` (the `SKILL.md` header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
+- `registry.ts`: what is installed. `listSkills`, `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt`, `setChatSkills`, `removeSkill`.
+- `imports.ts`: the two-step install. `stageImport` copies and checks a folder into staging, `confirmImport` moves it into place, and `discardImport` drops it.
+- `create.ts`: `createSkill`, which writes a skill from a form and never replaces an installed one.
+- `skills.test.mjs`: import review, refusals, enablement, the tools, and removal.
+
+## app/sync/: GitHub sync
+- `engine.ts`: `syncStatus` (accounts, the one in use, last run), `chooseAccount` (saved to `state.json`), `startSync` (background), and `syncWith({url, env, repo})` (one sync, also used by the tests). The merge base is kept per repo in `base.json`.
+- `github.ts`: `parseAccounts` and `pickAccount` (pure), `listAccounts` (`gh auth status`), `ghToken(login)` (`gh auth token --user`), `gitHubAccount`, `ensureRepo` (creates a private `dotmip`, refuses a public one), `repoUrl`, and `authEnv` (the token, only in git's environment).
+- `repo.ts`: the local clone in `sync/dotmip`. `fetchRepo` (re-clones when the URL changes), `readTree`, `writeTree`, and `commitAndPush`.
+- `snapshot.ts`: `readLocal` and `applySnapshot`. Only the records that differ are written.
+- `merge.ts`: pure three-way merge. Types, `keyOf`, `mergeSnapshots`, and `countChanges`.
+- Tests: `github.test.mjs`, `merge.test.mjs`, `sync.test.mjs` (two machines and a local bare repo, through real git).
 
 ## adapters/
-- `adapters/contract.ts` — `AgentEvent` (:4), `ToolResult` (:12), `ToolContext` (:18), `ToolSpec` (:24), `ThinkingLevel` (:33), `ModelOption` (:36), `RunOptions` (:44), `ProviderCapabilities` (:64), `AuthState` (:72), `SignInMethod` (:79), `SignInTarget` (:82), `SignInPrompt` (:90), `SignInProgress` (:97), `AgentProvider` (:104).
-- `adapters/async-queue.ts` — `AsyncQueue` (:2). Push-to-pull bridge used by both providers.
-- `adapters/sign-in-session.ts` — `SignInSession` (:4). Output lines, pending prompt, `answer`, `finish`, `progress`.
-- `adapters/claude-cli.ts` — `TARGET_ID` (:18), `STATUS_TTL_MS` (:20), `CATALOG_TTL_MS` (:22), `toModelOption` (:42), `cliEnv` (:58), `toText` (:66), `parseStreamLine` (:79), `mcpConfig` (:118), `ClaudeCliProvider` (:130): `models` (:148), `listModels` (:157, control channel), `targets` (:202), `startSignIn` (:209), `signInProgress` (:233), `answerSignIn` (:238), `signOut` (:245), `run` (:251), `authStatus` (:313), `runCli` (:323), `assertTarget` (:338).
-- `adapters/pi.ts` — `HIDDEN_PROVIDERS` (:27), `toSignInPrompt` (:48), `describeNotice` (:57), `toAppEvent` (:78), `toPiTool` (:94), `PiProvider` (:113): `models` (:128), `targets` (:140), `startSignIn` (:164), `signInProgress` (:191), `answerSignIn` (:195), `signOut` (:199), `run` (:204), `runtime` (private), `resolveModel` (private), `openSession` (private).
+- `contract.ts`: `AgentEvent`, `ToolContext`, `ToolSpec` (with `guide`), `RunOptions` (with `chatId` and `deferredTools`), `ProviderCapabilities`, and `AgentProvider`.
+- `async-queue.ts`: `AsyncQueue`, the push-to-pull bridge both providers use.
+- `sign-in-session.ts`: `SignInSession`, the sign-in progress and the pending prompt.
+- `claude-cli.ts`: `ClaudeCliProvider`. `run` builds the CLI arguments (stream-json, the MCP config, `--disable-slash-commands`) and maps the output to events. Also models, sign-in, and sign-out.
+- `pi.ts`: `PiProvider`. `run` builds a Pi session with `noSkills`, and the app's tools as custom tools (`toPiTool`). Also models and sign-in.
 
 ## storage/
-- `storage/db.ts` — `db` (:8, the one connection), `Row` type (:11), schema (:13-92), `hasColumn` (:95), migrations (:100-111), startup recovery (:114-115).
-- `storage/paths.ts` — `MIP_HOME` (:6), `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `ensureMipDirs`.
-- `storage/personas.ts` — `Persona` (:4), `listPersonas`, `getPersona`, `insertPersona`, `updatePersona`, `setDefaultPersona` (:35), `deletePersona`.
-- `storage/sessions.ts` — `Session` (:5), `Message` (:21), `createSession`, `listSessions`, `getSession`, `countSessionsWithPersona`, `listMessages`, `addMessage`, `renameSession`, `setSessionSettings`, `saveProviderSession` (:85), `deleteSession`.
-- `storage/runs.ts` — `createRun`, `getRun`, `activeRunForSession` (:13), `setRunStatus`, `appendRunEvent` (:21), `listRunEvents`.
-- `storage/notes.ts` — `Note` (:4), `getNoteByTitle`, `saveNote` (:16), `listNotes`, `deleteNote`, `searchNotes` (:60), `linksFrom`, `linksTo`, `allLinks`, `tagsOf`.
-- `storage/repos.ts` — `Repo` (:4), `listRepos`, `getRepo`, `getRepoByName`, `insertRepo`, `setRepoStatus`, `deleteRepo`.
-- `storage/bots.ts` — `Bot` (:4), `listBots`, `getBot`, `getBotByName`, `insertBot`, `updateBot`, `deleteBot`.
-- `storage/room.ts` — `RoomMessage` (:4), `addRoomMessage` (:17), `roomMessagesAfter` (:25).
-- `storage/sync.ts` — the rows GitHub sync reads and writes: `read*Rows` and `write*Row` for personas, bots, notes, chats (with `readMessageRows`/`insertMessageRow`), and room messages. `remove*Row` returns false where the database must keep the row (a default or used persona, a chat with a running run).
-- `storage/skills.ts` — `enabledSkillNames`, `saveChatSkills` (replaces a chat's list in one step), `removeSkillEnablements`. The table `skill_enablements` is created in `db.ts`.
+- `db.ts`: the connection, the schema, the additive migrations (`hasColumn`), and startup recovery.
+- `paths.ts`: `MIP_HOME`, `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `SKILLS_DIR`, `ensureMipDirs`.
+- `sessions.ts`: chats and messages, including each message's `calls`. `deleteSession` also removes the chat's skill enablements.
+- `runs.ts`, `notes.ts`, `personas.ts`, `bots.ts`, `room.ts`, `repos.ts`: one file per domain.
+- `skills.ts`: `enabledSkillNames`, `saveChatSkills`, `removeSkillEnablements`.
+- `sync.ts`: the rows GitHub sync reads and writes. A `remove` returns false where the database must keep the row (the default persona, a persona a chat uses, a chat with a running run).
 
-## Rules that hold across the backend
+## Rules across the backend
 - App code throws `AppError` for client mistakes. Routes don't catch.
-- Every storage write that touches several tables runs in `BEGIN`/`COMMIT`/`ROLLBACK` (see `saveNote`, `deleteSession`, `deleteNote`).
-- Provider calls go through the registry (`findProvider`). Nothing else constructs a provider.
-- A run's events are persisted as they arrive, so a page can resume them.
+- A write that touches several tables runs in `BEGIN`, `COMMIT`, and `ROLLBACK`.
+- Providers are reached only through the registry (`findProvider`).
+- A run's events are saved as they arrive, so a page can resume them.
+- Synced tables set their change times on every write (see `data-model.md`).
+- Tool lists come from the registry. A kind of run is offered a tool only when its list includes the tool.

@@ -1,6 +1,6 @@
 # Data model
 
-SQLite file: `MIP_HOME/data/mip.db`, opened once in `storage/db.ts:8`. Schema in `db.ts:13-92`. Columns added later are migrated in `db.ts:100-111` (only when missing). Startup recovery in `db.ts:114-115`.
+SQLite file: `MIP_HOME/data/mip.db`, opened once in `storage/db.ts`. Schema in `db.ts`. Columns added later are migrated in `db.ts` (only when missing). Startup recovery in `db.ts`.
 
 Owner = the storage module that reads and writes the table. Only that module writes it.
 
@@ -16,17 +16,17 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `note_links` | from_id, to_title (NOCASE) | (from_id, to_title) | `storage/notes.ts` | `saveNote` |
 | `note_tags` | note_id, tag | (note_id, tag) | `storage/notes.ts` | `saveNote` |
 | `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), created_at, updated_at | id | `storage/bots.ts` | `app/bots.ts` |
-| `room_messages` | id (autoincrement), kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, created_at | id | `storage/room.ts` | `app/room.ts` |
+| `room_messages` | id (autoincrement), kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, created_at | id | `storage/room.ts` | `app/room/room.ts` |
 | `repos` | id, name (UNIQUE), url, status (`cloning`/`ready`/`error`), error (nullable), created_at | id | `storage/repos.ts` | `app/repos.ts`, `db.ts` (recovery) |
 | `skill_enablements` | session_id, skill (the skill's name) | (session_id, skill) | `storage/skills.ts` (+ `sessions.ts` delete) | `app/skills/registry.ts` |
 
 ## Invariants
-- A chat has at most one `running` run (`app/runs.ts:21`).
-- Deleting a chat deletes its `run_events`, `runs`, `messages`, and `sessions` row in one transaction (`storage/sessions.ts:94`). Provider files and the workspace folder are removed separately.
+- A chat has at most one `running` run (`app/runs.ts`).
+- Deleting a chat deletes its `run_events`, `runs`, `messages`, and `sessions` row in one transaction (`storage/sessions.ts`). Provider files and the workspace folder are removed separately.
 - Note titles are unique ignoring case. `saveNote` keeps the existing id when the title exists, so links to it stay valid.
-- A note's links and tags are rebuilt on every save (`storage/notes.ts:16`).
+- A note's links and tags are rebuilt on every save (`storage/notes.ts`).
 - Bot names are unique ignoring case. Bot messages in `room_messages` keep `author_name`, so they stay readable after the bot is deleted.
-- Exactly one persona has `is_default = 1` (`setDefaultPersona`, `storage/personas.ts:35`). The built-in `default` persona cannot be deleted.
+- Exactly one persona has `is_default = 1` (`setDefaultPersona`, `storage/personas.ts`). The built-in `default` persona cannot be deleted.
 - Repo names are unique. The name is also the folder name in `repos/` and in each workspace.
 - GitHub sync merges by change times, so every write sets them: `personas.updated_at`, `bots.updated_at`, `notes.updated_at`, `sessions.meta_updated_at` (title and settings), and `created_at` on messages and room messages. A write that skips one is lost in a merge (`app/sync/merge.ts`).
 

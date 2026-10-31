@@ -1,95 +1,122 @@
 # Conventions and recipes
 
+## Where new code goes
+Backend:
+- A route: `http/routes/<domain>.ts`, added to `http/routes/index.ts`. The handler parses input, calls one `app/*` function, and returns a `Reply`.
+- Business logic: `app/<domain>.ts`. If the domain has more than one file, it gets a folder: `app/<domain>/`. Validation and client-error rules live here.
+- SQL: `storage/<domain>.ts`, one file per domain. The schema and migrations live in `storage/db.ts`.
+- A provider: `adapters/<name>.ts`, registered in `app/providers.ts`.
+- A tool: a module in `app/tools/`, listed in the registry in `app/tools/index.ts`.
+- A skill rule: `app/skills/`. A sync rule: `app/sync/`.
+- Tests: next to the module they test, and added to the list under "Verify before committing".
+
+Frontend:
+- A card or dialog family: `features/<name>/`. Its hooks and pure rules live beside it.
+- Code that two or more features use: `ui/` for components, hooks, and helpers, or `api/` for HTTP and shared types.
+- The page layout: `App.tsx`. No feature imports another feature.
+
+Docs:
+- Name files and functions, never line numbers. `symbols.md` carries the lines.
+- When you add or move a module, update `backend.md` or `frontend.md`, and run `node agent/gen-index.mjs`.
+
 ## Style
 - TypeScript strict on both sides. ESM with `.js` import suffixes in the backend (NodeNext). Bundler resolution in the frontend.
-- One concern per file. Feature code lives in `features/<name>/`. Shared UI lives in `ui/`. HTTP lives in `api/`.
-- Each exported function or component has a comment that says what it is for, not how it works. Keep that density.
-- Backend: route handlers only parse input, call one `app/*` function, and return a `Reply`. Validation lives in `app/*`. Client mistakes throw `AppError`.
-- Frontend: fetch only through `api/client.ts`. Use `Card`/`CardBody` for every dashboard card, `Modal` for every dialog, `ErrorAlert` for every error box, `Icon` for every icon.
-- Frontend: don't import across features. Shared code goes to `ui/` or `api/`.
-- Names: components PascalCase (`.tsx`), hooks `useX` (`.ts`), pure rules in plain `.ts` modules (`mentions.ts`, `graph-layout.ts`).
+- One concern per file. Each exported function or component has a comment that says what it is for, not how it works.
+- Backend: route handlers only parse input, call one `app/*` function, and return a `Reply`. Client mistakes throw `AppError`.
+- Frontend: fetch only through `api/client.ts`. Use `Card` and `CardBody` for every dashboard card, `Modal` for every dialog, `ErrorAlert` for every error box, and `Icon` for every icon.
+- Names: components are PascalCase in `.tsx`, hooks are `useX` in `.ts`, and pure rules live in plain `.ts` modules.
 
 ## Verify before committing
     npm run typecheck
     npm run build
-    node src/backend/app/room-engine.test.mjs
+    node src/backend/app/room/engine.test.mjs
     node src/backend/app/tools/tool-search.test.mjs
-    node src/backend/app/tool-calls.test.mjs
+    node src/backend/app/tools/guides.test.mjs
+    node src/backend/app/tools/calls.test.mjs
     node src/backend/app/skills/format.test.mjs
     node src/backend/app/skills/skills.test.mjs
     node src/backend/app/sync/github.test.mjs
     node src/backend/app/sync/merge.test.mjs
     node src/backend/app/sync/sync.test.mjs
-For behavior: restart the server after `build:backend` (`npm run build:backend`, then stop and start `dist/backend/http/server.js`). Frontend-only changes: `npm run build:frontend` is enough; the server reads `dist/frontend` on each request.
-Browser check: open http://127.0.0.1:3000, then the affected card. Check the console for errors.
-API regression check (used in the 2026-10-31 refactor): record each route's status and body before and after a change, then diff. The probe list is the route table in `api.md`.
+
+The backend tests need `npm run build:backend` first. The skill, tool, and sync tests use a temporary `MIP_HOME`.
+
+For behavior, restart the server after `npm run build:backend`. Frontend-only changes need only `npm run build:frontend`, because the server reads `dist/frontend` on each request.
+
+Browser check: open http://127.0.0.1:3000 and the affected card, and check the console for errors.
+
+API regression check (used in the 2026-10-31 refactor): record each route's status and body before and after a change, then diff. The route list is in `api.md`.
 
 ## Recipes
 
 ### Add an HTTP route
-1. Add a `get|post|put|patch|del(path, handler)` entry to `src/backend/http/routes/<domain>.ts`. Path params use `:name`.
-2. If the domain is new, create the file and add its array to the spread in `src/backend/http/routes/index.ts:13`.
-3. Handler returns `ok`, `created`, `accepted`, `ack`, or `notFound` from `http/respond.ts`. Throw `AppError(status, message)` for errors.
-4. Put the logic in an `app/*` function, and storage access in `storage/*`.
+1. Add a `get|post|put|patch|del(path, handler)` entry to `src/backend/http/routes/<domain>.ts`. Path parameters use `:name`.
+2. For a new domain, create the file and add its array to the spread in `src/backend/http/routes/index.ts`.
+3. The handler returns `ok`, `created`, `accepted`, `ack`, or `notFound`. Writes that act on this machine call `requireJson` first. Throw `AppError(status, message)` for client errors.
+4. Put the logic in an `app/*` function, and the storage access in `storage/*`.
 5. Add the route to `agent/api.md`.
 
 ### Add a storage table or query
-1. Add the table to the schema block in `storage/db.ts:13-92` with `CREATE TABLE IF NOT EXISTS`.
-2. For a new column on an existing table, add a `hasColumn` migration (`db.ts:100-111` shows the pattern).
-3. Put queries in `storage/<domain>.ts`. Map rows to types with a `toX(row)` function. Use `BEGIN`/`COMMIT`/`ROLLBACK` for multi-statement writes.
+1. Add the table to the schema block in `storage/db.ts`, with `CREATE TABLE IF NOT EXISTS`.
+2. For a new column on an existing table, add a `hasColumn` migration. The existing ones show the pattern. A migration only adds.
+3. Put the queries in `storage/<domain>.ts`. Map rows to types with a `toX(row)` function. Use `BEGIN`, `COMMIT`, and `ROLLBACK` for writes that touch several statements.
 4. Update `agent/data-model.md`.
 
 ### Add an agent tool
-1. Create `src/backend/app/tools/<name>.ts` exporting a `ToolSpec` (`adapters/contract.ts:24`). Return `ok(text)` or `fail(text)` from `tools/result.ts`.
-2. Add it to `BASIC_TOOLS` (always offered) or `DEFERRED_TOOLS` (found with `tool_search`) in `src/backend/app/tools/index.ts`. It is in the registry `TOOLS` through either list. Chats get it through `CHAT_TOOLS` or `CHAT_DEFERRED`. Bots get it only when you add it to `BOT_TOOLS` or `BOT_DEFERRED`, and room turns also need a workspace and a run token, which they don't have yet. Give it a `guide`: one paragraph on when and how to use it. Tool guidance belongs there, not in a persona. Every provider gets the list through its own adapter: Claude through `/mcp`, Pi as a custom tool.
-3. Paths must go through `inWorkspace` (`tools/workspace.ts:23`).
-4. Update `agent/backend.md` and `agent/flows.md` §6.
+1. Create a module in `src/backend/app/tools/`, exporting a `ToolSpec`. Give it a `description` (one line, for search), a `guide` (one paragraph on when and how to use it), and an `inputSchema`. Return `ok(text)` or `fail(text)` from `tools/result.ts`.
+2. List it in `app/tools/index.ts`: in `BASIC_TOOLS` if every run should have it, or in `DEFERRED_TOOLS` if the model should find it with `tool_search`.
+3. Chats get it through `CHAT_TOOLS` or `CHAT_DEFERRED`. Bots get it only when you add it to `BOT_TOOLS` or `BOT_DEFERRED`. A bot's turn has no workspace or run token yet, so a bot tool also needs that setup first.
+4. Paths go through `inWorkspace` (`tools/workspace.ts`).
+5. Each provider gets the tools through its own adapter: Claude through `/mcp`, Pi as a custom tool.
+6. Update `agent/backend.md` and the tool section of `agent/architecture.md`.
 
 ### Add a provider
-1. Implement `AgentProvider` (`adapters/contract.ts:104`) in `src/backend/adapters/<name>.ts`. Map its output to `AgentEvent` (`contract.ts:4`). Always end a run with `done` or `error`.
-2. Register it in the array in `src/backend/app/providers.ts:9-12`.
+1. Implement `AgentProvider` (`adapters/contract.ts`) in `src/backend/adapters/<name>.ts`. Map its output to `AgentEvent`. Always end a run with `done` or `error`.
+2. Register it in the array in `src/backend/app/providers.ts`.
 3. Sign-in methods are optional (`startSignIn`, `signInProgress`, `answerSignIn`, `signOut`). Set `capabilities.signIn` to match.
 
 ### Add a dashboard card
-1. Create `src/frontend/features/<name>/<Name>Card.tsx` with `Card` and `CardBody` from `ui/Card.tsx`. Pick a `glow` color.
-2. A new color needs a `.glow-<name>` rule in `styles.css` (see `:132-145`).
+1. Create `src/frontend/features/<name>/<Name>Card.tsx` with `Card` and `CardBody` from `ui/Card.tsx`. Pick a `glow` color, and add a `.glow-<name>` rule in `styles.css` if the color is new.
+2. A card whose content changes when expanded reads the state with `useCardExpansion()`, inside the card.
 3. Put state in a hook next to the card. Fetch only through `api`.
-4. Add the card to `App.tsx` in the grid, in the position you want. Entrance timing comes from `Card`, so nothing else is needed.
-5. Dialogs: use `Modal` (controlled by `open`). Confirmations: use `ConfirmDialog`.
-6. Cross-card changes: call `announce(name)` in `api/events.ts`, and listen with `useAnnouncement`.
+4. Add the card to `App.tsx` in the grid, where you want it.
+5. A small list with a view choice uses `RunScopePills` from `ui/`, so every card's pill looks and grows the same way.
+6. Dialogs: use `Modal` (controlled by `open`). Confirmations: use `ConfirmDialog`.
+7. Cross-card changes: call `announce(name)` in `api/events.ts`, and listen with `useAnnouncement`.
 
 ### Add a dialog
-Use `ui/Modal.tsx`. Pass `open`, `onClose`, `closeButton` (round X, top-right), and `boxClassName` for the size. Put the content as children. Put any nested `ConfirmDialog` next to the `Modal`, not inside it.
+Use `ui/Modal.tsx`. Pass `open`, `onClose`, `closeButton` (round X, top right), and `boxClassName` for the size. Put the content as children. Put a nested `ConfirmDialog` beside the `Modal`, not inside it.
 
 ### Add a frontend API call
 Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to `api/types.ts`. Catch with `errorText(err)` and show it with `ErrorAlert`.
 
 ## Gotchas (read before changing these areas)
-- Two copies of the default persona id: `api/constants.ts:4` and `src/backend/app/personas.ts:7`.
+- Two copies of the default persona id: `api/constants.ts` and `src/backend/app/personas.ts`.
 - Native `confirm()` is still used in `SignInPanel.tsx` (sign-out). The rest of the app uses `ConfirmDialog`. Prefer `ConfirmDialog` for new code.
-- Pi's `capabilities` says `tools: false, mcp: false` (`adapters/pi.ts:117`). Pi still gets the app tools, because `runs.ts` passes `TOOLS` to every provider and Pi maps them in `run`. The flags are informational; they are not checked before a run.
-- Room turns get no memory recall and no repository note. Only runs (`app/runs.ts`) build the system prompt that way.
+- Pi's `capabilities` says `tools: false, mcp: false`. Pi still gets the app's tools, because the run passes them to every provider. The flags are informational.
+- Room turns get no memory recall, no repository note, and no skills. Only chat runs (`app/runs.ts`) build the system prompt that way.
 - `POST /api/memory` answers 200, while other creates answer 201. This is kept for the dashboard.
-- Routes match on segments, so `/api/memory/` (trailing slash) is accepted. The old router required an exact match.
-- Runs left `running` by a crash are marked `error` on the next start (`storage/db.ts:114`). Clones left `cloning` are marked `error` too.
-- Bash tool is not sandboxed. It runs with the user's permissions.
-- The status row under the bots transcript must keep `h-5 flex-none` (`BotsCard.tsx`), or the transcript jumps.
-- Card entrance timing is random per mount (`ui/Card.tsx`), so the order changes on every page load. Don't add position-based animation delays. Set `--enter-delay` on the element instead.
-- The memory graph's degree-based sizing and the note count count only nodes with a note (`MemoryCard.tsx`).
-- The room is one conversation at a time (`app/room.ts:14`). A second post while busy gets 409.
-- `git` runs with `GIT_TERMINAL_PROMPT=0` (`app/git.ts`). A clone that needs a password fails instead of waiting.
-- A write to a synced table must set its change time (`data-model.md` invariants). A write that skips it is lost in a GitHub sync merge.
-- mip never stores the GitHub token. Each sync gets it from `gh auth token` (`ghToken`, `app/sync/github.ts`) and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
-- Sync refuses a public `dotmip` repo and an empty database when the last sync had data (`app/sync/engine.ts`).
+- Routes match on segments, so `/api/memory/` (with a trailing slash) is accepted.
+- Runs left `running` by a crash are marked `error` on the next start. Clones left `cloning` are marked `error` too.
+- Bash is not sandboxed. It runs with the user's permissions.
+- The status row under the bots transcript must keep `h-5 flex-none`, or the transcript jumps.
+- Card entrance timing is random per mount. Don't add position-based animation delays. Set `--enter-delay` on the element instead.
+- The memory graph's sizing and note count only count nodes that have a note.
+- The room is one conversation at a time. A second post while busy gets 409.
+- `git` runs with `GIT_TERMINAL_PROMPT=0`. A clone that needs a password fails instead of waiting.
+- A write to a synced table must set its change time (see `data-model.md`). A write that skips it is lost in a GitHub sync merge.
+- mip never stores the GitHub token. Each sync gets it from `gh auth token` and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
+- Sync refuses a public `dotmip` repo, and it refuses an empty database when the last sync had data.
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
-- Tool guidance lives in each tool's `guide`, never in a persona. The built-in persona keeps identity and style only. An unedited copy of the old built-in persona is updated at startup (`app/personas.ts`); an edited one is left alone.
-- A skill can be created from a form or imported from a folder. Both paths check the same header rules, so a skill from either one reads back the same. Create never replaces an installed skill; import asks for review first.
-- Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders (`app/skills/format.ts`, `imports.ts`). A skill is read only through `skill_read` and `skill_file`, and only in a chat that enabled it.
-- Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools. Don't enable either tool's own skill folders.
-- Each kind of run has its own tool list (`CHAT_TOOLS` and `BOT_TOOLS` in `app/tools/index.ts`). A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
+- Tool guidance lives in each tool's `guide`, never in a persona. The built-in persona keeps identity and style only. An unedited copy of the old built-in persona is updated at startup; an edited one is left alone.
+- A skill can be created from a form or imported from a folder. Both paths check the same header rules. Create never replaces an installed skill, and import asks for review first.
+- Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders. A skill is read only through `skill_read` and `skill_file`, and only in a chat that enabled it.
+- Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools.
+- Each kind of run has its own tool lists. A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
+- Expanded cards step their text up one size. Put that in `RunScopePills` and the card's own classes, not in one-off styles.
 
 ## Git
 - Push every change to `origin main`, as the GitHub account CorneliusTantius. No attribution lines (no Co-Authored-By, no "Generated with").
 - Commit with: `git -c user.name=CorneliusTantius -c user.email=65766122+CorneliusTantius@users.noreply.github.com commit -m "..."`.
 - Before committing, scan the diff for secrets. Never force-push. Check that local `HEAD` equals `origin/main` after the push.
-- Before a commit, check `git status` for staged leftovers. A plain `git commit` includes anything already staged. (This caused one broken push in the 2026-10-31 refactor, fixed by the next commit.)
+- Before a commit, check `git status` for staged leftovers. A plain `git commit` includes anything already staged.

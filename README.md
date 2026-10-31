@@ -220,14 +220,15 @@ The backend and the frontend are separate. A request flows from `http` to `app`,
 src/backend/
   http/       server.ts (request flow), router.ts, respond.ts, routes/ (one file per domain),
               mcp.ts (the tool endpoint), static.ts (the web build)
-  app/        use cases: sessions, runs, personas, bots, room, memory, repos, providers, tools/
+  app/        use cases: sessions, runs, personas, bots, memory, repos, providers, system;
+              folders for room/, tools/, skills/, and sync/
   adapters/   contract.ts (the provider interface), claude-cli.ts, pi.ts
   storage/    db.ts (connection and schema), then one file per domain (sessions, runs, notes, ...)
 
 src/frontend/
   api/        the HTTP client, response types, window events, shared ids
-  ui/         Card, Modal, ConfirmDialog, Icon, OptionDropdown, hooks, starfield
-  features/   chat, bots, memory, repos, settings, upcoming (one folder per card)
+  ui/         shared components and hooks: Card, Modal, ConfirmDialog, RunScopePills, hooks, Starfield
+  features/   chat, bots, memory, repos, skills, tools, settings, upcoming (one folder per card or dialog family)
   App.tsx     the page layout
   styles.css  the Nord theme and the card glows
 ```
