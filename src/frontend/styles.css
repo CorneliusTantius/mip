@@ -132,6 +132,8 @@ details[open] > .dropdown-content { animation: mip-pop 0.2s ease-out backwards; 
 .glow {
   border: 1px solid color-mix(in oklab, var(--glow) 55%, transparent);
   box-shadow: 0 0 16px -4px color-mix(in oklab, var(--glow) 45%, transparent);
+  /* A slight tint of the glow color over the card's own background, so each card reads as its own color. */
+  background-color: color-mix(in oklab, var(--glow) 7%, color-mix(in oklab, var(--color-base-200) 80%, transparent));
 }
 .glow-frost { --glow: #88c0d0; }
 .glow-teal { --glow: #8fbcbb; }
