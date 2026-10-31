@@ -4,6 +4,7 @@ import type { SkillDetail, SkillSummary } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { CreateSkillDialog } from "./CreateSkillDialog";
 import { ImportSkillDialog } from "./ImportSkillDialog";
 import { useSkills } from "./useSkills";
 
@@ -23,6 +24,7 @@ function SkillsBody() {
   const [selected, setSelected] = useState<string>();
   const [detail, setDetail] = useState<SkillDetail>();
   const [importing, setImporting] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<SkillSummary>();
   const [removeError, setRemoveError] = useState<string>();
   // The skill shown: the one picked, or the first one.
@@ -52,6 +54,9 @@ function SkillsBody() {
       className={expanded ? "min-h-0 flex-1" : ""}
       actions={
         <>
+          <button className="btn btn-ghost btn-sm" onClick={() => setCreating(true)}>
+            Create
+          </button>
           <button className="btn btn-ghost btn-sm" onClick={() => setImporting(true)}>
             Import
           </button>
@@ -60,7 +65,7 @@ function SkillsBody() {
       }
     >
       {skills.length === 0 ? (
-        <p className="py-6 text-center opacity-60">No skills yet. Import a skill folder to add one.</p>
+        <p className="py-6 text-center opacity-60">No skills yet. Create one, or import a skill folder.</p>
       ) : (
         <div className={expanded ? "flex min-h-0 flex-1 gap-4" : "flex flex-col gap-1"}>
           <ul className={expanded ? "menu w-48 shrink-0 gap-1 overflow-y-auto p-0" : "menu gap-1 p-0"}>
@@ -94,6 +99,14 @@ function SkillsBody() {
       )}
       <ErrorAlert message={error} />
 
+      <CreateSkillDialog
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(name) => {
+          setSelected(name);
+          load();
+        }}
+      />
       <ImportSkillDialog
         open={importing}
         onClose={() => setImporting(false)}

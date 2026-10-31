@@ -17,6 +17,7 @@ try {
   const { enabledSkillNames } = await import(`${DIST}storage/skills.js`);
   const { BOT_TOOLS, CHAT_TOOLS, TOOLS, registerRun, releaseRun, runContextForToken } = await import(`${DIST}app/tools/index.js`);
   const { SKILLS_DIR } = await import(`${DIST}storage/paths.js`);
+  const { createSkill } = await import(`${DIST}app/skills/create.js`);
 
   // A folder with a SKILL.md, and the files written next to it.
   const writeSkill = (folder, name, description, body = "Body text.") => {
@@ -124,6 +125,21 @@ try {
   assert.deepEqual(enabledSkillNames("chat-a"), []);
   assert.equal(skillsPrompt("chat-a"), "");
   assert.equal(existsSync(join(SKILLS_DIR, "codeword")), false);
+
+  // Create from a form. The skill reads back like an import, and an installed skill is never replaced.
+  const made = createSkill({ name: "release-checklist", description: "Steps before a release: tests, changelog, tag.", body: "1. Run the tests.\n2. Update the changelog." });
+  assert.equal(made.name, "release-checklist");
+  assert.equal(made.description, "Steps before a release: tests, changelog, tag.");
+  assert.match(made.body, /Run the tests/);
+  assert.deepEqual(made.files, []);
+  assert.throws(() => createSkill({ name: "release-checklist", description: "Again.", body: "Again." }), /already installed/);
+  assert.throws(() => createSkill({ name: "Release Checklist", description: "x", body: "x" }), /lowercase letters/);
+  assert.throws(() => createSkill({ name: "imports", description: "x", body: "x" }), /lowercase letters/);
+  assert.throws(() => createSkill({ name: "no-description", description: "", body: "x" }), /description is required/);
+  assert.throws(() => createSkill({ name: "two-lines", description: "one\ntwo", body: "x" }), /one line/);
+  assert.throws(() => createSkill({ name: "no-body", description: "x", body: "  " }), /instructions are required/);
+  assert.equal(existsSync(join(SKILLS_DIR, "no-body")), false, "a refused create leaves no folder behind");
+  removeSkill("release-checklist");
 
   console.log("skills tests passed");
 } finally {

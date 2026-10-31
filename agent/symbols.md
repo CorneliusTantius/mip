@@ -80,6 +80,8 @@
 | src/backend/app/sessions.ts | 33 | function | chooseChatSkills |
 | src/backend/app/sessions.ts | 42 | function | updateChat |
 | src/backend/app/sessions.ts | 72 | function | deleteChat |
+| src/backend/app/skills/create.ts | 9 | function | createSkill |
+| src/backend/app/skills/format.ts | 7 | const | MAX_DESCRIPTION |
 | src/backend/app/skills/format.ts | 11 | const | MAX_SKILL_MD_BYTES |
 | src/backend/app/skills/format.ts | 12 | const | MAX_SKILL_BYTES |
 | src/backend/app/skills/format.ts | 13 | const | MAX_SKILL_FILES |
@@ -198,7 +200,7 @@
 | src/backend/http/routes/room.ts | 6 | const | roomRoutes |
 | src/backend/http/routes/runs.ts | 6 | const | runRoutes |
 | src/backend/http/routes/sessions.ts | 6 | const | sessionRoutes |
-| src/backend/http/routes/skills.ts | 8 | const | skillRoutes |
+| src/backend/http/routes/skills.ts | 9 | const | skillRoutes |
 | src/backend/http/routes/sync.ts | 7 | const | syncRoutes |
 | src/backend/http/routes/system.ts | 6 | const | systemRoutes |
 | src/backend/http/static.ts | 18 | function | serveStatic |
@@ -358,8 +360,9 @@
 | src/frontend/features/settings/SyncTab.tsx | 6 | function | SyncTab |
 | src/frontend/features/settings/UpdateTab.tsx | 18 | function | UpdateTab |
 | src/frontend/features/settings/useSync.ts | 6 | function | useSync |
+| src/frontend/features/skills/CreateSkillDialog.tsx | 7 | function | CreateSkillDialog |
 | src/frontend/features/skills/ImportSkillDialog.tsx | 8 | function | ImportSkillDialog |
-| src/frontend/features/skills/SkillsCard.tsx | 11 | function | SkillsCard |
+| src/frontend/features/skills/SkillsCard.tsx | 12 | function | SkillsCard |
 | src/frontend/features/skills/useSkills.ts | 6 | function | useSkills |
 | src/frontend/features/upcoming/PlaceholderCard.tsx | 6 | function | PlaceholderCard |
 | src/frontend/ui/Card.tsx | 6 | type | Glow |

@@ -114,7 +114,7 @@ Memory is one set of notes shared by every chat. Notes live in SQLite with a ful
 
 ## Skills
 
-A skill is a folder with a `SKILL.md`: a header that gives its name and a one-line description, then its instructions. It can also hold text files that the instructions name. Add one from the **Skills** card: give the folder's full path, review what will be installed, then confirm. Only text files are accepted. Scripts, binaries, and symbolic links are refused, so a skill is instructions and cannot run code by itself.
+A skill is a folder with a `SKILL.md`: a header that gives its name and a one-line description, then its instructions. It can also hold text files that the instructions name. Add one from the **Skills** card in one of two ways. **Create** writes it from a form: a name, a one-line description, and the instructions. **Import** takes a folder: give its full path, review what will be installed, then confirm. Only text files are accepted for imports. Scripts, binaries, and symbolic links are refused, so a skill is instructions and cannot run code by itself.
 
 Each chat picks its skills with its **Skills** button. A chat can read only the skills it has enabled. The model sees their names and descriptions, and reads the full text with `skill_read` when a task needs it. mip reads only its own skills folder (`~/.mip/skills`), never your Claude Code or Pi skill folders.
 
@@ -185,6 +185,7 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/skills` | Installed skills, and any folders that could not be read |
 | GET | `/api/skills/:name` | One skill with its instructions |
 | DELETE | `/api/skills/:name` | Remove a skill from mip and from every chat |
+| POST | `/api/skills` | Create a skill from a form. Body: `{ name, description, body }` |
 | POST | `/api/skills/imports` | Stage a skill folder for review. Body: `{ path }` |
 | POST | `/api/skills/imports/:id/confirm` | Install a staged skill |
 | DELETE | `/api/skills/imports/:id` | Drop a staged skill without installing it |

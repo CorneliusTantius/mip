@@ -86,16 +86,17 @@ Both need `Content-Type: application/json`, or they return 415. A page on anothe
 | POST | /api/system/restart | :22 | 202 | `{restarting: true}` | The server exits about 300 ms later. A detached shell waits, runs `npm install` and `npm run build` (output to `MIP_HOME/restart.log`), then starts the server again. |
 
 ## Skills — `routes/skills.ts`
-Installed skills are folders under `MIP_HOME/skills`. Installing is two steps: an import is staged and checked, and the registry changes only when it is confirmed. Writes need `Content-Type: application/json`, or they return 415.
+Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of two ways. Create writes it from a form (name, description, instructions). Import stages a folder, checks it, and installs it only when it is confirmed. Writes need `Content-Type: application/json`, or they return 415.
 
 | method | path | handler | status | body | errors |
 | --- | --- | --- | --- | --- | --- |
-| GET | /api/skills | :9 | 200 | `{skills: SkillSummary[], problems: {folder, error}[]}` | |
-| GET | /api/skills/:name | :10 | 200 | `SkillDetail`: `{name, description, body, files}` | 404 no such skill; 409 the skill is not valid |
-| DELETE | /api/skills/:name | :11 | 200 | `{ok:true}`. The skill is removed from every chat | 404 |
-| POST | /api/skills/imports | :14 | 201 | `{id, name, description, files, source, skillMd, replaces}` (body `{path}`, a full folder path) | 400 not a folder, no SKILL.md, a symbolic link, a non-text file, too large, bad header; 415 |
-| POST | /api/skills/imports/:importId/confirm | :19 | 200 | `SkillDetail`. Replaces a skill with the same name | 404 no such import; 415 |
-| DELETE | /api/skills/imports/:importId | :24 | 200 | `{ok:true}`. Drops the staged import | |
+| GET | /api/skills | :10 | 200 | `{skills: SkillSummary[], problems: {folder, error}[]}` | |
+| GET | /api/skills/:name | :11 | 200 | `SkillDetail`: `{name, description, body, files}` | 404 no such skill; 409 the skill is not valid |
+| DELETE | /api/skills/:name | :12 | 200 | `{ok:true}`. The skill is removed from every chat | 404 |
+| POST | /api/skills | :16 | 201 | `SkillDetail` (body `{name, description, body}`). Never replaces an installed skill | 400 bad name, missing or multi-line description, empty instructions, too long; 409 a skill with that name is installed; 415 |
+| POST | /api/skills/imports | :20 | 201 | `{id, name, description, files, source, skillMd, replaces}` (body `{path}`, a full folder path) | 400 not a folder, no SKILL.md, a symbolic link, a non-text file, too large, bad header; 415 |
+| POST | /api/skills/imports/:importId/confirm | :25 | 200 | `SkillDetail`. Replaces a skill with the same name | 404 no such import; 415 |
+| DELETE | /api/skills/imports/:importId | :30 | 200 | `{ok:true}`. Drops the staged import | |
 
 ## Sessions — enabled skills
 `GET /api/sessions/:sessionId` also returns `skills`, the names the chat has enabled. Replace them with:

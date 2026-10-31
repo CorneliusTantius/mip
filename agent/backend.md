@@ -32,6 +32,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `app/tools/skills.ts` — `skillReadTool` and `skillFileTool`. Both need the run's chat, and both check it has the skill enabled.
 - `app/skills/format.ts` — pure rules: `parseSkill` (the SKILL.md header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
 - `app/skills/registry.ts` — the installed skills: `listSkills` (valid skills, and folders that are not), `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt` (the list in the system prompt), `setChatSkills`, `removeSkill`.
+- `app/skills/create.ts` — `createSkill(input)`: writes a skill from a form after the same checks as an import. Never replaces an installed skill. Tested by `skills.test.mjs`.
 - `app/skills/imports.ts` — the two-step install. `stageImport` copies and checks a folder into `skills/.staging/<id>`, and `confirmImport` moves it into place. `discardImport` drops it. Tested by `skills.test.mjs`.
 - `app/tools/result.ts` — `ok` (:4), `fail` (:5). Tool result helpers.
 - `app/tools/files.ts` — `readTool` (:10, offset/limit, 2000 lines / 50 KB cap), `writeTool` (:33), `editTool` (:52, exact unique `oldText`). All use `inWorkspace`.

@@ -4,7 +4,7 @@
 // A skill's name is its folder name: lowercase letters, digits, and single hyphens, up to 64 characters.
 const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const MAX_NAME = 64;
-const MAX_DESCRIPTION = 1024;
+export const MAX_DESCRIPTION = 1024;
 // Names that the routes use, so a skill cannot take them.
 const RESERVED = new Set(["imports"]);
 
