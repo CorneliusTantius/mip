@@ -15,7 +15,7 @@ try {
   const { confirmImport, discardImport, stageImport } = await import(`${DIST}app/skills/imports.js`);
   const { enabledSkill, listSkills, loadSkill, readSkillFile, removeSkill, setChatSkills, skillsPrompt } = await import(`${DIST}app/skills/registry.js`);
   const { enabledSkillNames } = await import(`${DIST}storage/skills.js`);
-  const { BOT_TOOLS, CHAT_TOOLS, TOOLS, describeTools, registerRun, releaseRun, runContextForToken } = await import(`${DIST}app/tools/index.js`);
+  const { BOT_TOOLS, AGENT_TOOLS, TOOLS, describeTools, registerRun, releaseRun, runContextForToken } = await import(`${DIST}app/tools/index.js`);
   const { SKILLS_DIR } = await import(`${DIST}storage/paths.js`);
   const { createSkill } = await import(`${DIST}app/skills/create.js`);
 
@@ -106,7 +106,7 @@ try {
   assert.equal(escape.isError, true);
 
   // One registry, two lists: chats get every tool, bots get none for now. A run's token carries its own list.
-  assert.ok(CHAT_TOOLS.some((tool) => tool.name === "skill_read") && CHAT_TOOLS.some((tool) => tool.name === "bash"));
+  assert.ok(AGENT_TOOLS.some((tool) => tool.name === "skill_read") && AGENT_TOOLS.some((tool) => tool.name === "bash"));
   assert.deepEqual(BOT_TOOLS, []);
   const token = registerRun({ workspace: root, chatId: "chat-a", tools: BOT_TOOLS });
   assert.deepEqual(runContextForToken(token).tools, []);
@@ -116,7 +116,7 @@ try {
   // The registry lists every tool with the kinds of run that may use it: chats get all of them, bots none.
   const described = describeTools();
   assert.equal(described.length, TOOLS.length);
-  assert.ok(described.every((tool) => tool.chat === true && tool.bot === false));
+  assert.ok(described.every((tool) => tool.agent === true && tool.bot === false));
   assert.equal(described.find((tool) => tool.name === "skill_read").description, TOOLS.find((tool) => tool.name === "skill_read").description);
 
   // A folder in the registry that is not a valid skill is reported, not hidden.

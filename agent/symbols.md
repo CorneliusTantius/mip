@@ -159,8 +159,8 @@
 | src/backend/app/tools/index.ts | 22 | const | BASIC_TOOLS |
 | src/backend/app/tools/index.ts | 24 | const | DEFERRED_TOOLS |
 | src/backend/app/tools/index.ts | 29 | const | TOOLS |
-| src/backend/app/tools/index.ts | 32 | const | CHAT_TOOLS |
-| src/backend/app/tools/index.ts | 33 | const | CHAT_DEFERRED |
+| src/backend/app/tools/index.ts | 32 | const | AGENT_TOOLS |
+| src/backend/app/tools/index.ts | 33 | const | AGENT_DEFERRED |
 | src/backend/app/tools/index.ts | 35 | const | BOT_TOOLS |
 | src/backend/app/tools/index.ts | 36 | const | BOT_DEFERRED |
 | src/backend/app/tools/index.ts | 39 | interface | RunContext |

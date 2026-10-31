@@ -25,7 +25,7 @@ Shared pieces. Each is used by more than one feature.
 | `ErrorAlert.tsx` | `ErrorAlert` | A red alert for a message. Renders nothing without one. |
 | `Icon.tsx` | `Icon`, `IconName` | Named SVG icons. |
 | `OptionDropdown.tsx` | `OptionDropdown` | A fixed-width dropdown with ellipsis, for model, thinking, provider, and copy-to-chat. |
-| `RunScopePills.tsx` | `RunScopePills`, `RunScope` | The All / Chat / Bot pill that picks a card's view. One size larger when its card is expanded. Used by the Tools and Skills cards. |
+| `RunScopePills.tsx` | `RunScopePills`, `RunScope` | The All / Agent / Bot pill that picks a card's view. One size larger when its card is expanded. Used by the Tools and Skills cards. |
 | `ToolCallDetails.tsx` | `ToolCallDetails` | One tool call's name, input, and result. Used by the tool-call dialog. |
 | `toolName.ts` | `toolLabel`, `prettyJson` | Pure helpers. `toolLabel` drops the `mcp__<server>__` prefix. |
 | `hooks.ts` | `usePolling`, `useAnnouncement` | An interval that always runs the latest function, and a window-event listener. |
@@ -86,7 +86,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/skills/
 | file | exports | job |
 | --- | --- | --- |
-| `SkillsCard.tsx` | `SkillsCard` | The installed skills with the All / Chat / Bot pill. All lists skills, with the selected skill's text when expanded. Chat lists each chat and its skills. Bot lists each bot and its skills, which is none. Create, Import, and Remove. |
+| `SkillsCard.tsx` | `SkillsCard` | The installed skills with the All / Agent / Bot pill. All lists skills, with the selected skill's text when expanded. Agent lists each agent (a chat conversation) and its skills. Bot lists each bot and its skills, which is none. Create, Import, and Remove. |
 | `CreateSkillDialog.tsx` | `CreateSkillDialog` | Creates a skill from a form: name, description, instructions. |
 | `ImportSkillDialog.tsx` | `ImportSkillDialog` | Two steps: review a folder's files and `SKILL.md`, then install. |
 | `useSkills.ts` | `useSkills` | Loads the installed skills and any folders that could not be read. |
@@ -94,7 +94,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/tools/
 | file | exports | job |
 | --- | --- | --- |
-| `ToolsCard.tsx` | `ToolsCard` | The tool registry as a table, with the All / Chat / Bot pill. Clicking a row opens that tool's description, guide, and inputs in a `Modal`. |
+| `ToolsCard.tsx` | `ToolsCard` | The tool registry as a table, with the All / Agent / Bot pill. Clicking a row opens that tool's description, guide, and inputs in a `Modal`. |
 
 ## features/settings/
 | file | exports | job |

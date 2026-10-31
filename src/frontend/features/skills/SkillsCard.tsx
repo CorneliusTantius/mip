@@ -97,7 +97,7 @@ function SkillsBody() {
           </div>
         ))}
 
-      {scope === "chat" && <ChatSkills />}
+      {scope === "agent" && <AgentSkills />}
       {scope === "bot" && <BotSkills />}
 
       {problems.length > 0 && (
@@ -135,8 +135,8 @@ function SkillsBody() {
   );
 }
 
-// Each chat with the skills it has enabled. Reads the chat list each time the view opens.
-function ChatSkills() {
+// Each agent (a chat conversation) with the skills it has enabled. Reads the chat list each time the view opens.
+function AgentSkills() {
   const { expanded } = useCardExpansion();
   const [chats, setChats] = useState<Session[]>();
   const [error, setError] = useState<string>();
@@ -152,7 +152,7 @@ function ChatSkills() {
     <table className={`table ${expanded ? "table-sm" : "table-xs"}`}>
       <thead>
         <tr>
-          <th>Chat</th>
+          <th>Agent</th>
           <th>Skills</th>
         </tr>
       </thead>

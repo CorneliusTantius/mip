@@ -65,7 +65,7 @@ API regression check (used in the 2026-10-31 refactor): record each route's stat
 ### Add an agent tool
 1. Create a module in `src/backend/app/tools/`, exporting a `ToolSpec`. Give it a `description` (one line, for search), a `guide` (one paragraph on when and how to use it), and an `inputSchema`. Return `ok(text)` or `fail(text)` from `tools/result.ts`.
 2. List it in `app/tools/index.ts`: in `BASIC_TOOLS` if every run should have it, or in `DEFERRED_TOOLS` if the model should find it with `tool_search`.
-3. Chats get it through `CHAT_TOOLS` or `CHAT_DEFERRED`. Bots get it only when you add it to `BOT_TOOLS` or `BOT_DEFERRED`. A bot's turn has no workspace or run token yet, so a bot tool also needs that setup first.
+3. Agents get it through `AGENT_TOOLS` or `AGENT_DEFERRED`. Bots get it only when you add it to `BOT_TOOLS` or `BOT_DEFERRED`. A bot's turn has no workspace or run token yet, so a bot tool also needs that setup first.
 4. Paths go through `inWorkspace` (`tools/workspace.ts`).
 5. Each provider gets the tools through its own adapter: Claude through `/mcp`, Pi as a custom tool.
 6. Update `agent/backend.md` and the tool section of `agent/architecture.md`.
@@ -94,7 +94,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - Two copies of the default persona id: `api/constants.ts` and `src/backend/app/personas.ts`.
 - Native `confirm()` is still used in `SignInPanel.tsx` (sign-out). The rest of the app uses `ConfirmDialog`. Prefer `ConfirmDialog` for new code.
 - Pi's `capabilities` says `tools: false, mcp: false`. Pi still gets the app's tools, because the run passes them to every provider. The flags are informational.
-- Room turns get no memory recall, no repository note, and no skills. Only chat runs (`app/runs.ts`) build the system prompt that way.
+- Room turns get no memory recall, no repository note, and no skills. Only agent runs (`app/runs.ts`) build the system prompt that way.
 - `POST /api/memory` answers 200, while other creates answer 201. This is kept for the dashboard.
 - Routes match on segments, so `/api/memory/` (with a trailing slash) is accepted.
 - Runs left `running` by a crash are marked `error` on the next start. Clones left `cloning` are marked `error` too.

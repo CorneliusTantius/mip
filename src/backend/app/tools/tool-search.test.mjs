@@ -11,14 +11,14 @@ const root = mkdtempSync(join(tmpdir(), "mip-search-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { BOT_TOOLS, CHAT_DEFERRED, CHAT_TOOLS, DEFERRED_TOOLS, describeTools } = await import(`${DIST}app/tools/index.js`);
+  const { BOT_TOOLS, AGENT_DEFERRED, AGENT_TOOLS, DEFERRED_TOOLS, describeTools } = await import(`${DIST}app/tools/index.js`);
   const { searchTools, toolCallTool, toolSearchTool } = await import(`${DIST}app/tools/search.js`);
 
   const names = (list) => list.map((tool) => tool.name);
 
-  // A chat is offered the basic tools and the two search tools. Memory and skill_file are deferred, found with tool_search.
-  assert.deepEqual(names(CHAT_TOOLS), ["bash", "read", "edit", "write", "skill_read", "tool_search", "tool_call"]);
-  assert.deepEqual(names(CHAT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file"]);
+  // An agent run is offered the basic tools and the two search tools. Memory and skill_file are deferred, found with tool_search.
+  assert.deepEqual(names(AGENT_TOOLS), ["bash", "read", "edit", "write", "skill_read", "tool_search", "tool_call"]);
+  assert.deepEqual(names(AGENT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file"]);
   assert.deepEqual(BOT_TOOLS, []);
 
   // Search finds tools by the words of their names and descriptions. A query nothing matches finds nothing.
@@ -27,7 +27,7 @@ try {
   assert.deepEqual(searchTools(DEFERRED_TOOLS, "spaceship"), []);
 
   // tool_search lists the matches with their inputs. With no match, it says so.
-  const context = { workspace: root, chatId: "chat-a", deferred: CHAT_DEFERRED };
+  const context = { workspace: root, chatId: "chat-a", deferred: AGENT_DEFERRED };
   const found = await toolSearchTool.run({ query: "search notes" }, context);
   assert.equal(found.isError, false);
   assert.match(found.text, /memory_search: /);
@@ -50,12 +50,12 @@ try {
   const noneHere = await toolSearchTool.run({ query: "memory" }, { workspace: root, deferred: [] });
   assert.match(noneHere.text, /No other tools/);
 
-  // The registry says how each tool is offered: basic, deferred, or the search tools. Chats can use every tool.
+  // The registry says how each tool is offered: basic, deferred, or the search tools. Agents can use every tool.
   const described = Object.fromEntries(describeTools().map((tool) => [tool.name, tool]));
   assert.equal(described.bash.load, "basic");
   assert.equal(described.memory_search.load, "deferred");
   assert.equal(described.tool_call.load, "search");
-  assert.ok(describeTools().every((tool) => tool.chat === true && tool.bot === false));
+  assert.ok(describeTools().every((tool) => tool.agent === true && tool.bot === false));
 
   console.log("tool search tests passed");
 } finally {

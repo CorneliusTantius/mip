@@ -12,7 +12,7 @@ const root = mkdtempSync(join(tmpdir(), "mip-guides-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { CHAT_DEFERRED, CHAT_TOOLS, TOOLS, describeTools, toolGuidesPrompt } = await import(`${DIST}app/tools/index.js`);
+  const { AGENT_DEFERRED, AGENT_TOOLS, TOOLS, describeTools, toolGuidesPrompt } = await import(`${DIST}app/tools/index.js`);
   const { toolSearchTool } = await import(`${DIST}app/tools/search.js`);
   const { defaultPersona } = await import(`${DIST}app/personas.js`);
 
@@ -23,15 +23,15 @@ try {
   }
 
   // The guides of the offered tools go into the system prompt. A deferred tool's guide stays out until tool_search returns it.
-  const offered = toolGuidesPrompt(CHAT_TOOLS);
+  const offered = toolGuidesPrompt(AGENT_TOOLS);
   assert.match(offered, /- bash: /);
   assert.match(offered, /- tool_search: /);
   assert.doesNotMatch(offered, /- memory_search: /);
-  assert.match(toolGuidesPrompt(CHAT_DEFERRED), /- memory_search: /);
+  assert.match(toolGuidesPrompt(AGENT_DEFERRED), /- memory_search: /);
   assert.equal(toolGuidesPrompt([]), "");
 
   // tool_search returns each match with its guide, so the guide reaches the model when the tool is found.
-  const found = await toolSearchTool.run({ query: "memory notes" }, { workspace: root, deferred: CHAT_DEFERRED });
+  const found = await toolSearchTool.run({ query: "memory notes" }, { workspace: root, deferred: AGENT_DEFERRED });
   assert.equal(found.isError, false);
   assert.match(found.text, /guide: Searches the notes shared by all chats/);
 

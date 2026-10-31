@@ -68,7 +68,7 @@ export interface ToolInfo {
   inputSchema: { properties?: Record<string, { type?: string; description?: string }>; required?: string[] };
   // basic: always offered. deferred: found with tool_search. search: the two tools that find and run deferred tools.
   load: "basic" | "deferred" | "search";
-  chat: boolean;
+  agent: boolean;
   bot: boolean;
 }
 

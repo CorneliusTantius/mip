@@ -28,9 +28,9 @@ const SEARCH_TOOLS: ToolSpec[] = [toolSearchTool, toolCallTool].map(guarded);
 // The one registry of tool definitions. Each kind of run takes its lists from here, so a definition exists in one place.
 export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS];
 
-// Chats are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
-export const CHAT_TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...SEARCH_TOOLS];
-export const CHAT_DEFERRED: ToolSpec[] = DEFERRED_TOOLS;
+// Agents (the chats) are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
+export const AGENT_TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...SEARCH_TOOLS];
+export const AGENT_DEFERRED: ToolSpec[] = DEFERRED_TOOLS;
 // Bots get none for now, which is what room turns have always used.
 export const BOT_TOOLS: ToolSpec[] = [];
 export const BOT_DEFERRED: ToolSpec[] = [];
@@ -69,7 +69,7 @@ export function describeTools() {
     guide: tool.guide,
     inputSchema: tool.inputSchema,
     load: BASIC_TOOLS.includes(tool) ? "basic" : DEFERRED_TOOLS.includes(tool) ? "deferred" : "search",
-    chat: CHAT_TOOLS.includes(tool) || CHAT_DEFERRED.includes(tool),
+    agent: AGENT_TOOLS.includes(tool) || AGENT_DEFERRED.includes(tool),
     bot: BOT_TOOLS.includes(tool) || BOT_DEFERRED.includes(tool),
   }));
 }

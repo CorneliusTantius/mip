@@ -31,8 +31,8 @@ function ToolsBody() {
     api.get<{ tools: ToolInfo[] }>("/api/tools").then((data) => setTools(data.tools), (err) => setError(errorText(err)));
   }, []);
 
-  // The tools the pill shows. Chat means chats can use it, and bot means bots can.
-  const scoped = tools.filter((tool) => scope === "all" || (scope === "chat" ? tool.chat : tool.bot));
+  // The tools the pill shows. Agent means agents can use it, and bot means bots can.
+  const scoped = tools.filter((tool) => scope === "all" || (scope === "agent" ? tool.agent : tool.bot));
   const shown = expanded ? scoped : scoped.slice(0, PREVIEW);
 
   return (
@@ -129,10 +129,10 @@ function ToolDetail({ tool }: { tool: ToolInfo }) {
 function Access({ tool }: { tool: ToolInfo }) {
   const { expanded } = useCardExpansion();
   const size = expanded ? "badge-sm" : "badge-xs";
-  if (!tool.chat && !tool.bot) return <span className={`badge badge-error ${size}`}>unused</span>;
+  if (!tool.agent && !tool.bot) return <span className={`badge badge-error ${size}`}>unused</span>;
   return (
     <span className="flex gap-1">
-      {tool.chat && <span className={`badge badge-outline ${size}`}>chat</span>}
+      {tool.agent && <span className={`badge badge-outline ${size}`}>agent</span>}
       {tool.bot && <span className={`badge badge-outline ${size}`}>bot</span>}
     </span>
   );
