@@ -3,6 +3,7 @@ import { Chat } from "./Chat";
 import { Memory } from "./Memory";
 import { BotsCard } from "./BotsCard";
 import { MemoryCard } from "./MemoryCard";
+import { PlaceholderCard } from "./PlaceholderCard";
 import { RepositoriesCard } from "./RepositoriesCard";
 import { Settings } from "./Settings";
 import { Starfield } from "./Starfield";
@@ -21,7 +22,7 @@ const SIZE = {
 // The page is narrow on a phone and wider on bigger screens. The top bar matches it.
 // From desktop up the page uses the whole window, with a cap on very wide monitors. Top bar and page share the same side padding.
 const WIDTH = "mx-auto w-full max-w-5xl xl:max-w-none 2xl:max-w-[1920px]";
-const SIDES = "px-4 xl:px-3";
+const SIDES = "px-4 xl:px-3.75";
 
 // The top bar stays put. Everything below it is one content box that scrolls, with the cards inside.
 export function App() {
@@ -40,14 +41,14 @@ export function App() {
   return (
     <div className="flex h-full flex-col">
       <Starfield />
-      <div className={`navbar ${WIDTH} min-h-10 shrink-0 ${SIDES} py-0`}>
-        <span className="flex-1 text-lg font-semibold">mip</span>
-        <button className="btn btn-ghost btn-sm btn-circle" aria-label="Settings" onClick={() => setOpen(true)}>
-          <GearIcon />
-        </button>
-      </div>
-
       <main className={`${WIDTH} grid min-h-0 flex-1 grid-cols-12 content-start gap-4 overflow-y-auto ${SIDES} pb-4 pt-0 xl:pb-3`}>
+        {/* The header scrolls with the page, so it sits inside the scrolling area. */}
+        <div className="navbar col-span-12 min-h-10 py-0">
+          <span className="flex-1 text-lg font-semibold">mip</span>
+          <button className="btn btn-ghost btn-sm btn-circle" aria-label="Settings" onClick={() => setOpen(true)}>
+            <GearIcon />
+          </button>
+        </div>
         <div className="col-span-12 h-[min(44rem,80vh)] xl:col-span-8">
           <Chat />
         </div>
@@ -60,8 +61,8 @@ export function App() {
         <div className={SIZE.medium}>
           <RepositoriesCard />
         </div>
-        {/* Not wired up yet, so they sit below everything else. Side by side from tablets up. */}
-        <div className="col-span-12 grid gap-4 md:grid-cols-2">
+        {/* Not wired up yet, so they sit below everything else. Two per row on tablets, four on desktops. */}
+        <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {PANELS.map((panel) => (
             <section key={panel.title} className="card bg-base-200/80">
               <div className="card-body">
@@ -70,6 +71,8 @@ export function App() {
               </div>
             </section>
           ))}
+          <PlaceholderCard title="Skills" summary="Skills the agents can use. None installed yet." />
+          <PlaceholderCard title="MCP" summary="MCP servers that add tools to the agents. None connected yet." />
         </div>
       </main>
 
