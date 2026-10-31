@@ -12,8 +12,9 @@ const PANELS = [
   { title: "Activity", empty: "No activity yet." },
 ];
 
-// Card sizes, on a 12-column grid. The chat and the bots room take the full width. Memory and repositories share a row.
-// Phones stack every card at full width. Tablets and desktops put two medium cards side by side.
+// Card sizes, on a 12-column grid. Memory and repositories share a row from tablets up.
+// The chat and the bots room are the tall cards. Desktops put them side by side, both as tall as the window allows.
+// Below desktop they stack at full width. Phones stack every card at full width.
 const SIZE = {
   medium: "col-span-12 md:col-span-6",
 };
@@ -47,10 +48,10 @@ export function App() {
       </div>
 
       <main className={`${WIDTH} grid min-h-0 flex-1 grid-cols-12 content-start gap-4 overflow-y-auto ${SIDES} pb-4 pt-0 xl:pb-3`}>
-        <div className="col-span-12">
+        <div className="col-span-12 h-[min(44rem,80vh)] xl:col-span-8">
           <Chat />
         </div>
-        <div className="col-span-12">
+        <div className="col-span-12 h-[min(40rem,80vh)] xl:col-span-4 xl:h-[min(44rem,80vh)]">
           <BotsCard />
         </div>
         <div className={SIZE.medium}>

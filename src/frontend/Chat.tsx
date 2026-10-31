@@ -261,7 +261,7 @@ export function Chat() {
   }
 
   return (
-    <section className="card card-border flex h-[min(44rem,80vh)] shrink-0 bg-base-200/80">
+    <section className="card card-border flex h-full shrink-0 bg-base-200/80">
       <div className="card-body min-h-0 flex-1 gap-3 p-4">
         <div className="flex min-h-0 flex-1">
           {/* On a phone the list is a card over the chat, so the chat keeps its full width. Tapping outside closes it. */}
@@ -323,18 +323,18 @@ export function Chat() {
             </aside>
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button className="btn btn-ghost btn-sm btn-square" aria-label="Toggle sessions" onClick={() => setSidebarOpen(!sidebarOpen)}>
                 <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
                   <path d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <h2 className="card-title mr-auto truncate text-base">{current?.title || "Chat"}</h2>
+              <h2 className="card-title min-w-40 flex-1 truncate text-base">{current?.title || "Chat"}</h2>
               {current && (
-                <>
+                <div className="flex shrink-0 gap-2">
                   <span className="badge badge-outline">{personaName(current.personaId)}</span>
                   <span className="badge badge-outline">{providerName(current.providerId)}</span>
-                </>
+                </div>
               )}
             </div>
 
