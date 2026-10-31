@@ -1,0 +1,116 @@
+import { useEffect, useState } from "preact/hooks";
+import { api, errorText } from "../../api/client";
+import { PERSONAS_CHANGED, announce } from "../../api/events";
+import { DEFAULT_PERSONA_ID } from "../../api/constants";
+import type { Persona } from "../../api/types";
+import { ErrorAlert } from "../../ui/ErrorAlert";
+
+// Chosen in the dropdown when the user wants a new persona. The last option of the list.
+const ADD_NEW = "add-new";
+
+// The personas: pick one to read or edit, set the default for new chats, or delete one. The last option adds a new one.
+export function PersonasTab() {
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [selected, setSelected] = useState(ADD_NEW);
+  const [name, setName] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [error, setError] = useState<string>();
+  const isNew = selected === ADD_NEW;
+  const current = personas.find((p) => p.id === selected);
+
+  async function load(): Promise<Persona[]> {
+    const data = await api.get<{ personas: Persona[] }>("/api/personas");
+    setPersonas(data.personas);
+    return data.personas;
+  }
+
+  // Shows a persona in the form. `list` is the freshest list, so a persona that was just saved is found.
+  function pick(id: string, list = personas) {
+    const persona = list.find((p) => p.id === id);
+    setSelected(id);
+    setName(persona?.name ?? "");
+    setPrompt(persona?.systemPrompt ?? "");
+    setError(undefined);
+  }
+
+  // Show the first persona on load.
+  useEffect(() => {
+    load().then((list) => pick(list[0]?.id ?? ADD_NEW, list));
+  }, []);
+
+  async function save() {
+    let saved: Persona;
+    try {
+      const body = { name, systemPrompt: prompt };
+      saved = isNew ? await api.post<Persona>("/api/personas", body) : await api.put<Persona>(`/api/personas/${selected}`, body);
+    } catch (err) {
+      return setError(errorText(err));
+    }
+    const list = await load();
+    pick(saved.id, list);
+    announce(PERSONAS_CHANGED);
+  }
+
+  async function makeDefault() {
+    await api.post(`/api/personas/${selected}/default`);
+    await load();
+    announce(PERSONAS_CHANGED);
+  }
+
+  async function remove() {
+    if (!confirm(`Delete the persona "${name}"?`)) return;
+    try {
+      await api.del(`/api/personas/${selected}`);
+    } catch (err) {
+      return setError(errorText(err));
+    }
+    const list = await load();
+    pick(list[0]?.id ?? ADD_NEW, list);
+    announce(PERSONAS_CHANGED);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">Persona</legend>
+        <select className="select w-full" value={selected} onChange={(e) => pick(e.currentTarget.value)}>
+          {personas.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+              {p.isDefault ? " (default)" : ""}
+            </option>
+          ))}
+          <option value={ADD_NEW}>+ Add new persona</option>
+        </select>
+      </fieldset>
+
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">Name</legend>
+        <input className="input w-full" placeholder="For example: Code reviewer" value={name} onInput={(e) => setName(e.currentTarget.value)} />
+      </fieldset>
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">System prompt</legend>
+        <textarea className="textarea h-56 w-full font-mono text-sm" value={prompt} onInput={(e) => setPrompt(e.currentTarget.value)} />
+      </fieldset>
+      <ErrorAlert message={error} />
+      <p className="text-sm opacity-70">A chat keeps the persona it was started with. Changes apply to its next message.</p>
+
+      <div className="flex justify-end gap-2">
+        {current?.isDefault && <span className="badge badge-success mr-auto">Default for new chats</span>}
+        {!isNew && !current?.isDefault && (
+          <button className="btn btn-ghost" onClick={makeDefault}>
+            Set as default
+          </button>
+        )}
+        {!isNew && !current?.isDefault && selected !== DEFAULT_PERSONA_ID && (
+          <button className="btn btn-ghost" onClick={remove}>
+            Delete
+          </button>
+        )}
+        <button className="btn btn-primary" disabled={!name.trim() || !prompt.trim()} onClick={save}>
+          {isNew ? "Create" : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+}

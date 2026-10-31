@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "preact/hooks";
+import { Icon } from "./Icon";
 
-interface Option {
+export interface DropdownOption {
   value: string;
   label: string;
 }
@@ -17,7 +18,7 @@ export function OptionDropdown({
 }: {
   label: string;
   value: string;
-  options: Option[];
+  options: DropdownOption[];
   placeholder: string;
   disabled?: boolean;
   onChange: (value: string) => void;
@@ -48,9 +49,7 @@ export function OptionDropdown({
         title={current?.label ?? placeholder}
       >
         <span className="truncate">{current?.label ?? placeholder}</span>
-        <svg className="size-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <Icon name="chevronDown" className="size-3 shrink-0" strokeWidth={2.5} />
       </summary>
       <ul className="dropdown-content menu z-20 mb-1 max-h-64 w-52 flex-nowrap overflow-y-auto rounded-box bg-base-200 p-2 shadow-lg">
         {options.map((option) => (
