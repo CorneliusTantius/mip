@@ -1,13 +1,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import type { ToolResult, ToolSpec } from "../../adapters/contract.js";
+import type { ToolSpec } from "../../adapters/contract.js";
+import { fail, ok } from "./result.js";
 import { inWorkspace } from "./workspace.js";
 
 const MAX_LINES = 2000;
 const MAX_BYTES = 50_000;
-
-const ok = (text: string): ToolResult => ({ text, isError: false });
-const fail = (text: string): ToolResult => ({ text, isError: true });
 
 export const readTool: ToolSpec = {
   name: "read",

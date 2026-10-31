@@ -1,8 +1,6 @@
-import type { ToolResult, ToolSpec } from "../../adapters/contract.js";
+import type { ToolSpec } from "../../adapters/contract.js";
 import { readNote, searchMemory, writeNote } from "../memory.js";
-
-const ok = (text: string): ToolResult => ({ text, isError: false });
-const fail = (text: string): ToolResult => ({ text, isError: true });
+import { fail, ok } from "./result.js";
 
 // Memory is shared: every agent sees the same notes.
 export const memorySearchTool: ToolSpec = {
