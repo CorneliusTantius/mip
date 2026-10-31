@@ -1,4 +1,5 @@
 import type { PullResult, Repo, Session } from "../../api/types";
+import { useCardExpansion } from "../../ui/Card";
 import { OptionDropdown } from "../../ui/OptionDropdown";
 
 // A link with a username or token in it is shown without them.
@@ -35,22 +36,24 @@ export function RepoRow({
   const options = chats
     .filter((chat) => !repo.copies.some((copied) => copied.sessionId === chat.id))
     .map((chat) => ({ value: chat.id, label: chat.title || "New session" }));
+  const { expanded } = useCardExpansion();
+  const small = expanded ? "text-sm" : "text-xs";
 
   return (
     <li className="flex flex-col gap-2 rounded-box border border-base-300 p-3">
       <div className="flex min-w-0 items-center gap-2">
         <span className="shrink-0 font-medium">{repo.name}</span>
         <StatusBadge status={repo.status} />
-        {repo.branch && <span className="badge badge-sm badge-outline font-mono">{repo.branch}</span>}
-        <span className="min-w-0 flex-1 truncate text-xs opacity-60" title={withoutCredentials(repo.url)}>
+        {repo.branch && <span className={`badge badge-outline font-mono ${expanded ? "badge-md" : "badge-sm"}`}>{repo.branch}</span>}
+        <span className={`min-w-0 flex-1 truncate ${small} opacity-60`} title={withoutCredentials(repo.url)}>
           {withoutCredentials(repo.url)}
         </span>
-        <button className="btn btn-ghost btn-xs" disabled={repo.status === "cloning"} onClick={onRemove}>
+        <button className={`btn btn-ghost ${expanded ? "btn-sm" : "btn-xs"}`} disabled={repo.status === "cloning"} onClick={onRemove}>
           Remove
         </button>
       </div>
-      {repo.status === "error" && <p className="text-xs text-error">{repo.error}</p>}
-      {pull && <p className={`text-xs ${pull.ok ? "opacity-70" : "text-error"}`}>{pull.message}</p>}
+      {repo.status === "error" && <p className={`${small} text-error`}>{repo.error}</p>}
+      {pull && <p className={`${small} ${pull.ok ? "opacity-70" : "text-error"}`}>{pull.message}</p>}
       <div className="flex flex-wrap items-center gap-1.5">
         {repo.copies.map((copied) => (
           <span key={copied.sessionId} className="badge badge-outline max-w-40 truncate" title={copied.title}>

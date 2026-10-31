@@ -46,7 +46,7 @@ function ToolsBody() {
     <CardBody title="Tools" className={expanded ? "min-h-0 flex-1" : ""} actions={<ExpandButton />}>
       <div className="join self-start">
         {SCOPES.map(([key, label]) => (
-          <button key={key} className={`join-item btn btn-xs ${scope === key ? "btn-active" : ""}`} onClick={() => setScope(key)}>
+          <button key={key} className={`join-item btn ${expanded ? "btn-sm" : "btn-xs"} ${scope === key ? "btn-active" : ""}`} onClick={() => setScope(key)}>
             {label}
           </button>
         ))}
@@ -60,7 +60,7 @@ function ToolsBody() {
         </p>
       ) : (
         <div className={expanded ? "min-h-0 flex-1 overflow-y-auto" : ""}>
-          <table className="table table-xs">
+          <table className={`table ${expanded ? "table-sm" : "table-xs"}`}>
             <thead>
               <tr>
                 <th>Tool</th>
@@ -73,7 +73,7 @@ function ToolsBody() {
                 <tr key={tool.name} className="cursor-pointer hover" onClick={() => setSelected(tool)}>
                   <td className="font-medium">{tool.name}</td>
                   <td>
-                    <span className="badge badge-ghost badge-xs">{tool.load}</span>
+                    <span className={`badge badge-ghost ${expanded ? "badge-sm" : "badge-xs"}`}>{tool.load}</span>
                   </td>
                   <td>
                     <Access tool={tool} />
@@ -140,11 +140,13 @@ function ToolDetail({ tool }: { tool: ToolInfo }) {
 
 // Which kinds of run may use the tool. A tool that no run may use says so.
 function Access({ tool }: { tool: ToolInfo }) {
-  if (!tool.chat && !tool.bot) return <span className="badge badge-error badge-xs">unused</span>;
+  const { expanded } = useCardExpansion();
+  const size = expanded ? "badge-sm" : "badge-xs";
+  if (!tool.chat && !tool.bot) return <span className={`badge badge-error ${size}`}>unused</span>;
   return (
     <span className="flex gap-1">
-      {tool.chat && <span className="badge badge-outline badge-xs">chat</span>}
-      {tool.bot && <span className="badge badge-outline badge-xs">bot</span>}
+      {tool.chat && <span className={`badge badge-outline ${size}`}>chat</span>}
+      {tool.bot && <span className={`badge badge-outline ${size}`}>bot</span>}
     </span>
   );
 }

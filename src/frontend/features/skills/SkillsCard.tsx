@@ -75,7 +75,7 @@ function SkillsBody() {
     >
       <div className="join self-start">
         {SCOPES.map(([key, label]) => (
-          <button key={key} className={`join-item btn btn-xs ${scope === key ? "btn-active" : ""}`} onClick={() => setScope(key)}>
+          <button key={key} className={`join-item btn ${expanded ? "btn-sm" : "btn-xs"} ${scope === key ? "btn-active" : ""}`} onClick={() => setScope(key)}>
             {label}
           </button>
         ))}
@@ -86,7 +86,7 @@ function SkillsBody() {
           <p className="py-6 text-center opacity-60">No skills yet. Create one, or import a skill folder.</p>
         ) : (
           <div className={expanded ? "flex min-h-0 flex-1 gap-4" : "flex flex-col gap-1"}>
-            <ul className={expanded ? "menu w-48 shrink-0 gap-1 overflow-y-auto p-0" : "menu gap-1 p-0"}>
+            <ul className={expanded ? "menu w-48 shrink-0 gap-1 overflow-y-auto p-0 text-base" : "menu gap-1 p-0"}>
               {skills.map((skill) => (
                 <li key={skill.name}>
                   <button className={skill.name === current ? "menu-active" : ""} onClick={() => setSelected(skill.name)} title={skill.description}>
@@ -97,9 +97,9 @@ function SkillsBody() {
             </ul>
             {expanded && detail && (
               <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
-                <p className="text-sm opacity-80">{detail.description}</p>
-                <pre className="whitespace-pre-wrap break-words rounded-box bg-base-300/60 p-3 text-xs">{detail.body}</pre>
-                {detail.files.length > 0 && <p className="text-xs opacity-60">Files: {detail.files.join(", ")}</p>}
+                <p className="text-base opacity-80">{detail.description}</p>
+                <pre className="whitespace-pre-wrap break-words rounded-box bg-base-300/60 p-3 text-sm">{detail.body}</pre>
+                {detail.files.length > 0 && <p className="text-sm opacity-60">Files: {detail.files.join(", ")}</p>}
                 <div>
                   <button className="btn btn-error btn-outline btn-sm" onClick={() => setRemoving(detail)}>
                     Remove skill
@@ -114,7 +114,7 @@ function SkillsBody() {
       {scope === "bot" && <BotSkills />}
 
       {problems.length > 0 && (
-        <p className="text-xs text-warning">
+        <p className={`${expanded ? "text-sm" : "text-xs"} text-warning`}>
           {problems.length} skill folder{problems.length > 1 ? "s" : ""} could not be read: {problems.map((p) => p.folder).join(", ")}
         </p>
       )}
@@ -150,6 +150,7 @@ function SkillsBody() {
 
 // Each chat with the skills it has enabled. Reads the chat list each time the view opens.
 function ChatSkills() {
+  const { expanded } = useCardExpansion();
   const [chats, setChats] = useState<Session[]>();
   const [error, setError] = useState<string>();
 
@@ -161,7 +162,7 @@ function ChatSkills() {
   if (!chats) return <p className="py-4 text-center text-sm opacity-60">Loading chats…</p>;
   if (chats.length === 0) return <p className="py-4 text-center text-sm opacity-60">No chats yet.</p>;
   return (
-    <table className="table table-xs">
+    <table className={`table ${expanded ? "table-sm" : "table-xs"}`}>
       <thead>
         <tr>
           <th>Chat</th>
@@ -182,6 +183,7 @@ function ChatSkills() {
 
 // Each bot with its skills. Bots have no skill access yet, so every row says none.
 function BotSkills() {
+  const { expanded } = useCardExpansion();
   const [bots, setBots] = useState<Bot[]>();
   const [error, setError] = useState<string>();
 
@@ -194,7 +196,7 @@ function BotSkills() {
   if (bots.length === 0) return <p className="py-4 text-center text-sm opacity-60">No bots yet.</p>;
   return (
     <div className="flex flex-col gap-2">
-      <table className="table table-xs">
+      <table className={`table ${expanded ? "table-sm" : "table-xs"}`}>
         <thead>
           <tr>
             <th>Bot</th>
@@ -210,7 +212,7 @@ function BotSkills() {
           ))}
         </tbody>
       </table>
-      <p className="text-xs opacity-60">Bots can't use skills yet. Their room turns have no skill access.</p>
+      <p className={`${expanded ? "text-sm" : "text-xs"} opacity-60`}>Bots can't use skills yet. Their room turns have no skill access.</p>
     </div>
   );
 }
