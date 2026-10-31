@@ -246,9 +246,9 @@
 | src/frontend/features/settings/SignInPanel.tsx | 19 | function | SignInPanel |
 | src/frontend/features/upcoming/PlaceholderCard.tsx | 6 | function | PlaceholderCard |
 | src/frontend/ui/Card.tsx | 6 | type | Glow |
-| src/frontend/ui/Card.tsx | 20 | function | Card |
-| src/frontend/ui/Card.tsx | 60 | function | ExpandButton |
-| src/frontend/ui/Card.tsx | 69 | function | CardBody |
+| src/frontend/ui/Card.tsx | 44 | function | Card |
+| src/frontend/ui/Card.tsx | 114 | function | ExpandButton |
+| src/frontend/ui/Card.tsx | 124 | function | CardBody |
 | src/frontend/ui/ConfirmDialog.tsx | 5 | function | ConfirmDialog |
 | src/frontend/ui/ErrorAlert.tsx | 2 | function | ErrorAlert |
 | src/frontend/ui/Icon.tsx | 20 | type | IconName |

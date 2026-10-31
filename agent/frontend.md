@@ -17,7 +17,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 ## ui/
 | file | export (line) | purpose |
 | --- | --- | --- |
-| `ui/Card.tsx` | `Glow` type (:4), `Card` (:7), `CardBody` (:12), `ExpandButton` (after `Card`) | Dashboard card shell: `section.card glow glow-<color> bg-base-200/80`. With `expanded`, the same element becomes a fixed panel over the page (Escape or a backdrop click collapses it). `ExpandButton` is the header toggle. `CardBody` = title row (title, optional actions) + content. |
+| `ui/Card.tsx` | `Glow` type (:6), `Card` (:44), `ExpandButton` (:114), `CardBody` (:124), `zoom` (private, FLIP-style move) | Dashboard card shell: `section.card glow glow-<color> bg-base-200/80`. Owns the expanded state. Expanding zooms the same element from its grid cell into a fixed panel, and the backdrop fades. Closing holds the panel 200 ms, then shrinks back. Escape, a backdrop click, or `ExpandButton` (reads the state from context) closes it. Reduced motion skips the zoom. `CardBody` = title row (title, optional actions) + content. |
 | `ui/Modal.tsx` | `Modal` (:18) | Native `<dialog>` opened and closed by the `open` prop. Props: `onClose`, `closeButton` (round X), `boxClassName`. Closes on unmount. |
 | `ui/ConfirmDialog.tsx` | `ConfirmDialog` | Yes/no question with `error` and Cancel/Delete. Built on `Modal`. |
 | `ui/ErrorAlert.tsx` | `ErrorAlert` | Red alert for a message. Renders nothing without a message. |
