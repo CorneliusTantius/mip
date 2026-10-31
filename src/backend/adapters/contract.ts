@@ -28,6 +28,8 @@ export interface ToolContext {
 export interface ToolSpec {
   name: string;
   description: string;
+  // How and when to use the tool, in one paragraph. Offered tools' guides go into the system prompt; a deferred tool's guide comes back with tool_search.
+  guide: string;
   // JSON Schema for the input.
   inputSchema: Record<string, unknown>;
   run(input: any, context: ToolContext): Promise<ToolResult>;

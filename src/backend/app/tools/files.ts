@@ -9,6 +9,7 @@ const MAX_BYTES = 50_000;
 
 export const readTool: ToolSpec = {
   name: "read",
+  guide: "Reads a text file in the workspace. Paths are relative to the workspace, and paths outside it are refused. Long files come back cut at 2000 lines or 50 KB, so use offset and limit to read the rest in parts. Read a file before you change it.",
   description: "Read a text file in the workspace. Use offset and limit to read part of a long file.",
   inputSchema: {
     type: "object",
@@ -32,6 +33,7 @@ export const readTool: ToolSpec = {
 
 export const writeTool: ToolSpec = {
   name: "write",
+  guide: "Creates or overwrites a file in the workspace. Paths are relative to the workspace, and paths outside it are refused. To change part of an existing file, use edit instead, so the rest of the file is left alone.",
   description: "Create or overwrite a file in the workspace. Missing folders are created.",
   inputSchema: {
     type: "object",
@@ -51,6 +53,7 @@ export const writeTool: ToolSpec = {
 
 export const editTool: ToolSpec = {
   name: "edit",
+  guide: "Replaces one exact piece of text in an existing file in the workspace. The old text must match exactly once, so read the file first and copy the old text from it.",
   description: "Replace one exact piece of text in a file. oldText must appear exactly once, so include enough context to make it unique.",
   inputSchema: {
     type: "object",

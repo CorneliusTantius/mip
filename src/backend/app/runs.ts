@@ -8,8 +8,7 @@ import { recallFor } from "./memory.js";
 import { personaPrompt } from "./personas.js";
 import { findProvider } from "./providers.js";
 import { repoNote } from "./repos.js";
-import { CHAT_DEFERRED, CHAT_TOOLS, registerRun, releaseRun } from "./tools/index.js";
-import { TOOL_SEARCH_HINT } from "./tools/search.js";
+import { CHAT_DEFERRED, CHAT_TOOLS, registerRun, releaseRun, toolGuidesPrompt } from "./tools/index.js";
 import { skillsPrompt } from "./skills/registry.js";
 import { ToolCallLog } from "./tool-calls.js";
 import { workspaceFor } from "./tools/workspace.js";
@@ -68,8 +67,8 @@ async function execute(job: RunJob): Promise<void> {
   try {
     for await (const event of job.provider.run({
       prompt: job.prompt,
-      // The persona's prompt, the repositories in the workspace, the skills the chat enabled, and any shared notes that match this message.
-      systemPrompt: [personaPrompt(job.session.personaId), repoNote(job.workspace), skillsPrompt(job.session.id), TOOL_SEARCH_HINT, recallFor(job.prompt)]
+      // The persona's prompt, the repositories in the workspace, the skills the chat enabled, the guides of the tools offered, and any shared notes that match this message.
+      systemPrompt: [personaPrompt(job.session.personaId), repoNote(job.workspace), skillsPrompt(job.session.id), toolGuidesPrompt(CHAT_TOOLS), recallFor(job.prompt)]
         .filter(Boolean)
         .join("\n\n"),
       tools: CHAT_TOOLS,

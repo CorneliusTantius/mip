@@ -1,3 +1,4 @@
+import { Fragment } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
 import type { ToolInfo } from "../../api/types";
@@ -7,7 +8,7 @@ import { ErrorAlert } from "../../ui/ErrorAlert";
 // How many tools the collapsed card lists.
 const PREVIEW = 4;
 
-// Which kind of run the list is for: every tool, the tools chats can use, or the tools bots can use.
+// Which kind of run the table is for: every tool, the tools chats can use, or the tools bots can use.
 type Scope = "all" | "chat" | "bot";
 const SCOPES: [Scope, string][] = [
   ["all", "All"],
@@ -15,8 +16,8 @@ const SCOPES: [Scope, string][] = [
   ["bot", "Bot"],
 ];
 
-// The tool registry: every tool the agents can use, and which kinds of run may use each. The pill picks the kind of run.
-// Collapsed, the card lists the first few. Expanded, each tool opens to its description and inputs.
+// The tool registry as a table: each tool, how it is offered, and which kinds of run may use it. The pill picks the kind of run.
+// Expanded, a row opens to the tool's guide and inputs. The guide is the part that goes into the model's system prompt.
 export function ToolsCard() {
   return (
     <Card glow="orange">
@@ -29,6 +30,8 @@ function ToolsBody() {
   const { expanded } = useCardExpansion();
   const [tools, setTools] = useState<ToolInfo[]>([]);
   const [scope, setScope] = useState<Scope>("all");
+  // The tool whose row is open, when the card is expanded.
+  const [open, setOpen] = useState<string>();
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -56,11 +59,42 @@ function ToolsBody() {
           {scope === "bot" ? "No tools are open to bots yet. Bot turns have no workspace or run token, so they have no tools." : "No tools for this view."}
         </p>
       ) : (
-        <ul className={expanded ? "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto" : "flex flex-col gap-1"}>
-          {shown.map((tool) => (
-            <ToolRow key={tool.name} tool={tool} expandable={expanded} />
-          ))}
-        </ul>
+        <div className={expanded ? "min-h-0 flex-1 overflow-y-auto" : ""}>
+          <table className="table table-xs">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Offered</th>
+                <th>Used by</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((tool) => (
+                <Fragment key={tool.name}>
+                  <tr
+                    className={expanded ? "cursor-pointer hover" : ""}
+                    onClick={expanded ? () => setOpen(open === tool.name ? undefined : tool.name) : undefined}
+                  >
+                    <td className="font-medium">{tool.name}</td>
+                    <td>
+                      <span className="badge badge-ghost badge-xs">{tool.load}</span>
+                    </td>
+                    <td>
+                      <Access tool={tool} />
+                    </td>
+                  </tr>
+                  {expanded && open === tool.name && (
+                    <tr>
+                      <td colSpan={3}>
+                        <ToolDetail tool={tool} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {!expanded && scoped.length > PREVIEW && <p className="text-xs opacity-60">{scoped.length - PREVIEW} more. Expand to see all.</p>}
       <ErrorAlert message={error} />
@@ -68,40 +102,30 @@ function ToolsBody() {
   );
 }
 
-// One tool in the list, with how it is offered and where it may be used. Expanded, it opens to the tool's description and inputs.
-function ToolRow({ tool, expandable }: { tool: ToolInfo; expandable: boolean }) {
-  const summary = (
-    <span className="flex min-w-0 items-center gap-2 text-sm">
-      <strong className="truncate">{tool.name}</strong>
-      <span className="badge badge-ghost badge-xs">{tool.load}</span>
-      <Access tool={tool} />
-    </span>
-  );
-
-  if (!expandable) return <li>{summary}</li>;
+// A tool's description, its guide, and its inputs. Shown under the tool's row.
+function ToolDetail({ tool }: { tool: ToolInfo }) {
   const inputs = Object.entries(tool.inputSchema.properties ?? {});
   const required = new Set(tool.inputSchema.required ?? []);
   return (
-    <li>
-      <details className="rounded-box bg-base-300/40 p-2">
-        <summary className="flex cursor-pointer">{summary}</summary>
-        <div className="mt-2 flex flex-col gap-2 text-sm">
-          <p className="opacity-80">{tool.description}</p>
-          {inputs.length === 0 ? (
-            <p className="text-xs opacity-60">Takes no input.</p>
-          ) : (
-            <ul className="flex flex-col gap-1 text-xs">
-              {inputs.map(([name, spec]) => (
-                <li key={name}>
-                  <strong>{name}</strong> <span className="opacity-60">({spec.type ?? "any"}{required.has(name) ? ", required" : ""})</span>
-                  {spec.description && <span className="opacity-80">: {spec.description}</span>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </details>
-    </li>
+    <div className="flex flex-col gap-2 py-2 text-sm">
+      <p>{tool.description}</p>
+      <div>
+        <span className="text-xs font-semibold">Guide</span>
+        <p className="rounded bg-base-100/60 p-2 text-xs">{tool.guide}</p>
+      </div>
+      {inputs.length === 0 ? (
+        <p className="text-xs">Takes no input.</p>
+      ) : (
+        <ul className="flex flex-col gap-1 text-xs">
+          {inputs.map(([name, spec]) => (
+            <li key={name}>
+              <strong>{name}</strong> <span>({spec.type ?? "any"}{required.has(name) ? ", required" : ""})</span>
+              {spec.description && <span>: {spec.description}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -109,9 +133,9 @@ function ToolRow({ tool, expandable }: { tool: ToolInfo; expandable: boolean }) 
 function Access({ tool }: { tool: ToolInfo }) {
   if (!tool.chat && !tool.bot) return <span className="badge badge-error badge-xs">unused</span>;
   return (
-    <>
+    <span className="flex gap-1">
       {tool.chat && <span className="badge badge-outline badge-xs">chat</span>}
       {tool.bot && <span className="badge badge-outline badge-xs">bot</span>}
-    </>
+    </span>
   );
 }

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { deletePersona, getPersona, insertPersona, listPersonas, type Persona, setDefaultPersona, updatePersona } from "../storage/personas.js";
 import { countSessionsWithPersona } from "../storage/sessions.js";
 import { AppError } from "./errors.js";
@@ -15,15 +15,19 @@ Working style:
 - For software work, read the relevant files before changing them. Make the smallest change that solves the problem, then check it by running it or reading it back. Say what changed and what you could not verify.
 - For multi-step work, give a short plan, then do it. End with what was done, what was left out, and anything that still needs the user.
 
-Tools:
-- read, write, edit, and bash work in this chat's own workspace folder. Paths outside it are refused.
-- memory_search and memory_read look at notes shared by all chats. Check them when the user refers to something from before.
-- memory_edit changes one part of a note that already exists, such as correcting a fact or adding a line. You cannot create or delete notes; the user does that. Do not edit notes for small talk.
 
 Answers:
 - Lead with the answer. Add the reasoning only when it helps.
 - Keep replies short unless the task needs more. Use Markdown where it helps: code blocks for code, short lists for steps. Skip headings in short replies.
 - If you are not sure, say so and say what would settle it. Never invent file contents, command output, or sources, and never say you ran something you did not run.`;
+
+// The built-in persona used to carry the tool guides. Those now live with each tool. An install that still has the old text
+// gets the new one. Only an unedited copy is replaced, so a persona the user changed keeps its text.
+const PREVIOUS_DEFAULT_HASH = "7c0304fc7e610fb605c898599f67734600b9bdee048de99eb4d3ca339021a861";
+const stored = getPersona(DEFAULT_PERSONA_ID);
+if (stored && createHash("sha256").update(stored.systemPrompt).digest("hex") === PREVIOUS_DEFAULT_HASH) {
+  updatePersona({ id: DEFAULT_PERSONA_ID, name: stored.name, systemPrompt: DEFAULT_SYSTEM_PROMPT });
+}
 
 // Every install has the built-in persona, and one persona is always the default.
 if (!getPersona(DEFAULT_PERSONA_ID)) {

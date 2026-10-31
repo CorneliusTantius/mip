@@ -6,6 +6,7 @@ const MAX_BYTES = 50_000;
 // Runs a shell command in the agent's workspace. Output keeps the last 50 KB. Nothing is sandboxed, so the command has your user's access.
 export const bashTool: ToolSpec = {
   name: "bash",
+  guide: "Runs a shell command with the workspace folder as its working directory. Use it for programs, tests, and git. Output keeps only the last 50 KB, and a command stops after 120 seconds unless you set a timeout. Nothing is sandboxed, so the command has your user's access.",
   description: "Run a shell command in the workspace folder. Returns the exit code and the output.",
   inputSchema: {
     type: "object",

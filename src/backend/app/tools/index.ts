@@ -66,9 +66,16 @@ export function describeTools() {
   return TOOLS.map((tool) => ({
     name: tool.name,
     description: tool.description,
+    guide: tool.guide,
     inputSchema: tool.inputSchema,
     load: BASIC_TOOLS.includes(tool) ? "basic" : DEFERRED_TOOLS.includes(tool) ? "deferred" : "search",
     chat: CHAT_TOOLS.includes(tool) || CHAT_DEFERRED.includes(tool),
     bot: BOT_TOOLS.includes(tool) || BOT_DEFERRED.includes(tool),
   }));
+}
+
+// The guides of the tools a run is offered, for its system prompt. Each guide says when and how to use its tool.
+export function toolGuidesPrompt(tools: ToolSpec[]): string {
+  if (tools.length === 0) return "";
+  return ["Tool guides. Use each tool as its guide says.", ...tools.map((tool) => `- ${tool.name}: ${tool.guide}`)].join("\n");
 }

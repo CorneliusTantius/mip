@@ -11,6 +11,7 @@ function chatOf(chatId: string | undefined): string {
 // Reads a skill the chat has enabled: its instructions, and the files it names.
 export const skillReadTool: ToolSpec = {
   name: "skill_read",
+  guide: "Reads a skill this chat has enabled: its instructions and the files it names. When a task matches a skill in the skill list, call this with the skill's name before you start, and follow what it says.",
   description: "Read a skill enabled for this chat: its instructions and the files it names. Call this before a task that a listed skill covers.",
   inputSchema: {
     type: "object",
@@ -27,6 +28,7 @@ export const skillReadTool: ToolSpec = {
 // Reads one text file that a skill lists. The skill must be enabled for the chat.
 export const skillFileTool: ToolSpec = {
   name: "skill_file",
+  guide: "Reads one text file that an enabled skill names, using the path that skill_read listed. Only the files a skill lists can be read.",
   description: "Read one text file that an enabled skill lists, as skill_read named it.",
   inputSchema: {
     type: "object",

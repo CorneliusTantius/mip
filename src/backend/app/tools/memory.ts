@@ -5,6 +5,7 @@ import { fail, ok } from "./result.js";
 // Memory is shared: every agent sees the same notes.
 export const memorySearchTool: ToolSpec = {
   name: "memory_search",
+  guide: "Searches the notes shared by all chats, by words. Check it when the user refers to something from before, before you say you do not know.",
   description: "Search the notes shared by all agents. Returns the matching note titles with a snippet of each.",
   inputSchema: {
     type: "object",
@@ -20,6 +21,7 @@ export const memorySearchTool: ToolSpec = {
 
 export const memoryReadTool: ToolSpec = {
   name: "memory_read",
+  guide: "Reads one shared note by its title. Use it after memory_search has found the note.",
   description: "Read one note by its title. Shows the full text, the notes it links to, the notes that link to it, and its tags.",
   inputSchema: {
     type: "object",
@@ -45,6 +47,7 @@ export const memoryReadTool: ToolSpec = {
 // Changes part of a note that already exists. Agents can't create or delete notes: the user does that in the memory screen.
 export const memoryEditTool: ToolSpec = {
   name: "memory_edit",
+  guide: "Changes one part of a note that already exists, such as correcting a fact or adding a line. You cannot create or delete notes; the user does that. Do not edit notes for small talk.",
   description:
     "Edit a note that already exists. Replaces one exact piece of its text with new text. The old text must appear exactly once in the note. Links ([[Title]]) and tags (#tag) in the new text are kept up to date.",
   inputSchema: {

@@ -40,12 +40,13 @@ function describe(tool: ToolSpec): string {
   const inputs = Object.entries(schema.properties ?? {}).map(
     ([name, spec]) => `  ${name} (${spec.type ?? "any"}${required.has(name) ? ", required" : ""}): ${spec.description ?? ""}`,
   );
-  return [`${tool.name}: ${tool.description}`, ...(inputs.length > 0 ? inputs : ["  (no inputs)"])].join("\n");
+  return [`${tool.name}: ${tool.description}`, `  guide: ${tool.guide}`, ...(inputs.length > 0 ? inputs : ["  (no inputs)"])].join("\n");
 }
 
 // Finds deferred tools by a few words about the task. The reply lists each match with its inputs.
 export const toolSearchTool: ToolSpec = {
   name: "tool_search",
+  guide: "Some tools are not listed for you. When you need one that is not listed, call tool_search with a few words about the task. It returns the matching tools with their inputs and guides, then run the match with tool_call.",
   description: "Find a tool that is not listed for you, by a few words about what it should do. Returns the matching tools with their inputs. Run one with tool_call.",
   inputSchema: {
     type: "object",
@@ -64,6 +65,7 @@ export const toolSearchTool: ToolSpec = {
 // Runs a deferred tool that tool_search found, with its inputs. Other tools are refused here, since they are offered directly.
 export const toolCallTool: ToolSpec = {
   name: "tool_call",
+  guide: "Runs a tool that tool_search found. Pass its name and its inputs as an object. Only tools that tool_search listed can be run this way.",
   description: "Run a tool that tool_search found. Give its name, and its inputs as an object.",
   inputSchema: {
     type: "object",
@@ -80,7 +82,3 @@ export const toolCallTool: ToolSpec = {
     return tool.run(input.input ?? {}, context);
   },
 };
-
-// What the system prompt says when a chat has deferred tools.
-export const TOOL_SEARCH_HINT =
-  "More tools are available but not listed. When you need one, call tool_search with a few words about the task, then run the match with tool_call.";

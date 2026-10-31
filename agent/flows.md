@@ -135,6 +135,7 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 - **tool_search.** `searchTools` scores each deferred tool by the words in its name (two points) and description (one point), best first, up to eight. The reply lists each match with its inputs.
 - **tool_call.** Runs one deferred tool by name with its inputs. It refuses any name not in the run's deferred list, so a basic tool, or a tool a bot was not given, is never run this way.
 - **Other providers.** Claude gets the search tools through `/mcp`, and the deferred list is read from the run's token. Pi gets them as custom tools, with `deferredTools` in its context.
+- **Guides.** Every tool has a `guide`. `runs.ts` puts the guides of the tools a run is offered into the system prompt (`toolGuidesPrompt`). A deferred tool's guide is in the `tool_search` result, so it reaches the model when the tool is found.
 - **Not built.** Code mode, and external MCP servers. Code mode needs a sandbox first.
 
 ## 16. Skills
