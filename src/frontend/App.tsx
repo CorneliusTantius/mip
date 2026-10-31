@@ -11,6 +11,18 @@ const PANELS = [
   { title: "Activity", empty: "No activity yet." },
 ];
 
+// Card sizes, on a 12-column grid. Large is the chat. Medium is memory and repositories. Small is tasks and activity.
+// Phones stack every card at full width. Tablets put two cards side by side. Desktops show a side column of small cards.
+const SIZE = {
+  large: "col-span-12 xl:col-span-9",
+  medium: "col-span-12 md:col-span-6",
+  small: "col-span-12 xl:col-span-3",
+};
+// The page is narrow on a phone and wider on bigger screens. The top bar matches it.
+// From desktop up the page uses the whole window, with a cap on very wide monitors. Top bar and page share the same side padding.
+const WIDTH = "mx-auto w-full max-w-5xl xl:max-w-none 2xl:max-w-[1920px]";
+const SIDES = "px-4 xl:px-3";
+
 // The top bar stays put. Everything below it is one content box that scrolls, with the cards inside.
 export function App() {
   const [open, setOpen] = useState(false);
@@ -28,16 +40,19 @@ export function App() {
   return (
     <div className="flex h-full flex-col">
       <Starfield />
-      <div className="navbar mx-auto min-h-10 w-full max-w-5xl shrink-0 px-2 py-0">
+      <div className={`navbar ${WIDTH} min-h-10 shrink-0 ${SIDES} py-0`}>
         <span className="flex-1 text-lg font-semibold">mip</span>
         <button className="btn btn-ghost btn-sm btn-circle" aria-label="Settings" onClick={() => setOpen(true)}>
           <GearIcon />
         </button>
       </div>
 
-      <main className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
-        <Chat />
-        <div className="grid shrink-0 grid-cols-2 gap-4">
+      <main className={`${WIDTH} grid min-h-0 flex-1 grid-cols-12 content-start gap-4 overflow-y-auto ${SIDES} pb-4 pt-0 xl:pb-3`}>
+        <div className={SIZE.large}>
+          <Chat />
+        </div>
+        {/* Two small cards side by side on tablets, stacked in the side column on desktops. */}
+        <div className={`${SIZE.small} grid gap-4 md:grid-cols-2 xl:grid-cols-1 xl:grid-rows-2`}>
           {PANELS.map((panel) => (
             <section key={panel.title} className="card bg-base-200/80">
               <div className="card-body">
@@ -46,7 +61,11 @@ export function App() {
               </div>
             </section>
           ))}
+        </div>
+        <div className={SIZE.medium}>
           <MemoryCard version={memoryVersion} onOpen={openMemory} onSeeMore={() => openMemory()} />
+        </div>
+        <div className={SIZE.medium}>
           <RepositoriesCard />
         </div>
       </main>

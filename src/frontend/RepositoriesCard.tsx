@@ -105,7 +105,7 @@ export function RepositoriesCard() {
   }
 
   return (
-    <section className="card col-span-2 bg-base-200/80">
+    <section className="card h-full bg-base-200/80">
       <div className="card-body gap-3">
         <h2 className="card-title">Repositories</h2>
 

@@ -61,6 +61,16 @@ function Icon({ d }: { d: string }) {
   );
 }
 
+// The session list is a card over the chat on a phone, and a column beside the chat on a desktop. It stays mounted,
+// so opening and closing both animate: it slides and fades on a phone, and folds its width on a desktop.
+const BACKDROP = "absolute inset-0 z-10 cursor-default bg-black/40 transition-[opacity,visibility] duration-300 md:hidden";
+const BACKDROP_OPEN = "visible opacity-100";
+const BACKDROP_CLOSED = "invisible pointer-events-none opacity-0";
+const SESSIONS =
+  "absolute inset-y-3 left-3 z-20 flex w-72 max-w-[calc(100%-1.5rem)] flex-col gap-2 overflow-y-auto rounded-box border border-base-300 bg-base-200 p-4 shadow-2xl transition-[translate,opacity,visibility,width,margin,padding,border-color] duration-300 ease-out md:static md:inset-auto md:z-auto md:max-w-none md:shrink-0 md:rounded-none md:bg-transparent md:shadow-none";
+const SESSIONS_OPEN = "translate-x-0 opacity-100 visible md:mr-4 md:w-56 md:border-0 md:border-r md:border-base-300 md:p-0 md:pr-4";
+const SESSIONS_CLOSED = "-translate-x-[120%] opacity-0 invisible md:translate-x-0 md:mr-0 md:w-0 md:overflow-hidden md:border-0 md:p-0 md:opacity-0 md:invisible";
+
 export function Chat() {
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [personas, setPersonas] = useState<PersonaOption[]>([]);
@@ -69,7 +79,8 @@ export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newProviderId, setNewProviderId] = useState("claude-cli");
   const [newPersonaId, setNewPersonaId] = useState(DEFAULT_PERSONA_ID);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // The session list takes room, so it starts closed on phones.
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.matchMedia("(min-width: 768px)").matches);
   const [renamingId, setRenamingId] = useState<string | undefined>(undefined);
   const [titleDraft, setTitleDraft] = useState("");
   const [draft, setDraft] = useState("");
@@ -106,6 +117,8 @@ export function Chat() {
 
   // Opens a chat: its saved messages, and the run still going in it, if there is one.
   async function openSession(id: string) {
+    // On a phone the session list is an overlay, so it closes once a chat is picked.
+    if (!window.matchMedia("(min-width: 768px)").matches) setSidebarOpen(false);
     following.current = undefined;
     setBusy(false);
     setCurrentId(id);
@@ -250,59 +263,64 @@ export function Chat() {
   return (
     <section className="card card-border flex h-[min(36rem,70vh)] shrink-0 bg-base-200/80">
       <div className="card-body min-h-0 flex-1 gap-3 p-4">
-        <div className="flex min-h-0 flex-1 gap-4">
-          {sidebarOpen && (
-            <aside className="flex w-56 shrink-0 flex-col gap-2 overflow-y-auto border-r border-base-300 pr-4">
-              <select className="select select-sm w-full" value={newProviderId} onChange={(e) => setNewProviderId(e.currentTarget.value)}>
-                {providers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <select className="select select-sm w-full" value={newPersonaId} onChange={(e) => setNewPersonaId(e.currentTarget.value)}>
-                {personas.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-primary btn-sm" disabled={providers.length === 0} onClick={createSession}>
-                + New session
-              </button>
-              <ul className="flex flex-col gap-1">
-                {sessions.map((s) =>
-                  renamingId === s.id ? (
-                    <li key={s.id}>
-                      <input
-                        className="input input-sm w-full"
-                        autoFocus
-                        value={titleDraft}
-                        onInput={(e) => setTitleDraft(e.currentTarget.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") rename(s.id);
-                          if (e.key === "Escape") setRenamingId(undefined);
-                        }}
-                        onBlur={() => setRenamingId(undefined)}
-                      />
-                    </li>
-                  ) : (
-                    <li key={s.id} className="flex items-center">
-                      <button className={"btn btn-ghost btn-sm min-w-0 flex-1 justify-start truncate font-normal " + (s.id === currentId ? "btn-active" : "")} onClick={() => openSession(s.id)}>
-                        {s.title || "New session"}
-                      </button>
-                      <button className="btn btn-ghost btn-xs btn-square" aria-label="Rename" onClick={() => startRename(s)}>
-                        <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                      </button>
-                      <button className="btn btn-ghost btn-xs btn-square" aria-label="Delete" onClick={() => askRemove(s)}>
-                        <Icon d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
-                      </button>
-                    </li>
-                  ),
-                )}
-              </ul>
+        <div className="flex min-h-0 flex-1">
+          {/* On a phone the list is a card over the chat, so the chat keeps its full width. Tapping outside closes it. */}
+          <button
+            className={`${BACKDROP} ${sidebarOpen ? BACKDROP_OPEN : BACKDROP_CLOSED}`}
+            aria-label="Close sessions"
+            tabIndex={sidebarOpen ? 0 : -1}
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside className={`${SESSIONS} ${sidebarOpen ? SESSIONS_OPEN : SESSIONS_CLOSED}`}>
+            <select className="select select-sm w-full" value={newProviderId} onChange={(e) => setNewProviderId(e.currentTarget.value)}>
+              {providers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <select className="select select-sm w-full" value={newPersonaId} onChange={(e) => setNewPersonaId(e.currentTarget.value)}>
+              {personas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <button className="btn btn-primary btn-sm" disabled={providers.length === 0} onClick={createSession}>
+              + New session
+            </button>
+            <ul className="flex flex-col gap-1">
+              {sessions.map((s) =>
+                renamingId === s.id ? (
+                  <li key={s.id}>
+                    <input
+                      className="input input-sm w-full"
+                      autoFocus
+                      value={titleDraft}
+                      onInput={(e) => setTitleDraft(e.currentTarget.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") rename(s.id);
+                        if (e.key === "Escape") setRenamingId(undefined);
+                      }}
+                      onBlur={() => setRenamingId(undefined)}
+                    />
+                  </li>
+                ) : (
+                  <li key={s.id} className="flex items-center">
+                    <button className={"btn btn-ghost btn-sm min-w-0 flex-1 justify-start truncate font-normal " + (s.id === currentId ? "btn-active" : "")} onClick={() => openSession(s.id)}>
+                      {s.title || "New session"}
+                    </button>
+                    <button className="btn btn-ghost btn-xs btn-square" aria-label="Rename" onClick={() => startRename(s)}>
+                      <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </button>
+                    <button className="btn btn-ghost btn-xs btn-square" aria-label="Delete" onClick={() => askRemove(s)}>
+                      <Icon d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+                    </button>
+                  </li>
+                ),
+              )}
+            </ul>
             </aside>
-          )}
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
             <div className="flex items-center gap-2">

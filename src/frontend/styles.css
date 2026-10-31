@@ -61,8 +61,8 @@ select::picker(select) {
 .navbar { animation: mip-drop 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
 .card { animation: mip-rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
 .grid > .card:nth-child(2) { animation-delay: 80ms; }
-.grid > .card:nth-child(3) { animation-delay: 160ms; }
-.grid > .card:nth-child(4) { animation-delay: 240ms; }
+main > div:nth-child(3) > .card { animation-delay: 160ms; }
+main > div:nth-child(4) > .card { animation-delay: 240ms; }
 .chat { animation: mip-pop 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
 .card li,
 dialog li { animation: mip-slide 0.35s ease-out backwards; }
