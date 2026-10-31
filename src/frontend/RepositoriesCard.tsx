@@ -62,9 +62,14 @@ export function RepositoriesCard() {
   useEffect(() => {
     load();
     loadChats();
-    // The chat card announces each change to the chat list.
-    window.addEventListener("sessions-changed", loadChats);
-    return () => window.removeEventListener("sessions-changed", loadChats);
+    // The chat card announces each change to the chat list. A deleted chat also takes its copies with it,
+    // so the repositories are reloaded too.
+    const onChatsChanged = () => {
+      loadChats();
+      load();
+    };
+    window.addEventListener("sessions-changed", onChatsChanged);
+    return () => window.removeEventListener("sessions-changed", onChatsChanged);
   }, []);
 
   // A clone takes a while, so the list refreshes until none is still running.
