@@ -67,7 +67,7 @@ select::picker(select) {
   animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
   animation-fill-mode: backwards;
 }
-.agent { animation: mip-pop 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+.chat { animation: mip-pop 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
 .card li,
 dialog li { animation: mip-slide 0.35s ease-out backwards; }
 .card p,

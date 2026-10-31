@@ -15,8 +15,8 @@ export function Transcript({ messages, busy, emptyText }: { messages: AgentMessa
     <div ref={log} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
       {messages.length === 0 && <p className="m-auto text-sm opacity-60">{emptyText}</p>}
       {messages.map((m, i) => (
-        <div key={i} className={"agent " + (m.role === "user" ? "agent-end" : "agent-start")}>
-          <div className={"agent-bubble whitespace-pre-wrap " + (m.error ? "agent-bubble-error" : m.role === "user" ? "agent-bubble-primary" : "")}>
+        <div key={i} className={"chat " + (m.role === "user" ? "chat-end" : "chat-start")}>
+          <div className={"chat-bubble whitespace-pre-wrap " + (m.error ? "chat-bubble-error" : m.role === "user" ? "chat-bubble-primary" : "")}>
             {m.text || m.error || (busy && i === messages.length - 1 ? <span className="loading loading-dots loading-sm" /> : null)}
             {m.error && m.text && <p className="mt-1 text-sm">{m.error}</p>}
             {m.tools.length > 0 && <ToolCallsButton calls={m.calls} names={m.tools} />}
