@@ -13,6 +13,7 @@
     npm run typecheck
     npm run build
     node src/backend/app/room-engine.test.mjs
+    node src/backend/app/tool-calls.test.mjs
     node src/backend/app/skills/format.test.mjs
     node src/backend/app/skills/skills.test.mjs
     node src/backend/app/sync/github.test.mjs

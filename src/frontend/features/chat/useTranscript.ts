@@ -22,7 +22,16 @@ export function useTranscript(onRunSaved: () => void) {
   // Shows the events the chat displays: text, tool names, and errors. Other events are ignored.
   function applyEvent(event: RunEvent) {
     if (event.type === "text") updateReply((r) => ({ ...r, text: r.text + (event.text ?? "") }));
-    if (event.type === "tool_call") updateReply((r) => ({ ...r, tools: [...r.tools, event.name ?? ""] }));
+    if (event.type === "tool_call") {
+      const call = { id: event.id, name: event.name ?? "", input: JSON.stringify(event.input ?? null), output: null, isError: false };
+      updateReply((r) => ({ ...r, tools: [...r.tools, call.name], calls: [...r.calls, call] }));
+    }
+    if (event.type === "tool_result") {
+      updateReply((r) => ({
+        ...r,
+        calls: r.calls.map((call) => (call.id === event.id ? { ...call, output: event.output ?? "", isError: !!event.isError } : call)),
+      }));
+    }
     if (event.type === "error") updateReply((r) => ({ ...r, error: event.message ?? null }));
   }
 
@@ -31,7 +40,7 @@ export function useTranscript(onRunSaved: () => void) {
   function follow(runId: string, sessionId: string) {
     following.current = runId;
     setBusy(true);
-    setMessages((list) => [...list, { role: "assistant", text: "", tools: [] }]);
+    setMessages((list) => [...list, { role: "assistant", text: "", tools: [], calls: [] }]);
 
     (async () => {
       let after = 0;
@@ -70,10 +79,10 @@ export function useTranscript(onRunSaved: () => void) {
   async function send(sessionId: string, prompt: string): Promise<void> {
     try {
       const data = await api.post<{ runId: string }>("/api/run", { sessionId, prompt });
-      setMessages((list) => [...list, { role: "user", text: prompt, tools: [] }]);
+      setMessages((list) => [...list, { role: "user", text: prompt, tools: [], calls: [] }]);
       follow(data.runId, sessionId);
     } catch (err) {
-      setMessages((list) => [...list, { role: "assistant", text: "", tools: [], error: errorText(err) }]);
+      setMessages((list) => [...list, { role: "assistant", text: "", tools: [], calls: [], error: errorText(err) }]);
     }
   }
 

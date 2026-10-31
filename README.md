@@ -118,6 +118,10 @@ A skill is a folder with a `SKILL.md`: a header that gives its name and a one-li
 
 Each chat picks its skills with its **Skills** button. A chat can read only the skills it has enabled. The model sees their names and descriptions, and reads the full text with `skill_read` when a task needs it. mip reads only its own skills folder (`~/.mip/skills`), never your Claude Code or Pi skill folders.
 
+## Tool calls
+
+Each reply keeps the tool calls it made, with their inputs and results. Click **View tool calls** at the bottom of a reply to read them. The **Tool calls** card on the dashboard lists the latest calls across every chat. Replies from before this was recorded show only the tool names. Tool calls stay on this machine and are not synced to GitHub.
+
 ## Tools
 
 Every provider gets the same seven tools, defined in `src/backend/app/tools/`: `read`, `write`, `edit`, `bash`, and the three memory tools.
@@ -182,6 +186,7 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/sync` | GitHub sync status: the gh accounts, the one in use, and the last run |
 | PUT | `/api/sync/account` | Choose the gh account sync uses. Body: `{ login }` |
 | POST | `/api/sync/run` | Start a sync in the background. Poll `GET /api/sync` for the result |
+| GET | `/api/tool-calls` | Tool calls from recent replies across every chat, with their inputs and results |
 | GET | `/api/skills` | Installed skills, and any folders that could not be read |
 | GET | `/api/skills/:name` | One skill with its instructions |
 | DELETE | `/api/skills/:name` | Remove a skill from mip and from every chat |

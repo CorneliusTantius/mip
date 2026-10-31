@@ -10,6 +10,7 @@ import { findProvider } from "./providers.js";
 import { repoNote } from "./repos.js";
 import { CHAT_TOOLS, registerRun, releaseRun } from "./tools/index.js";
 import { skillsPrompt } from "./skills/registry.js";
+import { ToolCallLog } from "./tool-calls.js";
 import { workspaceFor } from "./tools/workspace.js";
 
 // Starts a turn and returns its run id. The run is not tied to the browser: it keeps going if the page closes,
@@ -58,6 +59,7 @@ async function execute(job: RunJob): Promise<void> {
   let seq = 0;
   let text = "";
   const tools: string[] = [];
+  const calls = new ToolCallLog();
   let error: string | null = null;
   let providerSessionId: string | undefined;
 
@@ -78,7 +80,11 @@ async function execute(job: RunJob): Promise<void> {
       sessionId: job.session.providerSessionId ?? undefined,
     })) {
       if (event.type === "text") text += event.text;
-      if (event.type === "tool_call") tools.push(event.name);
+      if (event.type === "tool_call") {
+        tools.push(event.name);
+        calls.start(event.id, event.name, event.input);
+      }
+      if (event.type === "tool_result") calls.finish(event.id, event.output, event.isError);
       if (event.type === "error") error = event.message;
       if (event.type === "done") providerSessionId = event.sessionId;
       record(event);
@@ -90,7 +96,7 @@ async function execute(job: RunJob): Promise<void> {
     releaseRun(job.token);
   }
 
-  addMessage(job.session.id, { role: "assistant", text, tools, error });
+  addMessage(job.session.id, { role: "assistant", text, tools, calls: calls.calls, error });
   saveProviderSession(job.session.id, providerSessionId);
   setRunStatus(job.runId, error ? "error" : "done");
 }

@@ -3,3 +3,12 @@
 export function toolLabel(name: string): string {
   return name.replace(/^mcp__.+?__/, "");
 }
+
+// Shows JSON indented, and any other text as it is.
+export function prettyJson(text: string): string {
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
+}

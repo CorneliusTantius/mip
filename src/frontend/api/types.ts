@@ -55,12 +55,31 @@ export interface Session {
   thinking: string | null;
   title: string;
   updatedAt: number;
+  // The skills the chat has enabled. The chat list includes it; a chat created just now may not.
+  skills?: string[];
+}
+
+// A tool call from any chat's recent replies, with the chat it came from.
+export interface RecentCall extends ToolCall {
+  chatId: string;
+  chatTitle: string;
+  createdAt: number;
+}
+
+// One tool call in a reply. The id is only known while the reply streams. The input is JSON text.
+export interface ToolCall {
+  id?: string;
+  name: string;
+  input: string;
+  output: string | null;
+  isError: boolean;
 }
 
 export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   tools: string[];
+  calls: ToolCall[];
   error?: string | null;
 }
 
@@ -77,6 +96,10 @@ export interface RunEvent {
   text?: string;
   name?: string;
   message?: string;
+  id?: string;
+  input?: unknown;
+  output?: string;
+  isError?: boolean;
 }
 
 export interface Bot {

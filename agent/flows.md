@@ -122,8 +122,15 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 - **Limits:** the later edit is decided by each machine's clock. A chat with a running run is not deleted by a sync. A persona still used by a chat is not deleted.
 - Tests: `app/sync/github.test.mjs` (reading gh's accounts and picking one), `app/sync/merge.test.mjs` (the rules), and `app/sync/sync.test.mjs` (two machines and a local bare repo, through real git). Neither needs GitHub. The GitHub calls (`gitHubAccount`, `ensureRepo`) are checked only by hand, with a real `gh` login.
 
+## 17. Tool calls
+- **Recording.** `runs.ts` `execute` keeps a `ToolCallLog` (`app/tool-calls.ts`). A `tool_call` event starts a call with its input as JSON text. A `tool_result` event attaches its output and error flag, matched by the call's id. The reply saves the list in `messages.calls` with the tool names. Text longer than 8000 characters is cut with a marker.
+- **Reply button.** `Transcript.tsx` puts "View tool calls (n)" at the bottom of a reply that used tools. `ToolCallsDialog.tsx` lists each call's input and result with `ui/ToolCallDetails.tsx`. A reply saved before details were recorded lists its names only.
+- **Live.** `useTranscript.ts` builds the same list while a reply streams, from `tool_call` and `tool_result` events.
+- **Card.** `features/toolcalls/ToolCallsCard.tsx` lists the latest calls from `GET /api/tool-calls` across chats, refreshed every 4 seconds. Collapsed, it shows three. Expanded, each call opens to its input and result.
+- **Not synced.** Tool details stay on the machine that ran them. The GitHub sync carries tool names but not calls.
+
 ## 16. Skills
-Skills tab: `features/skills/SkillsCard.tsx` (list, text, remove), `ImportSkillDialog.tsx` (two steps), `useSkills.ts`. Chat: the **Skills** button → `features/chat/ChatSkillsDialog.tsx` → `PUT /api/sessions/:id/skills`.
+Skills tab: `features/skills/SkillsCard.tsx` (the All / Chat / Bot pill: installed skills, the skills each chat has, or each bot's skills, which is none yet), `CreateSkillDialog.tsx` and `ImportSkillDialog.tsx`, `useSkills.ts`. Chat: the **Skills** button → `features/chat/ChatSkillsDialog.tsx` → `PUT /api/sessions/:id/skills`.
 
 - **Import.** `POST /api/skills/imports` → `stageImport`: a full folder path, not a symbolic link, with a SKILL.md at the top. Every file is copied into `skills/.staging/<id>` and checked: text types only, at most 50 files and 512 KB, no links, and a valid header (`parseSkill`). Nothing is installed yet. `confirmImport` moves the staged folder into `skills/<name>/` and replaces any skill with that name. Chats keep their enablement. Staged imports older than a day are cleared.
 - **Create.** `POST /api/skills` → `createSkill` (`app/skills/create.ts`): the name must be valid, the description one line and not empty, and the instructions not empty. It writes `SKILL.md` into `skills/<name>/` in the same header form an import reads, and refuses a name that is installed (409). It writes no `.mip-source.json`, since there is no source folder.

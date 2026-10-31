@@ -17,13 +17,25 @@ export interface Session {
   updatedAt: number;
 }
 
-// One message in a chat. Tool names are kept so the transcript can show what was used.
+// One tool call in a reply: its name, its input as JSON text, and its result. A result is null when the run ended before it came.
+export interface ToolCall {
+  name: string;
+  input: string;
+  output: string | null;
+  isError: boolean;
+}
+
+// One message in a chat. Tool names are kept so the transcript can show what was used, and the calls keep the details.
 export interface Message {
   role: "user" | "assistant";
   text: string;
   tools: string[];
+  calls: ToolCall[];
   error: string | null;
 }
+
+// What a caller saves. A message with no calls (a user's message, for example) can leave them out.
+export type NewMessage = Omit<Message, "calls"> & { calls?: ToolCall[] };
 
 function toSession(row: Row): Session {
   return {
@@ -67,16 +79,27 @@ export function countSessionsWithPersona(personaId: string): number {
 
 export function listMessages(sessionId: string): Message[] {
   // Sent time first. Messages synced from another machine are inserted later, so the insert order is not always the chat order.
-  const rows = db.prepare("SELECT role, text, tools, error FROM messages WHERE session_id = ? ORDER BY created_at, id").all(sessionId) as Row[];
-  return rows.map((row) => ({ role: row.role, text: row.text, tools: JSON.parse(row.tools), error: row.error }));
+  const rows = db.prepare("SELECT role, text, tools, calls, error FROM messages WHERE session_id = ? ORDER BY created_at, id").all(sessionId) as Row[];
+  return rows.map((row) => ({ role: row.role, text: row.text, tools: JSON.parse(row.tools), calls: JSON.parse(row.calls), error: row.error }));
 }
 
-export function addMessage(sessionId: string, message: Message): void {
-  db.prepare("INSERT INTO messages (session_id, role, text, tools, error, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+// Replies that made tool calls, newest first, each with the chat it belongs to.
+export function listRepliesWithCalls(limit: number): { sessionId: string; title: string; createdAt: number; calls: ToolCall[] }[] {
+  const rows = db
+    .prepare(
+      "SELECT m.session_id AS session_id, s.title AS title, m.created_at AS created_at, m.calls AS calls FROM messages m JOIN sessions s ON s.id = m.session_id WHERE m.role = 'assistant' AND m.calls != '[]' ORDER BY m.created_at DESC, m.id DESC LIMIT ?",
+    )
+    .all(limit) as Row[];
+  return rows.map((row) => ({ sessionId: row.session_id, title: row.title, createdAt: row.created_at, calls: JSON.parse(row.calls) }));
+}
+
+export function addMessage(sessionId: string, message: NewMessage): void {
+  db.prepare("INSERT INTO messages (session_id, role, text, tools, calls, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
     sessionId,
     message.role,
     message.text,
     JSON.stringify(message.tools),
+    JSON.stringify(message.calls ?? []),
     message.error,
     Date.now(),
   );

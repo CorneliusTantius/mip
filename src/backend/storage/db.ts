@@ -128,6 +128,10 @@ if (!hasColumn("sessions", "meta_updated_at")) {
   db.exec("ALTER TABLE sessions ADD COLUMN meta_updated_at INTEGER NOT NULL DEFAULT 0");
   db.exec("UPDATE sessions SET meta_updated_at = updated_at");
 }
+// Replies made before tool calls were recorded have no details. Their calls list is empty, and their tool names stay.
+if (!hasColumn("messages", "calls")) {
+  db.exec("ALTER TABLE messages ADD COLUMN calls TEXT NOT NULL DEFAULT '[]'");
+}
 
 // Startup recovery. A run or clone cut off by a server restart can't finish, so it is marked as failed.
 db.prepare("UPDATE runs SET status = 'error' WHERE status = 'running'").run();

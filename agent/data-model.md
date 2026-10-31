@@ -8,7 +8,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | --- | --- | --- | --- | --- |
 | `personas` | id, name, system_prompt, is_default (0/1), created_at, updated_at | id | `storage/personas.ts` | `app/personas.ts` |
 | `sessions` | id, provider_id, provider_session_id (nullable), persona_id (default `'default'`), title, updated_at, meta_updated_at (title and settings), model (nullable), thinking (nullable) | id | `storage/sessions.ts` | `app/sessions.ts`, `app/runs.ts` |
-| `messages` | id (autoincrement), session_id, role (`user`/`assistant`), text, tools (JSON array of names), error (nullable), created_at | id | `storage/sessions.ts` | `app/runs.ts`, `app/sessions.ts` (delete) |
+| `messages` | id (autoincrement), session_id, role (`user`/`assistant`), text, tools (JSON array of names), calls (JSON array of `{name, input, output, isError}`, default `[]`), error (nullable), created_at | id | `storage/sessions.ts` | `app/runs.ts`, `app/sessions.ts` (delete) |
 | `runs` | id, session_id, status (`running`/`done`/`error`), started_at | id | `storage/runs.ts` (+ `sessions.ts` delete) | `app/runs.ts`, `db.ts` (recovery) |
 | `run_events` | run_id, seq, event (JSON `AgentEvent`) | (run_id, seq) | `storage/runs.ts` (+ `sessions.ts` delete) | `app/runs.ts` |
 | `notes` | id, title (UNIQUE, NOCASE), body, updated_at | id | `storage/notes.ts` | `app/memory.ts` |
