@@ -108,6 +108,9 @@ export interface RunEvent {
   isError?: boolean;
 }
 
+// A bot's color: one of the Nord accents. The same names are the glow colors and the bot-* classes in styles.css.
+export type BotColor = "frost" | "teal" | "blue" | "violet" | "red" | "orange" | "yellow" | "green";
+
 export interface Bot {
   id: string;
   name: string;
@@ -115,11 +118,14 @@ export interface Bot {
   providerId: string;
   model: string | null;
   thinking: string | null;
+  color: BotColor;
 }
 
 export interface RoomMessage {
   id: number;
   kind: "user" | "bot" | "system";
+  // The bot that wrote the message, if a bot did.
+  botId: string | null;
   authorName: string;
   text: string;
 }

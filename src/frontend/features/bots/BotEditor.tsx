@@ -1,9 +1,10 @@
 import { useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
 import { DEFAULT_PROVIDER_ID } from "../../api/constants";
-import type { Bot, ProviderInfo } from "../../api/types";
+import type { Bot, BotColor, ProviderInfo } from "../../api/types";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { OptionDropdown } from "../../ui/OptionDropdown";
+import { BOT_COLORS, nextBotColor } from "./botColors";
 
 interface Draft {
   name: string;
@@ -11,25 +12,29 @@ interface Draft {
   providerId: string;
   model: string;
   thinking: string;
+  color: BotColor;
 }
 
-const EMPTY: Draft = { name: "", persona: "", providerId: DEFAULT_PROVIDER_ID, model: "", thinking: "" };
-
-// The form for one bot. A bot with no `bot` is a new one. Changing the provider clears the model and thinking level,
-// and changing the model clears the thinking level, because the next choice may not offer them.
+// The form for one bot. A bot with no `bot` is a new one, and it starts on the first color no other bot uses. Changing the
+// provider clears the model and thinking level, and changing the model clears the thinking level, because the next choice may
+// not offer them.
 export function BotEditor({
   bot,
   providers,
+  usedColors,
   onSaved,
   onCancel,
 }: {
   bot?: Bot;
   providers: ProviderInfo[];
+  usedColors: BotColor[];
   onSaved: () => void;
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState<Draft>(
-    bot ? { name: bot.name, persona: bot.persona, providerId: bot.providerId, model: bot.model ?? "", thinking: bot.thinking ?? "" } : EMPTY,
+    bot
+      ? { name: bot.name, persona: bot.persona, providerId: bot.providerId, model: bot.model ?? "", thinking: bot.thinking ?? "", color: bot.color }
+      : { name: "", persona: "", providerId: DEFAULT_PROVIDER_ID, model: "", thinking: "", color: nextBotColor(usedColors) },
   );
   const [error, setError] = useState<string>();
 
@@ -81,6 +86,23 @@ export function BotEditor({
           onChange={(thinking) => setDraft({ ...draft, thinking })}
         />
       </div>
+
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">Color</legend>
+        <div className="flex flex-wrap gap-2">
+          {BOT_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              title={color}
+              aria-label={color}
+              aria-pressed={draft.color === color}
+              className={`bot-dot size-7 bot-${color} ${draft.color === color ? "ring-2 ring-base-content ring-offset-2 ring-offset-base-200" : ""}`}
+              onClick={() => setDraft({ ...draft, color })}
+            />
+          ))}
+        </div>
+      </fieldset>
 
       <fieldset className="fieldset">
         <legend className="fieldset-legend">Persona</legend>

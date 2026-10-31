@@ -21,7 +21,7 @@ Flat files, one per domain:
 - `agents.ts`: agents. `listAgents` (with each agent's enabled skill names), `createAgent`, `getAgent` (agent, messages, active run, skills), `updateAgent`, `chooseAgentSkills`, `deleteAgent`.
 - `runs.ts`: a turn in an agent. `startRun` and `readRun` for the routes, and `execute`, the background loop. It builds the system prompt, streams the provider's events into the run, records the tool calls, and saves the reply.
 - `personas.ts`: the built-in persona. Its prompt holds identity and style only. `DEFAULT_PERSONA_ID`, `personaPrompt`, and the create, edit, default, and remove functions.
-- `bots.ts`: bot create, edit, and remove, and the name rule. Model and thinking are checked against the provider's live catalog.
+- `bots.ts`: bot create, edit, and remove, and the name rule. Model and thinking are checked against the provider's live catalog. A color is checked against the palette, and `nextBotColor` gives a new bot the first color no bot uses.
 - `providers.ts`: the provider registry (`claude-cli`, `pi`), `findProvider`, `listProviders`, and sign-in, answer, and sign-out.
 - `memory.ts`: shared notes. Write, read, search, list, graph, forget, and `recallFor` (the notes that match a message, added to the system prompt).
 - `repos.ts`: repository clones, pull all, copies into agents, and `repoNote`.
@@ -69,6 +69,7 @@ Flat files, one per domain:
 - `paths.ts`: `MIP_HOME`, `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `SKILLS_DIR`, `ensureMipDirs`.
 - `agents.ts`: agents and messages, including each message's `calls`. `deleteAgent` also removes the agent's skill enablements.
 - `runs.ts`, `notes.ts`, `personas.ts`, `bots.ts`, `room.ts`, `repos.ts`: one file per domain.
+- `bot-colors.ts`: `BOT_COLORS` (the palette, in the order a new bot takes them), `BotColor`, and `isBotColor`. Used by storage, the schema migration, and the bot rules.
 - `skills.ts`: `enabledSkillNames`, `saveAgentSkills`, `removeSkillEnablements`.
 - `sync.ts`: the rows GitHub sync reads and writes. A `remove` returns false where the database must keep the row (the default persona, a persona an agent uses, an agent with a running run).
 

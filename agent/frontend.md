@@ -64,9 +64,12 @@ Shared pieces. Each is used by more than one feature.
 | `useRoom.ts` | `useRoom` | Bots, messages, busy, speaking, and errors. Polls every 1.5 s for new messages. |
 | `MentionInput.tsx` | `MentionInput` | The input with the bot suggestion list. |
 | `mentions.ts` | `mentionAt`, `suggestions`, `completeMention` | Pure rules for `@partial` text. No React. |
-| `RoomTranscript.tsx` | `RoomTranscript` | Bubbles for people and bots, and centered lines for system notes. |
+| `RoomTranscript.tsx` | `RoomTranscript` | Bubbles for people and bots, and centered lines for system notes. A bot's bubble takes a light tint of its color, and its name takes the color. |
+| `MessageText.tsx` | `MessageText` | A message's text, with each mention of a bot as a pill in that bot's color. A click opens `BotProfileModal`. |
+| `BotProfileModal.tsx` | `BotProfileModal` | A bot's profile: color, provider, model, thinking level, and persona. Its Edit button opens the bot's form in `BotsDialog`. |
+| `botColors.ts` | `BOT_COLORS`, `nextBotColor` | The palette, in the order a new bot takes its colors. The server has the same list. |
 | `BotsDialog.tsx` | `BotsDialog` | Manage bots: list, New, Edit, and Delete with confirmation. |
-| `BotEditor.tsx` | `BotEditor` | The bot form. Clears model and thinking when the provider or model changes. |
+| `BotEditor.tsx` | `BotEditor` | The bot form, with a color picker of eight swatches. A new bot starts on the first color no other bot uses. Clears model and thinking when the provider or model changes. |
 
 ## features/memory/
 | file | exports | job |
@@ -147,6 +150,7 @@ Shared pieces. Each is used by more than one feature.
 ## Gotchas
 - `DEFAULT_PERSONA_ID` is duplicated in `api/constants.ts` and `app/personas.ts`. Change both.
 - The status row under the bots transcript has a fixed height (`h-5 flex-none`). Without `flex-none`, flex grow makes it fill spare space.
+- Bot colors are `.bot-<name>` classes in `styles.css`, each setting `--bot`. `.bot-bubble`, `.bot-name`, `.bot-dot`, and `.mention` read it. The names must match `storage/bot-colors.ts`.
 - Tailwind classes must appear as literal strings in source, because the class scanner reads source text. The glow colors are plain CSS, so the `glow-${glow}` template is fine.
 - Preact `useRef` needs an initial argument: `useRef<T | undefined>(undefined)`.
 - A dialog opened from inside an expanded card closes with Escape first. The card's Escape handler skips while any dialog is open.

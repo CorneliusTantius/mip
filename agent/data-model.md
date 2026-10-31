@@ -15,7 +15,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `notes_fts` | title, body, note_id (UNINDEXED) — FTS5 virtual table | — | `storage/notes.ts` | `saveNote`, `deleteNote` |
 | `note_links` | from_id, to_title (NOCASE) | (from_id, to_title) | `storage/notes.ts` | `saveNote` |
 | `note_tags` | note_id, tag | (note_id, tag) | `storage/notes.ts` | `saveNote` |
-| `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), created_at, updated_at | id | `storage/bots.ts` | `app/bots.ts` |
+| `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), color (one of `storage/bot-colors.ts`), created_at, updated_at | id | `storage/bots.ts` | `app/bots.ts` |
 | `room_messages` | id (autoincrement), kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, created_at | id | `storage/room.ts` | `app/room/room.ts` |
 | `repos` | id, name (UNIQUE), url, status (`cloning`/`ready`/`error`), error (nullable), created_at | id | `storage/repos.ts` | `app/repos.ts`, `db.ts` (recovery) |
 | `skill_enablements` | agent_id, skill (the skill's name) | (agent_id, skill) | `storage/skills.ts` (+ `agents.ts` delete) | `app/skills/registry.ts` |
@@ -26,6 +26,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 - Note titles are unique ignoring case. `saveNote` keeps the existing id when the title exists, so links to it stay valid.
 - A note's links and tags are rebuilt on every save (`storage/notes.ts`).
 - Bot names are unique ignoring case. Bot messages in `room_messages` keep `author_name`, so they stay readable after the bot is deleted.
+- A bot's color is one of the Nord accents in `storage/bot-colors.ts`. Bots made before colors got one each in the order they were made, and that change moved their `updated_at` so the colors reach GitHub on the next sync.
 - Exactly one persona has `is_default = 1` (`setDefaultPersona`, `storage/personas.ts`). The built-in `default` persona cannot be deleted.
 - Repo names are unique. The name is also the folder name in `repos/` and in each workspace.
 - GitHub sync merges by change times, so every write sets them: `personas.updated_at`, `bots.updated_at`, `notes.updated_at`, `agents.meta_updated_at` (title and settings), and `created_at` on messages and room messages. A write that skips one is lost in a merge (`app/sync/merge.ts`).

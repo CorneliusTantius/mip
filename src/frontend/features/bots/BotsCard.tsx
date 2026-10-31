@@ -1,5 +1,7 @@
 import { useState } from "preact/hooks";
+import type { Bot } from "../../api/types";
 import { Card, ExpandButton } from "../../ui/Card";
+import { BotProfileModal } from "./BotProfileModal";
 import { BotsDialog } from "./BotsDialog";
 import { MentionInput } from "./MentionInput";
 import { RoomTranscript } from "./RoomTranscript";
@@ -10,6 +12,9 @@ export function BotsCard() {
   const room = useRoom();
   const [draft, setDraft] = useState("");
   const [managing, setManaging] = useState(false);
+  // The bot whose profile is open, and the bot the bots dialog opens on when the profile asks to edit it.
+  const [profile, setProfile] = useState<Bot>();
+  const [editTarget, setEditTarget] = useState<Bot>();
 
   async function send(e: Event) {
     e.preventDefault();
@@ -23,7 +28,8 @@ export function BotsCard() {
           <h2 className="card-title mr-auto">Bots</h2>
           <div className="flex min-w-0 flex-wrap justify-end gap-1.5">
             {room.bots.map((bot) => (
-              <span key={bot.id} className="badge badge-outline">
+              <span key={bot.id} className="badge badge-outline gap-1.5">
+                <span className={`bot-dot size-2 bot-${bot.color}`} />
                 {bot.name}
               </span>
             ))}
@@ -36,6 +42,8 @@ export function BotsCard() {
 
         <RoomTranscript
           messages={room.messages}
+          bots={room.bots}
+          onOpenBot={setProfile}
           emptyText={room.bots.length ? "Say something to start. Mention a bot with @Name." : "No bots yet. Create one with Manage bots."}
         />
 
@@ -67,10 +75,22 @@ export function BotsCard() {
         </form>
       </div>
 
+      <BotProfileModal
+        bot={profile}
+        onClose={() => setProfile(undefined)}
+        onEdit={(bot) => {
+          setProfile(undefined);
+          setEditTarget(bot);
+          setManaging(true);
+        }}
+      />
+
       <BotsDialog
         open={managing}
+        startWith={editTarget}
         onClose={() => {
           setManaging(false);
+          setEditTarget(undefined);
           room.loadBots();
         }}
       />

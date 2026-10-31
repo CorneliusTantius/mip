@@ -39,6 +39,8 @@ Docs:
     node src/backend/app/sync/merge.test.mjs
     node src/backend/app/sync/sync.test.mjs
     node src/backend/storage/db.test.mjs
+    node src/backend/app/bots.test.mjs
+    node src/frontend/features/bots/mentions.test.mjs
 
 The backend tests need `npm run build:backend` first. The skill, tool, and sync tests use a temporary `MIP_HOME`.
 
@@ -107,8 +109,9 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - `git` runs with `GIT_TERMINAL_PROMPT=0`. A clone that needs a password fails instead of waiting.
 - A write to a synced table must set its change time (see `data-model.md`). A write that skips it is lost in a GitHub sync merge.
 - mip never stores the GitHub token. Each sync gets it from `gh auth token` and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
+- Bot colors live in three places that must match: `storage/bot-colors.ts`, `features/bots/botColors.ts`, and a `.bot-<name>` class per color in `styles.css`. `app/bots.test.mjs` checks the lists against each other and against the stylesheet.
 - Sync refuses a public `dotmip` repo, and it refuses an empty database when the last sync had data.
-- The synced repo's folder is `agents/`. A repo or saved `base.json` from before the rename keeps its agents under `chats`, and sync still reads it. A machine on an older version that syncs after the change sees its chats missing and deletes them, so upgrade every machine before syncing.
+- The synced repo's folder is `agents/`. A repo or saved `base.json` from before the rename keeps its agents under `chats`, and sync still reads it. A machine on an older version that syncs after the change sees its chats missing and deletes them, so upgrade every machine before syncing. Bot records carry a color too, which an older version drops when it writes a bot.
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
 - Tool guidance lives in each tool's `guide`, never in a persona. The built-in persona keeps identity and style only. An unedited copy of the old built-in persona is updated at startup; an edited one is left alone.
 - A skill can be created from a form or imported from a folder. Both paths check the same header rules. Create never replaces an installed skill, and import asks for review first.

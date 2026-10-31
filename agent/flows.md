@@ -75,6 +75,7 @@ Client (`features/bots/useRoom.ts`): polls `GET /api/room?after=<id>` every 1.5 
 - `mentionAt(text, caret)` (`features/bots/mentions.ts`) finds an `@partial` at the caret.
 - `suggestions` lists bots whose names start with it. A fully typed name hides the list, so Enter sends.
 - `MentionInput` (`features/bots/MentionInput.tsx`): arrows move, Enter or Tab picks (`completeMention`, ), Escape hides.
+- `splitMentions` (`features/bots/mentions.ts`) splits a shown message into text and bot mentions, matched the way the server matches them. `MessageText` draws each mention as a pill in the bot's color. A click opens `BotProfileModal`.
 
 ## 10. Agents
 - Create: `POST /api/agents` → `createAgent` (`app/agents.ts`). Validates provider and persona. Name from `pickAgentName` (`app/names.ts`), unused by current agents.
@@ -118,7 +119,7 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
   4. `mergeSnapshots` (`app/sync/merge.ts`), per record: unchanged on both sides keeps it; changed on one side takes that side; changed on both takes the later change time, except that an edit beats a delete, and an agent keeps both sides' messages. Room messages are the union.
   5. `applySnapshot` writes the merge to the database, `readLocal` reads it back, `writeTree` writes the files, and `commitAndPush` commits and pushes.
   6. A rejected push means `main` moved. The run fetches and merges again, up to three times. On success `base.json` becomes the merged state.
-- **What syncs:** personas, bots, notes, agents with their messages, and the room. **Not:** provider logins (`sessions/`), repo clones, agent workspaces, the default-persona flag, and the provider session id (so a synced agent starts a new model conversation on another machine).
+- **What syncs:** personas, bots (with their colors), notes, agents with their messages, and the room. **Not:** provider logins (`sessions/`), repo clones, agent workspaces, the default-persona flag, and the provider session id (so a synced agent starts a new model conversation on another machine).
 - **Limits:** the later edit is decided by each machine's clock. An agent with a running run is not deleted by a sync. A persona still used by an agent is not deleted.
 - Tests: `app/sync/github.test.mjs` (reading gh's accounts and picking one), `app/sync/merge.test.mjs` (the rules), and `app/sync/sync.test.mjs` (two machines and a local bare repo, through real git). Neither needs GitHub. The GitHub calls (`gitHubAccount`, `ensureRepo`) are checked only by hand, with a real `gh` login.
 

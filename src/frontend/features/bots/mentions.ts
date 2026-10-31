@@ -23,6 +23,25 @@ export function suggestions<B extends { name: string }>(bots: B[], mention: Ment
   return typedOut ? [] : matches;
 }
 
+// The pieces of a message: plain text, and each mention of a bot in the room. An "@name" that is no bot stays plain text.
+// The name is matched the way the server matches it, so a pill shows exactly when the bot is asked for.
+export type Piece<B> = { kind: "text"; text: string } | { kind: "mention"; text: string; bot: B };
+
+export function splitMentions<B extends { name: string }>(text: string, bots: B[]): Piece<B>[] {
+  const pieces: Piece<B>[] = [];
+  let last = 0;
+  for (const match of text.matchAll(/@([A-Za-z][A-Za-z0-9_-]*)/g)) {
+    const bot = bots.find((b) => b.name.toLowerCase() === match[1].toLowerCase());
+    if (!bot) continue;
+    const at = match.index ?? 0;
+    if (at > last) pieces.push({ kind: "text", text: text.slice(last, at) });
+    pieces.push({ kind: "mention", text: match[0], bot });
+    last = at + match[0].length;
+  }
+  if (last < text.length) pieces.push({ kind: "text", text: text.slice(last) });
+  return pieces;
+}
+
 // Replaces the partial name with the full one and a space. Returns the new text and where the caret goes.
 export function completeMention(text: string, caret: number, mention: Mention, name: string): { text: string; caret: number } {
   const after = mention.start + name.length + 2;

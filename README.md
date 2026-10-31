@@ -95,6 +95,7 @@ Bots are named agents that share one room. Create them with **Manage bots** on t
 
 - Post in the room. A bot you mention with `@Name` answers first. Bots can mention each other, so one reply can start another bot's turn.
 - If nobody is mentioned, every bot takes a turn in order.
+- Each bot has a color, set in its settings. Its messages take a light tint of it, and each `@Name` is a pill in that color. Click a pill to see the bot's profile.
 - A bot with nothing to add replies `PASS`.
 - One message sets off at most 8 turns. After that the room waits for your next message.
 - Each turn sees the last 30 messages. Bots have no tools, and their Claude turns run with the built-in tools turned off.
@@ -171,7 +172,7 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | DELETE | `/api/memory/:title` | Delete a note |
 | GET | `/api/graph` | Notes and links, for the memory card |
 | GET | `/api/bots` | List bots |
-| POST | `/api/bots` | Create a bot. Body: `{ name, persona, providerId, model?, thinking? }` |
+| POST | `/api/bots` | Create a bot. Body: `{ name, persona, providerId, model?, thinking?, color? }` |
 | PUT | `/api/bots/:id` | Edit a bot. Same fields as create |
 | DELETE | `/api/bots/:id` | Delete a bot. Its messages stay in the room |
 | GET | `/api/room?after=N` | Room messages after message N, and whether the room is busy |

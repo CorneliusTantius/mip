@@ -36,9 +36,11 @@ Matching: path segments are decoded before matching; a trailing slash is tolerat
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
 | GET | /api/bots | 200 | `{bots: Bot[]}` | |
-| POST | /api/bots | 201 | `Bot` (body `{name, persona, providerId, model?, thinking?}`) | 400 name rule / persona / provider / model / thinking; 409 name taken |
+| POST | /api/bots | 201 | `Bot` (body `{name, persona, providerId, model?, thinking?, color?}`) | 400 name rule / persona / provider / model / thinking / color; 409 name taken |
 | PUT | /api/bots/:botId | 200 | `Bot` | same; 404 |
 | DELETE | /api/bots/:botId | 200 | `{ok:true}` | 404 |
+
+`Bot` is `{id, name, persona, providerId, model, thinking, color}`. `color` is one of `frost`, `orange`, `violet`, `green`, `yellow`, `red`, `teal`, `blue`. A new bot without a color takes the first one no bot uses. An edit without a color keeps the bot's color.
 
 Name rule: starts with a letter, 2–24 letters, digits, `-` or `_`; unique, case-insensitive.
 

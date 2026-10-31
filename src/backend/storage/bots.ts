@@ -1,4 +1,5 @@
 import { db, type Row } from "./db.js";
+import { BOT_COLORS, type BotColor, isBotColor } from "./bot-colors.js";
 
 // A bot is a named agent in the shared room. Its replies come from its provider.
 export interface Bot {
@@ -8,6 +9,8 @@ export interface Bot {
   providerId: string;
   model: string | null;
   thinking: string | null;
+  // The color the room tints this bot's messages with.
+  color: BotColor;
 }
 
 function toBot(row: Row): Bot {
@@ -18,6 +21,7 @@ function toBot(row: Row): Bot {
     providerId: row.provider_id,
     model: row.model ?? null,
     thinking: row.thinking ?? null,
+    color: isBotColor(row.color) ? row.color : BOT_COLORS[0],
   };
 }
 
@@ -37,25 +41,27 @@ export function getBotByName(name: string): Bot | undefined {
 
 export function insertBot(bot: Bot): void {
   const now = Date.now();
-  db.prepare("INSERT INTO bots (id, name, persona, provider_id, model, thinking, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO bots (id, name, persona, provider_id, model, thinking, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
     bot.id,
     bot.name,
     bot.persona,
     bot.providerId,
     bot.model,
     bot.thinking,
+    bot.color,
     now,
     now,
   );
 }
 
 export function updateBot(bot: Bot): void {
-  db.prepare("UPDATE bots SET name = ?, persona = ?, provider_id = ?, model = ?, thinking = ?, updated_at = ? WHERE id = ?").run(
+  db.prepare("UPDATE bots SET name = ?, persona = ?, provider_id = ?, model = ?, thinking = ?, color = ?, updated_at = ? WHERE id = ?").run(
     bot.name,
     bot.persona,
     bot.providerId,
     bot.model,
     bot.thinking,
+    bot.color,
     Date.now(),
     bot.id,
   );

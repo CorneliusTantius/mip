@@ -1,8 +1,20 @@
 import { useEffect, useRef } from "preact/hooks";
-import type { RoomMessage } from "../../api/types";
+import type { Bot, RoomMessage } from "../../api/types";
+import { MessageText } from "./MessageText";
 
-// The room's messages. Replies from people and bots are bubbles. System notes are small centered lines.
-export function RoomTranscript({ messages, emptyText }: { messages: RoomMessage[]; emptyText: string }) {
+// The room's messages. Replies from people and bots are bubbles. A bot's bubble takes a light tint of its color, and
+// its name takes the color itself. System notes are small centered lines.
+export function RoomTranscript({
+  messages,
+  bots,
+  emptyText,
+  onOpenBot,
+}: {
+  messages: RoomMessage[];
+  bots: Bot[];
+  emptyText: string;
+  onOpenBot: (bot: Bot) => void;
+}) {
   const log = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -12,18 +24,28 @@ export function RoomTranscript({ messages, emptyText }: { messages: RoomMessage[
   return (
     <div ref={log} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
       {messages.length === 0 && <p className="m-auto text-sm opacity-60">{emptyText}</p>}
-      {messages.map((message) =>
-        message.kind === "system" ? (
-          <p key={message.id} className="text-center text-xs opacity-60">
-            {message.text}
-          </p>
-        ) : (
-          <div key={message.id} className={"chat " + (message.kind === "user" ? "chat-end" : "chat-start")}>
-            <div className="chat-header text-xs opacity-70">{message.authorName}</div>
-            <div className={"chat-bubble whitespace-pre-wrap " + (message.kind === "user" ? "chat-bubble-primary" : "")}>{message.text}</div>
+      {messages.map((message) => {
+        if (message.kind === "system") {
+          return (
+            <p key={message.id} className="text-center text-xs opacity-60">
+              {message.text}
+            </p>
+          );
+        }
+        const bot = message.kind === "bot" ? bots.find((b) => b.id === message.botId) : undefined;
+        const side = message.kind === "user" ? "chat-end" : "chat-start";
+        const bubble = message.kind === "user" ? "chat-bubble-primary" : bot ? "bot-bubble" : "";
+        return (
+          <div key={message.id} className={`chat ${side}${bot ? ` bot-${bot.color}` : ""}`}>
+            <div className="chat-header text-xs opacity-70">
+              {bot ? <span className="bot-name">{message.authorName}</span> : message.authorName}
+            </div>
+            <div className={`chat-bubble whitespace-pre-wrap ${bubble}`}>
+              <MessageText text={message.text} bots={bots} onOpenBot={onOpenBot} />
+            </div>
           </div>
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }

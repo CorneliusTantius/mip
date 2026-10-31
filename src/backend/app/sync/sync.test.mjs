@@ -27,6 +27,7 @@ function run() {
       const engine = await import(${JSON.stringify(`${DIST}app/sync/engine.js`)});
       const notes = await import(${JSON.stringify(`${DIST}storage/notes.js`)});
       const agents = await import(${JSON.stringify(`${DIST}storage/agents.js`)});
+      const bots = await import(${JSON.stringify(`${DIST}storage/bots.js`)});
       const remote = ${JSON.stringify(remote)};
       const result = await (async () => { ${script} })();
       console.log(JSON.stringify(result ?? null));
@@ -42,7 +43,8 @@ function run() {
   const READ = `
     const found = agents.listAgents().map((s) => ({ id: s.id, title: s.title, messages: agents.listMessages(s.id).map((m) => m.text) }));
     const noteBody = (title) => notes.getNoteByTitle(title)?.body ?? null;
-    return { agents: found, ideas: noteBody("Ideas"), temp: noteBody("Temp") };
+    const roomBots = bots.listBots().map((bot) => ({ name: bot.name, color: bot.color }));
+    return { agents: found, bots: roomBots, ideas: noteBody("Ideas"), temp: noteBody("Temp") };
   `;
   const withRun = (run) => `const run = ${run}; ${READ.replace("return {", "return { run,")}`;
 
@@ -54,6 +56,7 @@ function run() {
     notes.saveNote({ id: "n-ideas", title: "Ideas", body: "from A" }, [], []);
     notes.saveNote({ id: "n-temp", title: "Temp", body: "delete me" }, [], []);
     const agent = agents.insertAgent("pi", "default", "Plans");
+    bots.insertBot({ id: "b-freya", name: "Freya", persona: "A keen reviewer.", providerId: "pi", model: null, thinking: null, color: "teal" });
     agents.addMessage(agent.id, { role: "user", text: "hello from A", tools: [], error: null });
     const run = await engine.syncWith(remote);
     return { run, agentId: agent.id };
@@ -67,6 +70,7 @@ function run() {
   assert.equal(second.ideas, "from A");
   assert.equal(second.temp, "delete me");
   assert.deepEqual(second.agents.map((a) => a.messages), [["hello from A"]]);
+  assert.deepEqual(second.bots, [{ name: "Freya", color: "teal" }], "a bot's color reaches the other machine");
 
   // Machine B edits the note and adds a message, then syncs.
   machine(b, `

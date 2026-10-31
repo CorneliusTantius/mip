@@ -20,6 +20,8 @@ export interface BotRow {
   providerId: string;
   model: string | null;
   thinking: string | null;
+  // Null when the record came from a version without colors.
+  color: string | null;
   updatedAt: number;
 }
 
@@ -82,12 +84,13 @@ export function removePersonaRow(id: string): boolean {
 }
 
 export function readBotRows(): BotRow[] {
-  return (db.prepare("SELECT name, persona, provider_id, model, thinking, updated_at FROM bots").all() as Row[]).map((row) => ({
+  return (db.prepare("SELECT name, persona, provider_id, model, thinking, color, updated_at FROM bots").all() as Row[]).map((row) => ({
     name: row.name,
     persona: row.persona,
     providerId: row.provider_id,
     model: row.model ?? null,
     thinking: row.thinking ?? null,
+    color: row.color ?? null,
     updatedAt: row.updated_at,
   }));
 }
@@ -96,23 +99,25 @@ export function readBotRows(): BotRow[] {
 export function writeBotRow(bot: BotRow): void {
   const row = db.prepare("SELECT id FROM bots WHERE name = ? COLLATE NOCASE").get(bot.name) as Row | undefined;
   if (row) {
-    db.prepare("UPDATE bots SET name = ?, persona = ?, provider_id = ?, model = ?, thinking = ?, updated_at = ? WHERE id = ?").run(
+    db.prepare("UPDATE bots SET name = ?, persona = ?, provider_id = ?, model = ?, thinking = ?, color = ?, updated_at = ? WHERE id = ?").run(
       bot.name,
       bot.persona,
       bot.providerId,
       bot.model,
       bot.thinking,
+      bot.color,
       bot.updatedAt,
       row.id,
     );
   } else {
-    db.prepare("INSERT INTO bots (id, name, persona, provider_id, model, thinking, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+    db.prepare("INSERT INTO bots (id, name, persona, provider_id, model, thinking, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
       randomUUID(),
       bot.name,
       bot.persona,
       bot.providerId,
       bot.model,
       bot.thinking,
+      bot.color,
       bot.updatedAt,
       bot.updatedAt,
     );

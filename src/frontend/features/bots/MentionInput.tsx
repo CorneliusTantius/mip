@@ -68,6 +68,7 @@ export function MentionInput({
                   pick(bot);
                 }}
               >
+                <span className={`bot-dot size-2 bot-${bot.color}`} />
                 @{bot.name}
               </button>
             </li>

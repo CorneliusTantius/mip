@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { BOT_COLORS } from "./bot-colors.js";
 import { DATA_DIR, ensureMipDirs } from "./paths.js";
 
 // The one SQLite connection, shared by every storage module. The schema is created here on first start.
@@ -137,6 +138,13 @@ if (!hasColumn("personas", "updated_at")) {
 if (!hasColumn("bots", "updated_at")) {
   db.exec("ALTER TABLE bots ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0");
   db.exec("UPDATE bots SET updated_at = created_at");
+}
+// Bots made before colors get one each, in the order they were made, so the room reads with distinct tints. The change time moves
+// so the colors reach GitHub on the next sync.
+if (!hasColumn("bots", "color")) {
+  db.exec("ALTER TABLE bots ADD COLUMN color TEXT");
+  const made = db.prepare("SELECT id FROM bots ORDER BY created_at, id").all() as Row[];
+  made.forEach((bot, i) => db.prepare("UPDATE bots SET color = ?, updated_at = ? WHERE id = ?").run(BOT_COLORS[i % BOT_COLORS.length], Date.now(), bot.id));
 }
 // Renames and setting changes move this, not updated_at, so the agent list order stays the same.
 if (!hasColumn("agents", "meta_updated_at")) {

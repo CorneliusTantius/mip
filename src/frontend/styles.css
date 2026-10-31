@@ -181,3 +181,53 @@ details[open] > .dropdown-content { animation: mip-pop 0.2s ease-out backwards; 
 .glow-orange { --glow: #d08770; }
 .glow-yellow { --glow: #ebcb8b; }
 .glow-green { --glow: #a3be8c; }
+
+/* Bot colors. A bot has one of the Nord accents, set in its settings. Its room messages take a light tint of it, its name
+   takes the color, and each mention of it is a pill in that color. The names match the server's list (storage/bot-colors.ts). */
+.bot-frost { --bot: #88c0d0; }
+.bot-teal { --bot: #8fbcbb; }
+.bot-blue { --bot: #81a1c1; }
+.bot-violet { --bot: #b48ead; }
+.bot-red { --bot: #bf616a; }
+.bot-orange { --bot: #d08770; }
+.bot-yellow { --bot: #ebcb8b; }
+.bot-green { --bot: #a3be8c; }
+
+.bot-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background-color: var(--bot, var(--color-neutral));
+}
+
+.bot-bubble {
+  background-color: color-mix(in oklab, var(--bot, var(--color-neutral)) 24%, var(--color-neutral));
+}
+
+.bot-name {
+  color: var(--bot, inherit);
+  font-weight: 600;
+}
+
+.mention {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.45em;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--bot, var(--color-base-content)) 70%, transparent);
+  background-color: color-mix(in oklab, var(--bot, var(--color-base-content)) 22%, var(--color-base-100));
+  color: var(--color-base-content);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mention:hover {
+  background-color: color-mix(in oklab, var(--bot, var(--color-base-content)) 34%, var(--color-base-100));
+}
+
+.mention:focus-visible {
+  outline: 2px solid var(--bot, var(--color-base-content));
+  outline-offset: 2px;
+}

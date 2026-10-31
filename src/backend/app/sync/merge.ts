@@ -16,6 +16,8 @@ export interface BotRecord {
   providerId: string;
   model: string | null;
   thinking: string | null;
+  // Null in a record written before colors existed.
+  color: string | null;
   updatedAt: number;
 }
 

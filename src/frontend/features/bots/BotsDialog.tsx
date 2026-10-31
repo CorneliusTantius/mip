@@ -6,8 +6,8 @@ import { ErrorAlert } from "../../ui/ErrorAlert";
 import { Modal } from "../../ui/Modal";
 import { BotEditor } from "./BotEditor";
 
-// Manage the bots: list them, then create, edit, or delete one.
-export function BotsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+// Manage the bots: list them, then create, edit, or delete one. With startWith, it opens straight on that bot's form.
+export function BotsDialog({ open, startWith, onClose }: { open: boolean; startWith?: Bot; onClose: () => void }) {
   const [bots, setBots] = useState<Bot[]>([]);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   // The bot being edited, "new" for a new bot, or undefined for the list.
@@ -22,7 +22,7 @@ export function BotsDialog({ open, onClose }: { open: boolean; onClose: () => vo
     if (!open) return;
     load();
     api.get<{ providers: ProviderInfo[] }>("/api/providers").then((data) => setProviders(data.providers));
-    setEditing(undefined);
+    setEditing(startWith);
   }, [open]);
 
   function startEdit(bot?: Bot) {
@@ -62,6 +62,7 @@ export function BotsDialog({ open, onClose }: { open: boolean; onClose: () => vo
               key={editing === "new" ? "new" : editing.id}
               bot={editing === "new" ? undefined : editing}
               providers={providers}
+              usedColors={bots.filter((b) => b.id !== (editing === "new" ? undefined : editing)?.id).map((b) => b.color)}
               onCancel={() => setEditing(undefined)}
               onSaved={() => {
                 setEditing(undefined);
@@ -75,6 +76,7 @@ export function BotsDialog({ open, onClose }: { open: boolean; onClose: () => vo
                 {bots.length === 0 && <li className="py-6 text-center text-sm opacity-60">No bots yet.</li>}
                 {bots.map((bot) => (
                   <li key={bot.id} className="flex items-center gap-2 rounded-box border border-base-300 p-3">
+                    <span className={`bot-dot size-3 bot-${bot.color}`} />
                     <div className="min-w-0 flex-1">
                       <div className="font-medium">{bot.name}</div>
                       <div className="truncate text-xs opacity-60">{bot.persona}</div>
