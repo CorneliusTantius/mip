@@ -6,8 +6,8 @@ import { countChanges, emptySnapshot, indexBy, keyOf, mergeSnapshots } from "../
 const note = (title, body, updatedAt) => ({ title, body, links: [], tags: [], updatedAt });
 const withNotes = (...notes) => ({ ...emptySnapshot(), notes: indexBy(notes, keyOf.note) });
 const msg = (createdAt, text, role = "user") => ({ createdAt, role, text, tools: [], error: null });
-const chat = (id, title, updatedAt, messages) => ({ id, title, providerId: "pi", personaId: "default", model: null, thinking: null, updatedAt, messages });
-const withChats = (...chats) => ({ ...emptySnapshot(), chats: indexBy(chats, keyOf.chat) });
+const agent = (id, title, updatedAt, messages) => ({ id, title, providerId: "pi", personaId: "default", model: null, thinking: null, updatedAt, messages });
+const withChats = (...chats) => ({ ...emptySnapshot(), chats: indexBy(chats, keyOf.agent) });
 
 // Only one side changed: that side's version is taken, and nothing is reported.
 {
@@ -71,9 +71,9 @@ const withChats = (...chats) => ({ ...emptySnapshot(), chats: indexBy(chats, key
 // Chats: messages from both sides are kept once each, oldest first. The newer settings win.
 {
   const shared = msg(10, "hello");
-  const base = withChats(chat("c1", "Chat", 10, [shared]));
-  const local = withChats(chat("c1", "Chat", 20, [shared, msg(20, "from laptop", "assistant")]));
-  const remote = withChats(chat("c1", "Chat", 15, [shared, msg(15, "from desktop", "assistant")]));
+  const base = withChats(agent("c1", "Agent", 10, [shared]));
+  const local = withChats(agent("c1", "Agent", 20, [shared, msg(20, "from laptop", "assistant")]));
+  const remote = withChats(agent("c1", "Agent", 15, [shared, msg(15, "from desktop", "assistant")]));
   const { merged, notes } = mergeSnapshots(base, local, remote);
   assert.deepEqual(
     merged.chats.c1.messages.map((m) => m.text),
@@ -83,10 +83,10 @@ const withChats = (...chats) => ({ ...emptySnapshot(), chats: indexBy(chats, key
   assert.equal(notes.length, 1);
 }
 
-// A chat deleted on GitHub while it changed here is kept, with its new messages.
+// An agent deleted on GitHub while it changed here is kept, with its new messages.
 {
-  const base = withChats(chat("c1", "Chat", 10, [msg(10, "hello")]));
-  const local = withChats(chat("c1", "Chat", 30, [msg(10, "hello"), msg(30, "still here")]));
+  const base = withChats(agent("c1", "Agent", 10, [msg(10, "hello")]));
+  const local = withChats(agent("c1", "Agent", 30, [msg(10, "hello"), msg(30, "still here")]));
   const { merged } = mergeSnapshots(base, local, emptySnapshot());
   assert.equal(merged.chats.c1.messages.length, 2);
 }

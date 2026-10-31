@@ -1,9 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { deletePersona, getPersona, insertPersona, listPersonas, type Persona, setDefaultPersona, updatePersona } from "../storage/personas.js";
-import { countSessionsWithPersona } from "../storage/sessions.js";
+import { countAgentsWithPersona } from "../storage/agents.js";
 import { AppError } from "./errors.js";
 
-// The built-in persona. It always exists and can't be deleted. It is also the fallback when a chat's persona is missing.
+// The built-in persona. It always exists and can't be deleted. It is also the fallback when an agent's persona is missing.
 export const DEFAULT_PERSONA_ID = "default";
 
 // The text the built-in persona starts with. Each provider replaces its own default prompt with a persona's text.
@@ -47,7 +47,7 @@ export function hasPersona(id: string): boolean {
   return getPersona(id) !== undefined;
 }
 
-// The text a chat's persona uses. Read on every run, so edits apply to the next message.
+// The text an agent's persona uses. Read on every run, so edits apply to the next message.
 export function personaPrompt(id: string): string {
   return (getPersona(id) ?? getPersona(DEFAULT_PERSONA_ID)!).systemPrompt;
 }
@@ -64,19 +64,19 @@ export function editPersona(id: string, name: unknown, systemPrompt: unknown): P
   return getPersona(id)!;
 }
 
-// New chats start with this persona from now on.
+// New agents start with this persona from now on.
 export function makeDefaultPersona(id: string): void {
   requirePersona(id);
   setDefaultPersona(id);
 }
 
-// The built-in persona can't be removed, and neither can the default or a persona that chats still use.
+// The built-in persona can't be removed, and neither can the default or a persona that agents still use.
 export function removePersona(id: string): void {
   const persona = requirePersona(id);
   if (id === DEFAULT_PERSONA_ID) throw new AppError(400, "the built-in Default persona can't be deleted");
   if (persona.isDefault) throw new AppError(400, "set another persona as default before deleting this one");
-  const chats = countSessionsWithPersona(id);
-  if (chats > 0) throw new AppError(409, `${chats} ${chats === 1 ? "chat uses" : "chats use"} this persona`);
+  const agents = countAgentsWithPersona(id);
+  if (agents > 0) throw new AppError(409, `${agents} ${agents === 1 ? "agent uses" : "agents use"} this persona`);
   deletePersona(id);
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
-import { CHATS_CHANGED } from "../../api/events";
-import type { PullResult, Repo, Session } from "../../api/types";
+import { AGENTS_CHANGED } from "../../api/events";
+import type { PullResult, Repo, Agent } from "../../api/types";
 import { Card, CardBody, ExpandButton } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
@@ -12,10 +12,10 @@ import { RepoRow } from "./RepoRow";
 const CLONE_POLL_MS = 1500;
 
 // Clones are made with your own git, so private repositories work when git can reach them.
-// Each chat can take its own copy of a repository, in its workspace.
+// Each agent can take its own copy of a repository, in its workspace.
 export function RepositoriesCard() {
   const [repos, setRepos] = useState<Repo[]>([]);
-  const [chats, setChats] = useState<Session[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [link, setLink] = useState("");
   const [error, setError] = useState<string>();
   const [removing, setRemoving] = useState<Repo>();
@@ -25,16 +25,16 @@ export function RepositoriesCard() {
   const cloning = repos.some((repo) => repo.status === "cloning");
 
   const load = () => api.get<{ repos: Repo[] }>("/api/repos").then((data) => setRepos(data.repos));
-  const loadChats = () => api.get<{ sessions: Session[] }>("/api/sessions").then((data) => setChats(data.sessions));
+  const loadAgents = () => api.get<{ agents: Agent[] }>("/api/agents").then((data) => setAgents(data.agents));
 
   useEffect(() => {
     load();
-    loadChats();
+    loadAgents();
   }, []);
 
-  // The chat list changed. A deleted chat also takes its copies with it, so the repositories reload too.
-  useAnnouncement(CHATS_CHANGED, () => {
-    loadChats();
+  // The agent list changed. A deleted agent also takes its copies with it, so the repositories reload too.
+  useAnnouncement(AGENTS_CHANGED, () => {
+    loadAgents();
     load();
   });
 
@@ -53,10 +53,10 @@ export function RepositoriesCard() {
     load();
   }
 
-  async function copy(repo: Repo, sessionId: string) {
+  async function copy(repo: Repo, agentId: string) {
     setError(undefined);
     try {
-      await api.post(`/api/repos/${repo.id}/copies`, { sessionId });
+      await api.post(`/api/repos/${repo.id}/copies`, { agentId });
     } catch (err) {
       return setError(errorText(err));
     }
@@ -127,9 +127,9 @@ export function RepositoriesCard() {
               <RepoRow
                 key={repo.id}
                 repo={repo}
-                chats={chats}
+                agents={agents}
                 pull={pulls[repo.id]}
-                onCopy={(sessionId) => copy(repo, sessionId)}
+                onCopy={(agentId) => copy(repo, agentId)}
                 onRemove={() => setRemoving(repo)}
               />
             ))}
@@ -140,7 +140,7 @@ export function RepositoriesCard() {
       <ConfirmDialog
         open={!!removing}
         title="Remove this repository?"
-        message={`"${removing?.name ?? ""}" is removed from mip. Copies in chats stay in their workspaces.`}
+        message={`"${removing?.name ?? ""}" is removed from mip. Copies in agents stay in their workspaces.`}
         onConfirm={remove}
         onCancel={() => setRemoving(undefined)}
       />

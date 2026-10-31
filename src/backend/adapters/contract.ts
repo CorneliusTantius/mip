@@ -17,8 +17,8 @@ export interface ToolResult {
 // What a tool may use while it runs: the agent's workspace folder, and a signal that fires when the run is stopped.
 export interface ToolContext {
   workspace: string;
-  // The chat the run belongs to. Skill tools use it to check which skills the chat has enabled.
-  chatId?: string;
+  // The agent the run belongs to. Skill tools use it to check which skills the agent has enabled.
+  agentId?: string;
   // The deferred tools this run may run through tool_call. Only tool_search and tool_call read them.
   deferred?: ToolSpec[];
   signal?: AbortSignal;
@@ -61,8 +61,8 @@ export interface RunOptions {
   tools?: ToolSpec[];
   // The folder the tools work in.
   workspace?: string;
-  // The chat the run belongs to. Passed on to the tools.
-  chatId?: string;
+  // The agent the run belongs to. Passed on to the tools.
+  agentId?: string;
   // The deferred tools the run may run through tool_call. They are not offered to the model.
   deferredTools?: ToolSpec[];
   // Where the CLI reaches the app's tools, and the token that opens this run's workspace there.

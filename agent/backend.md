@@ -9,22 +9,22 @@ Each entry gives the file, its job, its main exports, and who calls it. Line num
 - `mcp.ts`: `handleMcp`. JSON-RPC 2.0 for the Claude CLI: `initialize`, `tools/list`, and `tools/call`. Both list and call use the run's offered tools. Without a live run token it answers 401.
 - `static.ts`: serves `dist/frontend`, and keeps every path inside it.
 - `routes/index.ts`: concatenates the domain route lists. A new domain is added here.
-- `routes/<domain>.ts`: one `Route[]` per domain: `sessions`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
+- `routes/<domain>.ts`: one `Route[]` per domain: `agents`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
 
 ## app/: use cases
 Flat files, one per domain:
 - `config.ts`: `HOST` and `PORT` (from `MIP_PORT`).
 - `errors.ts`: `AppError(status, message)` and `errorMessage`.
 - `git.ts`: `runGit(args, env?)`. Prompts are off, so a clone that needs a password fails instead of waiting. `env` adds variables for one call.
-- `names.ts`: `pickAgentName`. Norse names, with no repeats among open chats.
+- `names.ts`: `pickAgentName`. Norse names, with no repeats among open agents.
 - `system.ts`: `pullLatest` (`git pull --ff-only`) and `restartMip` (a detached shell that waits, runs `npm install` and `npm run build`, then starts the server).
-- `sessions.ts`: chats. `listChats` (with each chat's enabled skill names), `createChat`, `getChat` (session, messages, active run, skills), `updateChat`, `chooseChatSkills`, `deleteChat`.
-- `runs.ts`: a turn in a chat. `startRun` and `readRun` for the routes, and `execute`, the background loop. It builds the system prompt, streams the provider's events into the run, records the tool calls, and saves the reply.
+- `agents.ts`: agents. `listAgents` (with each agent's enabled skill names), `createAgent`, `getAgent` (agent, messages, active run, skills), `updateAgent`, `chooseAgentSkills`, `deleteAgent`.
+- `runs.ts`: a turn in an agent. `startRun` and `readRun` for the routes, and `execute`, the background loop. It builds the system prompt, streams the provider's events into the run, records the tool calls, and saves the reply.
 - `personas.ts`: the built-in persona. Its prompt holds identity and style only. `DEFAULT_PERSONA_ID`, `personaPrompt`, and the create, edit, default, and remove functions.
 - `bots.ts`: bot create, edit, and remove, and the name rule. Model and thinking are checked against the provider's live catalog.
 - `providers.ts`: the provider registry (`claude-cli`, `pi`), `findProvider`, `listProviders`, and sign-in, answer, and sign-out.
 - `memory.ts`: shared notes. Write, read, search, list, graph, forget, and `recallFor` (the notes that match a message, added to the system prompt).
-- `repos.ts`: repository clones, pull all, copies into chats, and `repoNote`.
+- `repos.ts`: repository clones, pull all, copies into agents, and `repoNote`.
 
 ## app/room/: the bots room
 - `room.ts`: `postToRoom`, `roomMessages`, `roomStatus`, `runTurn`. A bot turn gets `BOT_TOOLS` and no workspace yet.
@@ -37,14 +37,14 @@ Flat files, one per domain:
 - `files.ts`: `read`, `write`, `edit`. Paths go through `inWorkspace`.
 - `bash.ts`: `bash`. The working directory is the workspace. Output keeps the last 50 KB. The default timeout is 120 seconds. Not sandboxed.
 - `memory.ts`: `memory_search`, `memory_read`, `memory_edit`. Only existing notes can be edited.
-- `skills.ts`: `skill_read` and `skill_file`. Both need the chat to have enabled the skill.
+- `skills.ts`: `skill_read` and `skill_file`. Both need the agent to have enabled the skill.
 - `workspace.ts`: `workspacePath`, `workspaceFor`, `removeWorkspace`, `inWorkspace`.
 - `result.ts`: `ok` and `fail`.
 - `guides.test.mjs`: checks that every tool has a guide and that the guides reach the prompt.
 
 ## app/skills/: installed skills
 - `format.ts`: pure rules. `parseSkill` (the `SKILL.md` header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
-- `registry.ts`: what is installed. `listSkills`, `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt`, `setChatSkills`, `removeSkill`.
+- `registry.ts`: what is installed. `listSkills`, `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt`, `setAgentSkills`, `removeSkill`.
 - `imports.ts`: the two-step install. `stageImport` copies and checks a folder into staging, `confirmImport` moves it into place, and `discardImport` drops it.
 - `create.ts`: `createSkill`, which writes a skill from a form and never replaces an installed one.
 - `skills.test.mjs`: import review, refusals, enablement, the tools, and removal.
@@ -58,19 +58,19 @@ Flat files, one per domain:
 - Tests: `github.test.mjs`, `merge.test.mjs`, `sync.test.mjs` (two machines and a local bare repo, through real git).
 
 ## adapters/
-- `contract.ts`: `AgentEvent`, `ToolContext`, `ToolSpec` (with `guide`), `RunOptions` (with `chatId` and `deferredTools`), `ProviderCapabilities`, and `AgentProvider`.
+- `contract.ts`: `AgentEvent`, `ToolContext`, `ToolSpec` (with `guide`), `RunOptions` (with `agentId` and `deferredTools`), `ProviderCapabilities`, and `AgentProvider`.
 - `async-queue.ts`: `AsyncQueue`, the push-to-pull bridge both providers use.
-- `sign-in-session.ts`: `SignInSession`, the sign-in progress and the pending prompt.
+- `sign-in-agent.ts`: `SignInSession`, the sign-in progress and the pending prompt.
 - `claude-cli.ts`: `ClaudeCliProvider`. `run` builds the CLI arguments (stream-json, the MCP config, `--disable-slash-commands`) and maps the output to events. Also models, sign-in, and sign-out.
 - `pi.ts`: `PiProvider`. `run` builds a Pi session with `noSkills`, and the app's tools as custom tools (`toPiTool`). Also models and sign-in.
 
 ## storage/
 - `db.ts`: the connection, the schema, the additive migrations (`hasColumn`), and startup recovery.
 - `paths.ts`: `MIP_HOME`, `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `SKILLS_DIR`, `ensureMipDirs`.
-- `sessions.ts`: chats and messages, including each message's `calls`. `deleteSession` also removes the chat's skill enablements.
+- `agents.ts`: agents and messages, including each message's `calls`. `deleteAgent` also removes the agent's skill enablements.
 - `runs.ts`, `notes.ts`, `personas.ts`, `bots.ts`, `room.ts`, `repos.ts`: one file per domain.
-- `skills.ts`: `enabledSkillNames`, `saveChatSkills`, `removeSkillEnablements`.
-- `sync.ts`: the rows GitHub sync reads and writes. A `remove` returns false where the database must keep the row (the default persona, a persona a chat uses, a chat with a running run).
+- `skills.ts`: `enabledSkillNames`, `saveAgentSkills`, `removeSkillEnablements`.
+- `sync.ts`: the rows GitHub sync reads and writes. A `remove` returns false where the database must keep the row (the default persona, a persona an agent uses, an agent with a running run).
 
 ## Rules across the backend
 - App code throws `AppError` for client mistakes. Routes don't catch.

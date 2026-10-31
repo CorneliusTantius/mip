@@ -45,8 +45,8 @@ export interface Persona {
   isDefault: boolean;
 }
 
-// A chat. Its model and thinking level apply to the next message.
-export interface Session {
+// An agent. Its model and thinking level apply to the next message.
+export interface Agent {
   id: string;
   providerId: string;
   providerSessionId: string | null;
@@ -55,7 +55,7 @@ export interface Session {
   thinking: string | null;
   title: string;
   updatedAt: number;
-  // The skills the chat has enabled. The chat list includes it; a chat created just now may not.
+  // The skills the agent has enabled. The agent list includes it; an agent created just now may not.
   skills?: string[];
 }
 
@@ -81,7 +81,7 @@ export interface ToolCall {
   isError: boolean;
 }
 
-export interface ChatMessage {
+export interface AgentMessage {
   role: "user" | "assistant";
   text: string;
   tools: string[];
@@ -89,14 +89,14 @@ export interface ChatMessage {
   error?: string | null;
 }
 
-export interface ChatDetail {
-  session: Session;
-  messages: ChatMessage[];
-  // The run still going in this chat, if there is one.
+export interface AgentDetail {
+  agent: Agent;
+  messages: AgentMessage[];
+  // The run still going in this agent, if there is one.
   activeRunId?: string;
 }
 
-// One event of a run, as the server saves it. The chat reads the kinds it shows and ignores the rest.
+// One event of a run, as the server saves it. The agent reads the kinds it shows and ignores the rest.
 export interface RunEvent {
   type: string;
   text?: string;
@@ -125,7 +125,7 @@ export interface RoomMessage {
 }
 
 export interface RepoCopy {
-  sessionId: string;
+  agentId: string;
   title: string;
 }
 

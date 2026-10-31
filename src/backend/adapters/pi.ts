@@ -91,7 +91,7 @@ function toAppEvent(event: AgentSessionEvent): AgentEvent | undefined {
 }
 
 // Wraps an app tool for Pi. Pi shows the call and the result; the app's function does the work.
-function toPiTool(tool: ToolSpec, context: { workspace: string; chatId?: string; deferred?: ToolSpec[] }): ToolDefinition {
+function toPiTool(tool: ToolSpec, context: { workspace: string; agentId?: string; deferred?: ToolSpec[] }): ToolDefinition {
   return {
     name: tool.name,
     label: tool.name,
@@ -219,7 +219,7 @@ export class PiProvider implements AgentProvider {
         cwd,
         agentDir: getAgentDir(),
         noContextFiles: true,
-        // Pi's own skills are off. A chat uses only the skills enabled for it, through the app's skill tools.
+        // Pi's own skills are off. An agent uses only the skills enabled for it, through the app's skill tools.
         noSkills: true,
         systemPrompt: options.systemPrompt,
       });
@@ -234,7 +234,7 @@ export class PiProvider implements AgentProvider {
         // Pi's own copies of these tools are off. The app's copies are on.
         noTools: "builtin",
         customTools: (options.tools ?? []).map((tool) =>
-          toPiTool(tool, { workspace: options.workspace ?? process.cwd(), chatId: options.chatId, deferred: options.deferredTools }),
+          toPiTool(tool, { workspace: options.workspace ?? process.cwd(), agentId: options.agentId, deferred: options.deferredTools }),
         ),
       });
 

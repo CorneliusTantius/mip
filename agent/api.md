@@ -6,19 +6,19 @@ Common errors: `400` bad input, `404` not found (message `no such …`), `409` c
 
 Matching: path segments are decoded before matching; a trailing slash is tolerated.
 
-## Sessions (chats) — `routes/sessions.ts`
+## Agents (agents) — `routes/agents.ts`
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/sessions | 200 | `{sessions: Session[]}` | |
-| POST | /api/sessions | 201 | `Session` (body `{providerId, personaId}`) | 400 unknown provider/persona |
-| GET | /api/sessions/:sessionId | 200 | `{session, messages, activeRunId?}` | 404 no such session |
-| PATCH | /api/sessions/:sessionId | 200 | `Session` (body `{title?, model?, thinking?}`; `""` clears model/thinking) | 400 empty title, unknown model, thinking not accepted by model; 404 |
-| DELETE | /api/sessions/:sessionId | 200 | `{ok:true}` | 404; 409 run active |
+| GET | /api/agents | 200 | `{agents: Agent[]}` | |
+| POST | /api/agents | 201 | `Agent` (body `{providerId, personaId}`) | 400 unknown provider/persona |
+| GET | /api/agents/:agentId | 200 | `{agent, messages, activeRunId?}` | 404 no such agent |
+| PATCH | /api/agents/:agentId | 200 | `Agent` (body `{title?, model?, thinking?}`; `""` clears model/thinking) | 400 empty title, unknown model, thinking not accepted by model; 404 |
+| DELETE | /api/agents/:agentId | 200 | `{ok:true}` | 404; 409 run active |
 
 ## Runs — `routes/runs.ts`
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| POST | /api/run | 202 | `{runId}` (body `{sessionId, prompt}`) | 404 no such session; 400 prompt required; 409 chat still running |
+| POST | /api/run | 202 | `{runId}` (body `{agentId, prompt}`) | 404 no such agent; 400 prompt required; 409 agent still running |
 | GET | /api/runs/:runId/events?after=N | 200 | `{status: "running"|"done"|"error", events: [{seq, event}]}` | 404 no such run |
 
 `event` is an `AgentEvent` (`adapters/contract.ts`): `text`, `tool_call`, `tool_result`, `error`, `done`.
@@ -29,7 +29,7 @@ Matching: path segments are decoded before matching; a trailing slash is tolerat
 | GET | /api/personas | 200 | `{personas: Persona[]}` | |
 | POST | /api/personas | 201 | `Persona` (body `{name, systemPrompt}`) | 400 name / prompt required |
 | PUT | /api/personas/:personaId | 200 | `Persona` | 400; 404 |
-| DELETE | /api/personas/:personaId | 200 | `{ok:true}` | 400 built-in default or current default; 409 chats use it; 404 |
+| DELETE | /api/personas/:personaId | 200 | `{ok:true}` | 400 built-in default or current default; 409 agents use it; 404 |
 | POST | /api/personas/:personaId/default | 200 | `{ok:true}` | 404 |
 
 ## Bots — `routes/bots.ts`
@@ -53,11 +53,11 @@ Name rule: starts with a letter, 2–24 letters, digits, `-` or `_`; unique, cas
 ## Repositories — `routes/repos.ts`
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/repos | 200 | `{repos: RepoCard[]}` (Repo + `branch`, `copies: [{sessionId,title}]`) | |
+| GET | /api/repos | 200 | `{repos: RepoCard[]}` (Repo + `branch`, `copies: [{agentId,title}]`) | |
 | POST | /api/repos | 202 | `Repo` with `status: "cloning"` (body `{url}`) | 400 not a clone link / bad folder name; 409 name already here |
 | POST | /api/repos/pull | 200 | `{results: [{id,name,ok,message}]}` | |
 | DELETE | /api/repos/:repoId | 200 | `{ok:true}` | 404; 409 still cloning |
-| POST | /api/repos/:repoId/copies | 201 | `{ok:true}` (body `{sessionId}`) | 404 repo or chat; 409 not ready or chat already has it; 500 clone failed |
+| POST | /api/repos/:repoId/copies | 201 | `{ok:true}` (body `{agentId}`) | 404 repo or agent; 409 not ready or agent already has it; 500 clone failed |
 
 ## Memory — `routes/memory.ts`
 | method | path | status | body | errors |
@@ -92,7 +92,7 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 | --- | --- | --- | --- | --- |
 | GET | /api/skills | 200 | `{skills: SkillSummary[], problems: {folder, error}[]}` | |
 | GET | /api/skills/:name | 200 | `SkillDetail`: `{name, description, body, files}` | 404 no such skill; 409 the skill is not valid |
-| DELETE | /api/skills/:name | 200 | `{ok:true}`. The skill is removed from every chat | 404 |
+| DELETE | /api/skills/:name | 200 | `{ok:true}`. The skill is removed from every agent | 404 |
 | POST | /api/skills | 201 | `SkillDetail` (body `{name, description, body}`). Never replaces an installed skill | 400 bad name, missing or multi-line description, empty instructions, too long; 409 a skill with that name is installed; 415 |
 | POST | /api/skills/imports | 201 | `{id, name, description, files, source, skillMd, replaces}` (body `{path}`, a full folder path) | 400 not a folder, no SKILL.md, a symbolic link, a non-text file, too large, bad header; 415 |
 | POST | /api/skills/imports/:importId/confirm | 200 | `SkillDetail`. Replaces a skill with the same name | 404 no such import; 415 |
@@ -101,12 +101,12 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 ## Tools — `routes/tools.ts`
 `GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, guide, inputSchema, load, agent, bot}`. `guide` is one paragraph on when and how to use the tool. `load` is `basic` (always offered), `deferred` (found with `tool_search`, run with `tool_call`), or `search` (the two tools that do the finding). `agent` and `bot` say whether that kind of run may use the tool. Agents can use every tool, and bots none for now.
 
-## Sessions — enabled skills
-`GET /api/sessions/:sessionId` also returns `skills`, the names the chat has enabled. Replace them with:
+## Agents — enabled skills
+`GET /api/agents/:agentId` also returns `skills`, the names the agent has enabled. Replace them with:
 
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| PUT | /api/sessions/:sessionId/skills | 200 | `{skills: string[]}` (body `{skills: [names]}`) | 400 a name is not an installed skill, or the body is not a list of names; 404 no such session |
+| PUT | /api/agents/:agentId/skills | 200 | `{skills: string[]}` (body `{skills: [names]}`) | 400 a name is not an installed skill, or the body is not a list of names; 404 no such agent |
 
 ## Sync — `routes/sync.ts`
 GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is signed in to on this machine. The run needs `Content-Type: application/json`, or it returns 415. The run is in the background: poll `GET /api/sync` until `running` is false.

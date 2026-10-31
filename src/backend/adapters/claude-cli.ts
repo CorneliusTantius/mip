@@ -54,7 +54,7 @@ interface ClaudeAuthStatus {
 }
 
 // Drops API keys so the CLI uses the subscription login.
-// configDir (when set) becomes the CLI's config folder, so its chats and login are kept there.
+// configDir (when set) becomes the CLI's config folder, so its agents and login are kept there.
 function cliEnv(configDir?: string): NodeJS.ProcessEnv {
   const env = { ...process.env };
   delete env.ANTHROPIC_API_KEY;
@@ -122,7 +122,7 @@ function mcpConfig(mcp: { url: string; token: string }): string {
 export interface ClaudeCliOptions {
   // Path or name of the claude binary. Defaults to CLAUDE_BIN or "claude" on PATH.
   bin?: string;
-  // Folder for the CLI's config, chats, and login. Unset uses the CLI default (~/.claude).
+  // Folder for the CLI's config, agents, and login. Unset uses the CLI default (~/.claude).
   configDir?: string;
   defaultTimeoutMs?: number;
 }
@@ -251,7 +251,7 @@ export class ClaudeCliProvider implements AgentProvider {
   async *run(options: RunOptions): AsyncGenerator<AgentEvent> {
     // A new run gets a known session id, so the caller can resume it later.
     const sessionId = options.sessionId ?? randomUUID();
-    // Claude Code's own skills and commands are off. A chat uses only the skills enabled for it, through the app's skill tools.
+    // Claude Code's own skills and commands are off. An agent uses only the skills enabled for it, through the app's skill tools.
     const args = ["-p", options.prompt, "--output-format", "stream-json", "--verbose", "--include-partial-messages", "--disable-slash-commands"];
     // The app's tools replace Claude Code's built-in ones for this run. Only the app's tools are allowed.
     if (options.toolServer && options.tools?.length) {
@@ -269,7 +269,7 @@ export class ClaudeCliProvider implements AgentProvider {
     if (options.tools?.length === 0) args.push("--tools", "");
     if (options.model) args.push("--model", options.model);
     if (options.thinking) args.push("--effort", options.thinking);
-    // Replaces Claude Code's default prompt. Snapshot off re-renders it on every run, so resumed chats pick up changes.
+    // Replaces Claude Code's default prompt. Snapshot off re-renders it on every run, so resumed agents pick up changes.
     if (options.systemPrompt) args.push("--system-prompt", options.systemPrompt, "--system-prompt-snapshot", "off");
     args.push(options.sessionId ? "--resume" : "--session-id", sessionId);
 

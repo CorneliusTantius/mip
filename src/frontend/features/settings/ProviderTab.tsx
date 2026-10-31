@@ -5,7 +5,7 @@ import { ErrorAlert } from "../../ui/ErrorAlert";
 import { usePolling } from "../../ui/hooks";
 import { confirmSignOut, SignInPanel } from "./SignInPanel";
 
-const CAPABILITIES: Record<string, string> = { streaming: "Streaming", tools: "Tools", mcp: "MCP", sessions: "Sessions", signIn: "Sign-in" };
+const CAPABILITIES: Record<string, string> = { streaming: "Streaming", tools: "Tools", mcp: "MCP", agents: "Agents", signIn: "Sign-in" };
 const POLL_MS = 2000;
 
 // The providers, the service the user picks within one, and what is connected. Polls while Settings is open,

@@ -61,7 +61,7 @@ export function stageImport(source: string): ImportPreview {
   }
 }
 
-// Installs a staged skill. A skill with the same name is replaced. Chats that had it enabled keep it enabled.
+// Installs a staged skill. A skill with the same name is replaced. Agents that had it enabled keep it enabled.
 export function confirmImport(id: string): SkillDetail {
   const dir = stagingDir(id);
   const header = parseSkill(readFileSync(join(dir, "SKILL.md"), "utf8"));

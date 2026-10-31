@@ -12,7 +12,7 @@ process.env.MIP_HOME = join(root, "mip-home");
 
 try {
   const { MAX_TEXT, ToolCallLog } = await import(`${DIST}app/tools/calls.js`);
-  const sessions = await import(`${DIST}storage/sessions.js`);
+  const agents = await import(`${DIST}storage/agents.js`);
 
   // A log keeps each call's input, and attaches its result by the call's id. An unknown id is ignored.
   const log = new ToolCallLog();
@@ -41,10 +41,10 @@ try {
   assert.match(long.calls[0].output, /… \(10 more characters\)$/);
 
   // Messages keep their calls. A message saved without calls has none.
-  const chat = sessions.createSession("claude-cli", "default", "Test chat");
-  sessions.addMessage(chat.id, { role: "user", text: "hi", tools: [], error: null });
-  sessions.addMessage(chat.id, { role: "assistant", text: "done", tools: ["bash", "skill_read"], calls: log.calls, error: null });
-  const messages = sessions.listMessages(chat.id);
+  const agent = agents.insertAgent("claude-cli", "default", "Test agent");
+  agents.addMessage(agent.id, { role: "user", text: "hi", tools: [], error: null });
+  agents.addMessage(agent.id, { role: "assistant", text: "done", tools: ["bash", "skill_read"], calls: log.calls, error: null });
+  const messages = agents.listMessages(agent.id);
   assert.deepEqual(messages[0].calls, []);
   assert.equal(messages[1].calls.length, 2);
   assert.equal(messages[1].calls[0].name, "mcp__mip__bash");

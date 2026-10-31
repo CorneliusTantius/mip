@@ -2,7 +2,7 @@ import { allPersonas, createPersona, editPersona, makeDefaultPersona, removePers
 import { ack, created, ok, readJson } from "../respond.js";
 import { del, get, post, put, type Route } from "../router.js";
 
-// Personas: the system prompts a chat can use. Exactly one is the default for new chats.
+// Personas: the system prompts an agent can use. Exactly one is the default for new agents.
 export const personaRoutes: Route[] = [
   get("/api/personas", () => ok({ personas: allPersonas() })),
   post("/api/personas", async ({ req }) => {

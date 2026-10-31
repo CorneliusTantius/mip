@@ -1,5 +1,5 @@
 import * as store from "../../storage/sync.js";
-import { indexBy, keyOf, sameRecord, type ChatRecord, type Snapshot } from "./merge.js";
+import { indexBy, keyOf, sameRecord, type AgentRecord, type Snapshot } from "./merge.js";
 
 // Reads this machine's database as a snapshot, in the shape the dotmip repo stores.
 export function readLocal(): Snapshot {
@@ -8,8 +8,8 @@ export function readLocal(): Snapshot {
     bots: indexBy(store.readBotRows(), keyOf.bot),
     notes: indexBy(store.readNoteRows(), keyOf.note),
     chats: indexBy(
-      store.readChatRows().map((chat) => ({ ...chat, messages: store.readMessageRows(chat.id) })),
-      keyOf.chat,
+      store.readAgentRows().map((agent) => ({ ...agent, messages: store.readMessageRows(agent.id) })),
+      keyOf.agent,
     ),
     room: indexBy(store.readRoomRows(), keyOf.room),
   };
@@ -21,7 +21,7 @@ export function applySnapshot(local: Snapshot, target: Snapshot): void {
   applyPart(local.personas, target.personas, store.writePersonaRow, (persona) => store.removePersonaRow(persona.id));
   applyPart(local.bots, target.bots, store.writeBotRow, (bot) => store.removeBotRow(bot.name));
   applyPart(local.notes, target.notes, store.writeNoteRow, (note) => store.removeNoteRow(note.title));
-  applyPart(local.chats, target.chats, writeChat, (chat) => store.removeChatRow(chat.id));
+  applyPart(local.chats, target.chats, writeAgent, (agent) => store.removeAgentRow(agent.id));
   // Room messages are only added, as the merge keeps both sides' messages. They go in sent order, so the room reads in time.
   const added = Object.keys(target.room)
     .filter((key) => local.room[key] === undefined)
@@ -30,12 +30,12 @@ export function applySnapshot(local: Snapshot, target: Snapshot): void {
   for (const message of added) store.insertRoomRow(message);
 }
 
-// Writes a chat's settings, then adds the messages the database does not have yet. Messages are never removed here.
-function writeChat(chat: ChatRecord): void {
-  store.writeChatRow(chat);
-  const have = new Set(store.readMessageRows(chat.id).map(keyOf.message));
-  for (const message of chat.messages) {
-    if (!have.has(keyOf.message(message))) store.insertMessageRow(chat.id, message);
+// Writes an agent's settings, then adds the messages the database does not have yet. Messages are never removed here.
+function writeAgent(agent: AgentRecord): void {
+  store.writeAgentRow(agent);
+  const have = new Set(store.readMessageRows(agent.id).map(keyOf.message));
+  for (const message of agent.messages) {
+    if (!have.has(keyOf.message(message))) store.insertMessageRow(agent.id, message);
   }
 }
 

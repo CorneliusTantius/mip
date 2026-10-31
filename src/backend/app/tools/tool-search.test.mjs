@@ -27,7 +27,7 @@ try {
   assert.deepEqual(searchTools(DEFERRED_TOOLS, "spaceship"), []);
 
   // tool_search lists the matches with their inputs. With no match, it says so.
-  const context = { workspace: root, chatId: "chat-a", deferred: AGENT_DEFERRED };
+  const context = { workspace: root, agentId: "agent-a", deferred: AGENT_DEFERRED };
   const found = await toolSearchTool.run({ query: "search notes" }, context);
   assert.equal(found.isError, false);
   assert.match(found.text, /memory_search: /);

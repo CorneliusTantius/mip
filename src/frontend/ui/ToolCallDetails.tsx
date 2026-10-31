@@ -1,7 +1,7 @@
 import type { ToolCall } from "../api/types";
 import { prettyJson, toolLabel } from "./toolName";
 
-// One tool call's name, input, and result. Used by the chat's tool-call dialog.
+// One tool call's name, input, and result. Used by the agent's tool-call dialog.
 export function ToolCallDetails({ call }: { call: ToolCall }) {
   return (
     <div className="flex flex-col gap-2">

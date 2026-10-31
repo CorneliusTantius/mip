@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { SYNC_DIR } from "../../storage/paths.js";
 import { errorMessage } from "../errors.js";
 import { runGit } from "../git.js";
-import { indexBy, keyOf, sortKeys, type BotRecord, type ChatRecord, type NoteRecord, type PersonaRecord, type RoomRecord, type Snapshot } from "./merge.js";
+import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type NoteRecord, type PersonaRecord, type RoomRecord, type Snapshot } from "./merge.js";
 
 // The local copy of the dotmip repo. Sync reads its files, writes the merged state, and commits and pushes. Edits made
 // here by hand are overwritten by the next sync.
@@ -21,7 +21,7 @@ Data synced from mip. mip writes this repo; edits made here are overwritten by t
 - chats/: chats with their messages, one file each
 - room.json: the messages from the bots room, in order
 
-Not stored here: provider logins, repository clones, and chat workspaces.
+Not stored here: provider logins, repository clones, and agent workspaces.
 `;
 
 // Brings the local copy to the remote's main branch. The copy is made again when the URL changes (another GitHub account),
@@ -58,7 +58,7 @@ export function readTree(): Snapshot {
     personas: indexBy(readFolder<PersonaRecord>("personas"), keyOf.persona),
     bots: indexBy(readFolder<BotRecord>("bots"), keyOf.bot),
     notes: indexBy(readFolder<NoteRecord>("notes"), keyOf.note),
-    chats: indexBy(readFolder<ChatRecord>("chats"), keyOf.chat),
+    chats: indexBy(readFolder<AgentRecord>("chats"), keyOf.agent),
     room: indexBy(existsSync(join(REPO_DIR, ROOM_FILE)) ? readJson<RoomRecord[]>(ROOM_FILE) : [], keyOf.room),
   };
 }

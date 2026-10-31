@@ -10,8 +10,8 @@ import { Modal } from "../../ui/Modal";
 // Chosen in the dropdown when the user wants a new persona. It is the last option of the list.
 const ADD_NEW = "add-new";
 
-// Manage the personas from the chat card: pick one to read or edit, set the default for new chats, or delete one.
-// Saving, making a default, or deleting announces the change, so the new-chat dropdown follows.
+// Manage the personas from the agent card: pick one to read or edit, set the default for new agents, or delete one.
+// Saving, making a default, or deleting announces the change, so the new-agent dropdown follows.
 export function PersonasDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [selected, setSelected] = useState(ADD_NEW);
@@ -108,10 +108,10 @@ export function PersonasDialog({ open, onClose }: { open: boolean; onClose: () =
               <textarea className="textarea h-56 w-full font-mono text-sm" value={prompt} onInput={(e) => setPrompt(e.currentTarget.value)} />
             </fieldset>
             <ErrorAlert message={error} />
-            <p className="text-sm opacity-70">A chat keeps the persona it was started with. Changes apply to its next message.</p>
+            <p className="text-sm opacity-70">An agent keeps the persona it was started with. Changes apply to its next message.</p>
 
             <div className="flex justify-end gap-2">
-              {current?.isDefault && <span className="badge badge-success mr-auto">Default for new chats</span>}
+              {current?.isDefault && <span className="badge badge-success mr-auto">Default for new agents</span>}
               {!isNew && !current?.isDefault && (
                 <button className="btn btn-ghost" onClick={makeDefault}>
                   Set as default

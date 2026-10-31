@@ -1,17 +1,17 @@
 import { db, type Row } from "./db.js";
 
-// Which skills each chat has enabled. A skill is stored by name, and it is checked against the registry when it is used.
+// Which skills each agent has enabled. A skill is stored by name, and it is checked against the registry when it is used.
 
-export function enabledSkillNames(chatId: string): string[] {
-  return (db.prepare("SELECT skill FROM skill_enablements WHERE session_id = ? ORDER BY skill").all(chatId) as Row[]).map((row) => row.skill);
+export function enabledSkillNames(agentId: string): string[] {
+  return (db.prepare("SELECT skill FROM skill_enablements WHERE agent_id = ? ORDER BY skill").all(agentId) as Row[]).map((row) => row.skill);
 }
 
-// Replaces the chat's enabled skills in one step.
-export function saveChatSkills(chatId: string, names: string[]): void {
+// Replaces the agent's enabled skills in one step.
+export function saveAgentSkills(agentId: string, names: string[]): void {
   db.exec("BEGIN");
   try {
-    db.prepare("DELETE FROM skill_enablements WHERE session_id = ?").run(chatId);
-    for (const name of names) db.prepare("INSERT INTO skill_enablements (session_id, skill) VALUES (?, ?)").run(chatId, name);
+    db.prepare("DELETE FROM skill_enablements WHERE agent_id = ?").run(agentId);
+    for (const name of names) db.prepare("INSERT INTO skill_enablements (agent_id, skill) VALUES (?, ?)").run(agentId, name);
     db.exec("COMMIT");
   } catch (err) {
     db.exec("ROLLBACK");
@@ -19,7 +19,7 @@ export function saveChatSkills(chatId: string, names: string[]): void {
   }
 }
 
-// Called when a skill is removed, so no chat keeps a pointer to it.
+// Called when a skill is removed, so no agent keeps a pointer to it.
 export function removeSkillEnablements(name: string): void {
   db.prepare("DELETE FROM skill_enablements WHERE skill = ?").run(name);
 }

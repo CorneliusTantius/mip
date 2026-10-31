@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { db, type Row } from "./db.js";
 import { deleteNote, getNoteByTitle, linksFrom, saveNote, tagsOf } from "./notes.js";
 import { deletePersona } from "./personas.js";
-import { countSessionsWithPersona, deleteSession } from "./sessions.js";
+import { countAgentsWithPersona, deleteAgent } from "./agents.js";
 
 // The rows GitHub sync reads and writes. Each write keeps the change time it is given, so a record that came from GitHub keeps
 // its own time. The app's sync code decides what to write. A remove returns false when the database must keep the row.
@@ -31,7 +31,7 @@ export interface NoteRow {
   updatedAt: number;
 }
 
-export interface ChatRow {
+export interface AgentRow {
   id: string;
   title: string;
   providerId: string;
@@ -72,11 +72,11 @@ export function writePersonaRow(persona: PersonaRow): void {
   ).run(persona.id, persona.name, persona.systemPrompt, persona.updatedAt, persona.updatedAt);
 }
 
-// The default persona stays, and so does one a chat still uses. Otherwise the persona is removed.
+// The default persona stays, and so does one an agent still uses. Otherwise the persona is removed.
 export function removePersonaRow(id: string): boolean {
   const row = db.prepare("SELECT is_default FROM personas WHERE id = ?").get(id) as Row | undefined;
   if (!row) return true;
-  if (row.is_default === 1 || countSessionsWithPersona(id) > 0) return false;
+  if (row.is_default === 1 || countAgentsWithPersona(id) > 0) return false;
   deletePersona(id);
   return true;
 }
@@ -146,8 +146,8 @@ export function removeNoteRow(title: string): boolean {
   return true;
 }
 
-export function readChatRows(): ChatRow[] {
-  return (db.prepare("SELECT id, provider_id, persona_id, model, thinking, title, meta_updated_at FROM sessions").all() as Row[]).map((row) => ({
+export function readAgentRows(): AgentRow[] {
+  return (db.prepare("SELECT id, provider_id, persona_id, model, thinking, title, meta_updated_at FROM agents").all() as Row[]).map((row) => ({
     id: row.id,
     providerId: row.provider_id,
     personaId: row.persona_id,
@@ -158,25 +158,25 @@ export function readChatRows(): ChatRow[] {
   }));
 }
 
-// Inserts or updates a chat's settings. The chat's activity time only moves forward, so the chat list keeps its order.
-export function writeChatRow(chat: ChatRow): void {
+// Inserts or updates an agent's settings. The agent's activity time only moves forward, so the agent list keeps its order.
+export function writeAgentRow(agent: AgentRow): void {
   db.prepare(
-    `INSERT INTO sessions (id, provider_id, persona_id, title, model, thinking, updated_at, meta_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO agents (id, provider_id, persona_id, title, model, thinking, updated_at, meta_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET provider_id = excluded.provider_id, persona_id = excluded.persona_id, title = excluded.title,
-     model = excluded.model, thinking = excluded.thinking, updated_at = MAX(sessions.updated_at, excluded.updated_at),
+     model = excluded.model, thinking = excluded.thinking, updated_at = MAX(agents.updated_at, excluded.updated_at),
      meta_updated_at = excluded.meta_updated_at`,
-  ).run(chat.id, chat.providerId, chat.personaId, chat.title, chat.model, chat.thinking, chat.updatedAt, chat.updatedAt);
+  ).run(agent.id, agent.providerId, agent.personaId, agent.title, agent.model, agent.thinking, agent.updatedAt, agent.updatedAt);
 }
 
-// A chat that is running stays, so its reply is not lost. Otherwise the chat goes with its messages and runs.
-export function removeChatRow(id: string): boolean {
-  if (db.prepare("SELECT 1 FROM runs WHERE session_id = ? AND status = 'running'").get(id)) return false;
-  deleteSession(id);
+// An agent that is running stays, so its reply is not lost. Otherwise the agent goes with its messages and runs.
+export function removeAgentRow(id: string): boolean {
+  if (db.prepare("SELECT 1 FROM runs WHERE agent_id = ? AND status = 'running'").get(id)) return false;
+  deleteAgent(id);
   return true;
 }
 
-export function readMessageRows(sessionId: string): MessageRow[] {
-  return (db.prepare("SELECT created_at, role, text, tools, error FROM messages WHERE session_id = ? ORDER BY created_at, id").all(sessionId) as Row[]).map(
+export function readMessageRows(agentId: string): MessageRow[] {
+  return (db.prepare("SELECT created_at, role, text, tools, error FROM messages WHERE agent_id = ? ORDER BY created_at, id").all(agentId) as Row[]).map(
     (row) => ({
       createdAt: row.created_at,
       role: row.role,
@@ -187,9 +187,9 @@ export function readMessageRows(sessionId: string): MessageRow[] {
   );
 }
 
-export function insertMessageRow(sessionId: string, message: MessageRow): void {
-  db.prepare("INSERT INTO messages (session_id, role, text, tools, error, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
-    sessionId,
+export function insertMessageRow(agentId: string, message: MessageRow): void {
+  db.prepare("INSERT INTO messages (agent_id, role, text, tools, error, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+    agentId,
     message.role,
     message.text,
     JSON.stringify(message.tools),

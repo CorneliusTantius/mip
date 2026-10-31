@@ -18,9 +18,9 @@ export function RoomTranscript({ messages, emptyText }: { messages: RoomMessage[
             {message.text}
           </p>
         ) : (
-          <div key={message.id} className={"chat " + (message.kind === "user" ? "chat-end" : "chat-start")}>
-            <div className="chat-header text-xs opacity-70">{message.authorName}</div>
-            <div className={"chat-bubble whitespace-pre-wrap " + (message.kind === "user" ? "chat-bubble-primary" : "")}>{message.text}</div>
+          <div key={message.id} className={"agent " + (message.kind === "user" ? "agent-end" : "agent-start")}>
+            <div className="agent-header text-xs opacity-70">{message.authorName}</div>
+            <div className={"agent-bubble whitespace-pre-wrap " + (message.kind === "user" ? "agent-bubble-primary" : "")}>{message.text}</div>
           </div>
         ),
       )}

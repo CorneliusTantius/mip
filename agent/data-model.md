@@ -7,10 +7,10 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | table | columns | primary key / constraints | owner | written by |
 | --- | --- | --- | --- | --- |
 | `personas` | id, name, system_prompt, is_default (0/1), created_at, updated_at | id | `storage/personas.ts` | `app/personas.ts` |
-| `sessions` | id, provider_id, provider_session_id (nullable), persona_id (default `'default'`), title, updated_at, meta_updated_at (title and settings), model (nullable), thinking (nullable) | id | `storage/sessions.ts` | `app/sessions.ts`, `app/runs.ts` |
-| `messages` | id (autoincrement), session_id, role (`user`/`assistant`), text, tools (JSON array of names), calls (JSON array of `{name, input, output, isError}`, default `[]`), error (nullable), created_at | id | `storage/sessions.ts` | `app/runs.ts`, `app/sessions.ts` (delete) |
-| `runs` | id, session_id, status (`running`/`done`/`error`), started_at | id | `storage/runs.ts` (+ `sessions.ts` delete) | `app/runs.ts`, `db.ts` (recovery) |
-| `run_events` | run_id, seq, event (JSON `AgentEvent`) | (run_id, seq) | `storage/runs.ts` (+ `sessions.ts` delete) | `app/runs.ts` |
+| `agents` | id, provider_id, provider_session_id (nullable), persona_id (default `'default'`), title, updated_at, meta_updated_at (title and settings), model (nullable), thinking (nullable) | id | `storage/agents.ts` | `app/agents.ts`, `app/runs.ts` |
+| `messages` | id (autoincrement), agent_id, role (`user`/`assistant`), text, tools (JSON array of names), calls (JSON array of `{name, input, output, isError}`, default `[]`), error (nullable), created_at | id | `storage/agents.ts` | `app/runs.ts`, `app/agents.ts` (delete) |
+| `runs` | id, agent_id, status (`running`/`done`/`error`), started_at | id | `storage/runs.ts` (+ `agents.ts` delete) | `app/runs.ts`, `db.ts` (recovery) |
+| `run_events` | run_id, seq, event (JSON `AgentEvent`) | (run_id, seq) | `storage/runs.ts` (+ `agents.ts` delete) | `app/runs.ts` |
 | `notes` | id, title (UNIQUE, NOCASE), body, updated_at | id | `storage/notes.ts` | `app/memory.ts` |
 | `notes_fts` | title, body, note_id (UNINDEXED) — FTS5 virtual table | — | `storage/notes.ts` | `saveNote`, `deleteNote` |
 | `note_links` | from_id, to_title (NOCASE) | (from_id, to_title) | `storage/notes.ts` | `saveNote` |
@@ -18,29 +18,29 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), created_at, updated_at | id | `storage/bots.ts` | `app/bots.ts` |
 | `room_messages` | id (autoincrement), kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, created_at | id | `storage/room.ts` | `app/room/room.ts` |
 | `repos` | id, name (UNIQUE), url, status (`cloning`/`ready`/`error`), error (nullable), created_at | id | `storage/repos.ts` | `app/repos.ts`, `db.ts` (recovery) |
-| `skill_enablements` | session_id, skill (the skill's name) | (session_id, skill) | `storage/skills.ts` (+ `sessions.ts` delete) | `app/skills/registry.ts` |
+| `skill_enablements` | agent_id, skill (the skill's name) | (agent_id, skill) | `storage/skills.ts` (+ `agents.ts` delete) | `app/skills/registry.ts` |
 
 ## Invariants
-- A chat has at most one `running` run (`app/runs.ts`).
-- Deleting a chat deletes its `run_events`, `runs`, `messages`, and `sessions` row in one transaction (`storage/sessions.ts`). Provider files and the workspace folder are removed separately.
+- An agent has at most one `running` run (`app/runs.ts`).
+- Deleting an agent deletes its `run_events`, `runs`, `messages`, and `agents` row in one transaction (`storage/agents.ts`). Provider files and the workspace folder are removed separately.
 - Note titles are unique ignoring case. `saveNote` keeps the existing id when the title exists, so links to it stay valid.
 - A note's links and tags are rebuilt on every save (`storage/notes.ts`).
 - Bot names are unique ignoring case. Bot messages in `room_messages` keep `author_name`, so they stay readable after the bot is deleted.
 - Exactly one persona has `is_default = 1` (`setDefaultPersona`, `storage/personas.ts`). The built-in `default` persona cannot be deleted.
 - Repo names are unique. The name is also the folder name in `repos/` and in each workspace.
-- GitHub sync merges by change times, so every write sets them: `personas.updated_at`, `bots.updated_at`, `notes.updated_at`, `sessions.meta_updated_at` (title and settings), and `created_at` on messages and room messages. A write that skips one is lost in a merge (`app/sync/merge.ts`).
+- GitHub sync merges by change times, so every write sets them: `personas.updated_at`, `bots.updated_at`, `notes.updated_at`, `agents.meta_updated_at` (title and settings), and `created_at` on messages and room messages. A write that skips one is lost in a merge (`app/sync/merge.ts`).
 
 ## Files outside SQLite
 | path | created by | content |
 | --- | --- | --- |
 | `MIP_HOME/repos/<name>/` | `app/repos.ts` `addRepo` (`git clone`) | master clone |
-| `MIP_HOME/workspaces/<sessionId>/` | `app/tools/workspace.ts` `workspaceFor` | chat files and `<name>/` repo copies |
+| `MIP_HOME/workspaces/<agentId>/` | `app/tools/workspace.ts` `workspaceFor` | agent files and `<name>/` repo copies |
 | `MIP_HOME/sessions/claude/` | `adapters/claude-cli.ts` (`CLAUDE_CONFIG_DIR`) | CLI login, transcripts |
 | `MIP_HOME/sessions/pi/` | `adapters/pi.ts` | Pi sessions |
 | `MIP_HOME/skills/<name>/` | `app/skills/imports.ts` (confirm) | an installed skill: `SKILL.md`, text files, and `.mip-source.json` (source path and hash). `skills/.staging/` holds imports not yet confirmed |
 | `MIP_HOME/sync/` | `app/sync/*` | `base.json` (`{repo, snapshot}`: the state at the last sync with that repo), `state.json` (chosen account, last run), `dotmip/` (local clone of the GitHub repo). No token is stored |
 
 ## Identifiers
-- Chats, personas, bots, notes, repos, runs: UUID strings (`randomUUID`), except the built-in persona `default`.
+- Agents, personas, bots, notes, repos, runs: UUID strings (`randomUUID`), except the built-in persona `default`.
 - Messages and room messages: autoincrement integers. The room polls by these.
 - Run events: `seq` is per run, starting at 1 (`app/runs.ts` `record`).

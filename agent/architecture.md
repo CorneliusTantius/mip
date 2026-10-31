@@ -40,12 +40,12 @@ Dependency direction is one way: `http → app → adapters | storage`, and `sto
 | `sessions/claude/` | Claude CLI config (`CLAUDE_CONFIG_DIR`): login, CLI transcripts | `adapters/claude-cli.ts` |
 | `sessions/pi/` | Pi session files | `adapters/pi.ts` |
 | `repos/<name>/` | master clones of repositories | `app/repos.ts` |
-| `workspaces/<chatId>/` | a chat's files, plus its repository copies | tools, `app/repos.ts` |
+| `workspaces/<agentId>/` | an agent's files, plus its repository copies | tools, `app/repos.ts` |
 | `skills/<name>/` | installed skills: `SKILL.md`, text files, `.mip-source.json`. `skills/.staging/` holds imports not yet confirmed | `app/skills/imports.ts`, `app/skills/create.ts` |
 | `sync/` | GitHub sync: `base.json` (merge base), `state.json` (chosen account, last run), `dotmip/` (local clone). No token is stored | `app/sync/*` |
 | `restart.log` | output of the last restart | `app/system.ts` |
 
-Deleting a chat removes `workspaces/<chatId>` (`app/tools/workspace.ts`). Provider files are left alone.
+Deleting an agent removes `workspaces/<agentId>` (`app/tools/workspace.ts`). Provider files are left alone.
 
 ## State held in memory (lost on restart)
 | state | where | notes |
@@ -53,7 +53,7 @@ Deleting a chat removes `workspaces/<chatId>` (`app/tools/workspace.ts`). Provid
 | run tokens and their contexts | `app/tools/index.ts` | one token per run, released when the run ends |
 | room `busy` and `speaking` | `app/room/room.ts` | one room conversation at a time |
 | Claude auth status (5 s) and model catalog (10 min) | `adapters/claude-cli.ts` | caches |
-| sign-in attempts | adapters (`sign-in-session.ts`) | progress lines and the pending prompt |
+| sign-in attempts | adapters (`sign-in-agent.ts`) | progress lines and the pending prompt |
 | GitHub sync running flag | `app/sync/engine.ts` | the last run is kept in `sync/state.json` |
 | client polling state | `features/*` hooks | cleared on page reload |
 
@@ -69,7 +69,7 @@ Deleting a chat removes `workspaces/<chatId>` (`app/tools/workspace.ts`). Provid
 - `capabilities` is informational. Pi reports `tools: false` but receives the app's tools.
 
 ## Tools
-- `ToolSpec` (`adapters/contract.ts`): `name`, `description`, `guide`, `inputSchema`, and `run(input, context)`. The context holds the workspace, the chat id, the offered and deferred lists, and the abort signal.
+- `ToolSpec` (`adapters/contract.ts`): `name`, `description`, `guide`, `inputSchema`, and `run(input, context)`. The context holds the workspace, the agent id, the offered and deferred lists, and the abort signal.
 - Registry: `app/tools/index.ts`. Three groups:
   - `BASIC_TOOLS` are always offered: `bash`, `read`, `edit`, `write`, `skill_read`.
   - `DEFERRED_TOOLS` are not offered. The model finds one with `tool_search` and runs it with `tool_call`: `memory_search`, `memory_read`, `memory_edit`, `skill_file`.
@@ -87,4 +87,4 @@ Deleting a chat removes `workspaces/<chatId>` (`app/tools/workspace.ts`). Provid
 - Preact 11, daisyUI 5, Tailwind 4, Vite 8. Dark Nord theme in `styles.css`.
 - No global store. State lives in feature hooks and components. Cards tell each other about changes with window events (`api/events.ts`).
 - Every HTTP call goes through `api/client.ts`. Every dashboard card is a `Card` (`ui/Card.tsx`).
-- `App.tsx` is one scrolling grid. The chat and bots sit side by side on desktops. The bottom row holds the Tasks, Activity, Tools, Skills, and MCP cards.
+- `App.tsx` is one scrolling grid. The agent and bots sit side by side on desktops. The bottom row holds the Tasks, Activity, Tools, Skills, and MCP cards.

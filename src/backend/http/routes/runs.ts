@@ -6,7 +6,7 @@ import { get, post, type Route } from "../router.js";
 export const runRoutes: Route[] = [
   post("/api/run", async ({ req }) => {
     const body = await readJson(req);
-    return accepted({ runId: startRun({ sessionId: String(body.sessionId ?? ""), prompt: String(body.prompt ?? "") }) });
+    return accepted({ runId: startRun({ agentId: String(body.agentId ?? ""), prompt: String(body.prompt ?? "") }) });
   }),
   get("/api/runs/:runId/events", ({ params, url }) => ok(readRun(params.runId, Number(url.searchParams.get("after") ?? 0)))),
 ];

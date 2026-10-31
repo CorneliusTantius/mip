@@ -6,7 +6,7 @@ import { join } from "node:path";
 export const MIP_HOME = process.env.MIP_HOME ?? join(homedir(), ".mip");
 export const DATA_DIR = join(MIP_HOME, "data");
 export const SESSIONS_DIR = join(MIP_HOME, "sessions");
-// Master clones of repositories. Each chat gets its own copy in its workspace.
+// Master clones of repositories. Each agent gets its own copy in its workspace.
 export const REPOS_DIR = join(MIP_HOME, "repos");
 // GitHub sync: the sign-in token, the merge base, and a local copy of the dotmip repo.
 export const SYNC_DIR = join(MIP_HOME, "sync");

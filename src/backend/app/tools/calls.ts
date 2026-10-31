@@ -1,6 +1,6 @@
-import type { ToolCall } from "../../storage/sessions.js";
+import type { ToolCall } from "../../storage/agents.js";
 
-// Long inputs and results are cut, so a chat's history stays small. The cut is marked, so the reader knows it is partial.
+// Long inputs and results are cut, so an agent's history stays small. The cut is marked, so the reader knows it is partial.
 export const MAX_TEXT = 8000;
 
 function clip(text: string): string {

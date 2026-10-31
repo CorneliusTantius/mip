@@ -35,8 +35,8 @@ export interface MessageRecord {
   error: string | null;
 }
 
-// A chat's settings, and its messages. Messages are never edited, so both sides' messages are kept.
-export interface ChatRecord {
+// An agent's settings, and its messages. Messages are never edited, so both sides' messages are kept.
+export interface AgentRecord {
   id: string;
   title: string;
   providerId: string;
@@ -59,7 +59,7 @@ export interface Snapshot {
   personas: Record<string, PersonaRecord>;
   bots: Record<string, BotRecord>;
   notes: Record<string, NoteRecord>;
-  chats: Record<string, ChatRecord>;
+  chats: Record<string, AgentRecord>;
   room: Record<string, RoomRecord>;
 }
 
@@ -79,7 +79,7 @@ export const keyOf = {
   persona: (persona: PersonaRecord) => persona.id,
   bot: (bot: BotRecord) => bot.name.toLowerCase(),
   note: (note: NoteRecord) => note.title.toLowerCase(),
-  chat: (chat: ChatRecord) => chat.id,
+  agent: (agent: AgentRecord) => agent.id,
   message: (message: MessageRecord) => `${message.createdAt}:${message.role}:${digest(message.text)}`,
   room: (message: RoomRecord) => `${message.createdAt}:${message.kind}:${message.authorName}:${digest(message.text)}`,
 };
@@ -145,13 +145,13 @@ const noteKind: Kind<NoteRecord> = {
   combine: (local, remote) => [newer(local, remote), `note "${local.title}" was edited on both sides; kept the newer edit`],
 };
 
-// A chat keeps the newer settings. Its messages from both sides are kept, so nothing said in either copy is lost.
-const chatKind: Kind<ChatRecord> = {
-  name: "chat",
-  label: (chat) => chat.title || "New session",
+// An agent keeps the newer settings. Its messages from both sides are kept, so nothing said in either copy is lost.
+const agentKind: Kind<AgentRecord> = {
+  name: "agent",
+  label: (agent) => agent.title || "New agent",
   combine: (local, remote) => [
     { ...newer(local, remote), messages: unionMessages(local.messages, remote.messages) },
-    `chat "${local.title || "New session"}" was changed on both sides; kept the newer settings and merged the messages`,
+    `agent "${local.title || "New agent"}" was changed on both sides; kept the newer settings and merged the messages`,
   ],
 };
 
@@ -189,7 +189,7 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     personas: mergeKind(personaKind, base.personas, local.personas, remote.personas, notes),
     bots: mergeKind(botKind, base.bots, local.bots, remote.bots, notes),
     notes: mergeKind(noteKind, base.notes, local.notes, remote.notes, notes),
-    chats: mergeKind(chatKind, base.chats, local.chats, remote.chats, notes),
+    chats: mergeKind(agentKind, base.chats, local.chats, remote.chats, notes),
     // Room messages are never edited or deleted, so both sides' messages are kept.
     room: { ...remote.room, ...local.room },
   };

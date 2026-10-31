@@ -1,4 +1,4 @@
-// Names for new chats: Norse gods and beings, heroes of the sagas, and rulers of the Viking Age.
+// Names for new agents: Norse gods and beings, heroes of the sagas, and rulers of the Viking Age.
 // Plain ASCII spellings. Duplicates across groups are dropped below.
 const GROUPS: Record<string, string[]> = {
   aesirAndVanir: [
@@ -47,7 +47,7 @@ const GROUPS: Record<string, string[]> = {
 // Every name once, in the order the groups list them.
 const AGENT_NAMES: string[] = [...new Set(Object.values(GROUPS).flat())];
 
-// A random name that no other chat has. When every name is taken, a number is added to one of them.
+// A random name that no other agent has. When every name is taken, a number is added to one of them.
 export function pickAgentName(taken: Set<string>): string {
   const free = AGENT_NAMES.filter((name) => !taken.has(name));
   if (free.length > 0) return free[Math.floor(Math.random() * free.length)];

@@ -10,6 +10,24 @@ export const db = new DatabaseSync(join(DATA_DIR, "mip.db"));
 // Rows come back as plain objects. Each storage module maps them to its own types.
 export type Row = Record<string, any>;
 
+// Helpers for the migrations below. They run before the schema, so an older database can be renamed first.
+function hasTable(table: string): boolean {
+  return !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
+}
+function hasColumn(table: string, column: string): boolean {
+  return (db.prepare(`PRAGMA table_info(${table})`).all() as Row[]).some((c) => c.name === column);
+}
+
+// Databases made before the chat tables were named agents keep their rows under the old names. Each rename runs once.
+if (hasTable("sessions") && !hasTable("agents")) {
+  db.exec("ALTER TABLE sessions RENAME TO agents");
+}
+for (const table of ["messages", "runs", "skill_enablements"]) {
+  if (hasColumn(table, "session_id")) {
+    db.exec(`ALTER TABLE ${table} RENAME COLUMN session_id TO agent_id`);
+  }
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS personas (
     id TEXT PRIMARY KEY,
@@ -18,7 +36,7 @@ db.exec(`
     is_default INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL
   );
-  CREATE TABLE IF NOT EXISTS sessions (
+  CREATE TABLE IF NOT EXISTS agents (
     id TEXT PRIMARY KEY,
     provider_id TEXT NOT NULL,
     provider_session_id TEXT,
@@ -28,7 +46,7 @@ db.exec(`
   );
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
     role TEXT NOT NULL,
     text TEXT NOT NULL,
     tools TEXT NOT NULL DEFAULT '[]',
@@ -37,7 +55,7 @@ db.exec(`
   );
   CREATE TABLE IF NOT EXISTS runs (
     id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
     status TEXT NOT NULL,
     started_at INTEGER NOT NULL
   );
@@ -90,28 +108,25 @@ db.exec(`
     created_at INTEGER NOT NULL
   );
   CREATE TABLE IF NOT EXISTS skill_enablements (
-    session_id TEXT NOT NULL,
+    agent_id TEXT NOT NULL,
     skill TEXT NOT NULL,
-    PRIMARY KEY (session_id, skill)
+    PRIMARY KEY (agent_id, skill)
   );
 `);
 
 // Migrations for databases made before some columns existed. Each one adds the column only when it is missing.
-function hasColumn(table: string, column: string): boolean {
-  return (db.prepare(`PRAGMA table_info(${table})`).all() as Row[]).some((c) => c.name === column);
-}
 
-// Databases made before personas have no persona column. Their chats get the default persona.
-if (!hasColumn("sessions", "persona_id")) {
-  db.exec("ALTER TABLE sessions ADD COLUMN persona_id TEXT NOT NULL DEFAULT 'default'");
+// Databases made before personas have no persona column. Their agents get the default persona.
+if (!hasColumn("agents", "persona_id")) {
+  db.exec("ALTER TABLE agents ADD COLUMN persona_id TEXT NOT NULL DEFAULT 'default'");
 }
 if (!hasColumn("personas", "is_default")) {
   db.exec("ALTER TABLE personas ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0");
 }
-// Databases made before per-chat model and thinking settings. Their chats use the provider's defaults.
+// Databases made before per-agent model and thinking settings. Their agents use the provider's defaults.
 for (const column of ["model", "thinking"]) {
-  if (!hasColumn("sessions", column)) {
-    db.exec(`ALTER TABLE sessions ADD COLUMN ${column} TEXT`);
+  if (!hasColumn("agents", column)) {
+    db.exec(`ALTER TABLE agents ADD COLUMN ${column} TEXT`);
   }
 }
 // Databases made before GitHub sync need change times. Existing rows start at their creation time.
@@ -123,10 +138,10 @@ if (!hasColumn("bots", "updated_at")) {
   db.exec("ALTER TABLE bots ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0");
   db.exec("UPDATE bots SET updated_at = created_at");
 }
-// Renames and setting changes move this, not updated_at, so the chat list order stays the same.
-if (!hasColumn("sessions", "meta_updated_at")) {
-  db.exec("ALTER TABLE sessions ADD COLUMN meta_updated_at INTEGER NOT NULL DEFAULT 0");
-  db.exec("UPDATE sessions SET meta_updated_at = updated_at");
+// Renames and setting changes move this, not updated_at, so the agent list order stays the same.
+if (!hasColumn("agents", "meta_updated_at")) {
+  db.exec("ALTER TABLE agents ADD COLUMN meta_updated_at INTEGER NOT NULL DEFAULT 0");
+  db.exec("UPDATE agents SET meta_updated_at = updated_at");
 }
 // Replies made before tool calls were recorded have no details. Their calls list is empty, and their tool names stay.
 if (!hasColumn("messages", "calls")) {

@@ -21,7 +21,7 @@ export function findProvider(id: string): AgentProvider {
   return provider;
 }
 
-// Settings data: each provider, its sign-in targets, and any sign-in in progress. Also the models a chat can use.
+// Settings data: each provider, its sign-in targets, and any sign-in in progress. Also the models an agent can use.
 export async function listProviders() {
   return Promise.all(
     providers.map(async (provider) => {

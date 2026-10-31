@@ -10,8 +10,8 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 
 ## api/
 - `client.ts`: the only place that calls `fetch`. `ApiError` (has `status`), `api` (`get`, `post`, `put`, `patch`, `del`), and `errorText`.
-- `types.ts`: response shapes that mirror `src/backend`. Chats, messages and their tool calls, runs and run events, personas, bots, room messages, repos, memory notes, providers, skills and skill imports, the tool registry (`ToolInfo`), and the sync status.
-- `events.ts`: window events for cross-card changes: `CHATS_CHANGED` and `PERSONAS_CHANGED`, with `announce` and `subscribe`.
+- `types.ts`: response shapes that mirror `src/backend`. Agents, messages and their tool calls, runs and run events, personas, bots, room messages, repos, memory notes, providers, skills and skill imports, the tool registry (`ToolInfo`), and the sync status.
+- `events.ts`: window events for cross-card changes: `AGENTS_CHANGED` and `PERSONAS_CHANGED`, with `announce` and `subscribe`.
 - `constants.ts`: `DEFAULT_PERSONA_ID` (must equal the server's) and `DEFAULT_PROVIDER_ID`.
 
 ## ui/
@@ -24,7 +24,7 @@ Shared pieces. Each is used by more than one feature.
 | `ConfirmDialog.tsx` | `ConfirmDialog` | A yes-or-no question, with an `error` line. Built on `Modal`. |
 | `ErrorAlert.tsx` | `ErrorAlert` | A red alert for a message. Renders nothing without one. |
 | `Icon.tsx` | `Icon`, `IconName` | Named SVG icons. |
-| `OptionDropdown.tsx` | `OptionDropdown` | A fixed-width dropdown with ellipsis, for model, thinking, provider, and copy-to-chat. |
+| `OptionDropdown.tsx` | `OptionDropdown` | A fixed-width dropdown with ellipsis, for model, thinking, provider, and copy-to-agent. |
 | `RunScopePills.tsx` | `RunScopePills`, `RunScope` | The All / Agent / Bot pill that picks a card's view. One size larger when its card is expanded. Used by the Tools and Skills cards. |
 | `ToolCallDetails.tsx` | `ToolCallDetails` | One tool call's name, input, and result. Used by the tool-call dialog. |
 | `toolName.ts` | `toolLabel`, `prettyJson` | Pure helpers. `toolLabel` drops the `mcp__<server>__` prefix. |
@@ -35,7 +35,7 @@ Shared pieces. Each is used by more than one feature.
 - `App` owns: whether Settings is open, whether memory is open, the memory start note, and a memory version that changes after a save or delete.
 - Layout, in order, inside the grid:
   1. The navbar: the title and the gear, which opens `SettingsDialog`.
-  2. `ChatCard`, two-thirds of the width on desktops.
+  2. `AgentCard`, two-thirds of the width on desktops.
   3. `BotsCard`, one-third of the width on desktops.
   4. `MemoryCard`.
   5. `RepositoriesCard`.
@@ -43,16 +43,16 @@ Shared pieces. Each is used by more than one feature.
 - Breakpoints are the Tailwind defaults: md at 768px, xl at 1280px.
 - Gaps: `gap-4` (16px), and `xl:gap-5` (20px) on desktops.
 
-## features/chat/
+## features/agent/
 | file | exports | job |
 | --- | --- | --- |
-| `ChatCard.tsx` | `ChatCard` | Composes the pieces. Opens the newest chat on load. Its header has a Skills button (opens `ChatSkillsDialog`). Phones close the chat list. |
-| `useChatSessions.ts` | `useChatSessions` | Providers, personas, chats, the open chat, and new-chat choices. Announces `CHATS_CHANGED`, and listens for `PERSONAS_CHANGED`. |
+| `AgentCard.tsx` | `AgentCard` | Composes the pieces. Opens the newest agent on load. Its header has a Skills button (opens `AgentSkillsDialog`). Phones close the agent list. |
+| `useAgents.ts` | `useAgents` | Providers, personas, agents, the open agent, and new-agent choices. Announces `AGENTS_CHANGED`, and listens for `PERSONAS_CHANGED`. |
 | `useTranscript.ts` | `useTranscript` | Messages, busy, and the run being followed. `applyEvent` builds a reply live: text, tool names, each call with its input, and its result matched by id. Polls run events every 600 ms while a run goes. |
-| `SessionList.tsx` | `SessionList` | The sidebar: provider and persona selects, New session, the list with inline rename and delete. |
+| `AgentList.tsx` | `AgentList` | The sidebar: provider and persona selects, New agent, the list with inline rename and delete. |
 | `PersonasDialog.tsx` | `PersonasDialog` | Manage personas: pick, edit, set default, and delete with confirmation. |
-| `ChatSkillsDialog.tsx` | `ChatSkillsDialog` | Checkboxes for the installed skills this chat may use. Saves with `PUT /api/sessions/:id/skills`. |
-| `ChatHeader.tsx` | `ChatHeader` | The title, the persona and provider badges, and the header controls. |
+| `AgentSkillsDialog.tsx` | `AgentSkillsDialog` | Checkboxes for the installed skills this agent may use. Saves with `PUT /api/agents/:id/skills`. |
+| `AgentHeader.tsx` | `AgentHeader` | The title, the persona and provider badges, and the header controls. |
 | `Transcript.tsx` | `Transcript` | Message bubbles. A reply that used tools has a View tool calls button at its bottom. |
 | `ToolCallsDialog.tsx` | `ToolCallsButton`, `ToolCallsDialog` | The button and the dialog listing one reply's tool calls with their inputs and results. A reply saved before details were recorded lists its names only. |
 | `Composer.tsx` | `Composer` | Model and thinking dropdowns, and the message box. Owns the draft. |
@@ -80,13 +80,13 @@ Shared pieces. Each is used by more than one feature.
 ## features/repos/
 | file | exports | job |
 | --- | --- | --- |
-| `RepositoriesCard.tsx` | `RepositoriesCard` | Clone form, Pull all, and the list. Reloads on `CHATS_CHANGED`. Polls every 1.5 s while a clone runs. |
-| `RepoRow.tsx` | `RepoRow` | One repo: status, branch, link with credentials hidden, last pull message, copies, copy-to-chat, and Remove. Reads the expanded state, so its text grows with the card. |
+| `RepositoriesCard.tsx` | `RepositoriesCard` | Clone form, Pull all, and the list. Reloads on `AGENTS_CHANGED`. Polls every 1.5 s while a clone runs. |
+| `RepoRow.tsx` | `RepoRow` | One repo: status, branch, link with credentials hidden, last pull message, copies, copy-to-agent, and Remove. Reads the expanded state, so its text grows with the card. |
 
 ## features/skills/
 | file | exports | job |
 | --- | --- | --- |
-| `SkillsCard.tsx` | `SkillsCard` | The installed skills with the All / Agent / Bot pill. All lists skills, with the selected skill's text when expanded. Agent lists each agent (a chat conversation) and its skills. Bot lists each bot and its skills, which is none. Create, Import, and Remove. |
+| `SkillsCard.tsx` | `SkillsCard` | The installed skills with the All / Agent / Bot pill. All lists skills, with the selected skill's text when expanded. Agent lists each agent (an agent conversation) and its skills. Bot lists each bot and its skills, which is none. Create, Import, and Remove. |
 | `CreateSkillDialog.tsx` | `CreateSkillDialog` | Creates a skill from a form: name, description, instructions. |
 | `ImportSkillDialog.tsx` | `ImportSkillDialog` | Two steps: review a folder's files and `SKILL.md`, then install. |
 | `useSkills.ts` | `useSkills` | Loads the installed skills and any folders that could not be read. |
@@ -99,7 +99,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/settings/
 | file | exports | job |
 | --- | --- | --- |
-| `SettingsDialog.tsx` | `SettingsDialog` | Tabs: Provider, Sync, and Update. Personas are managed from the chat card. |
+| `SettingsDialog.tsx` | `SettingsDialog` | Tabs: Provider, Sync, and Update. Personas are managed from the agent card. |
 | `ProviderTab.tsx` | `ProviderTab` | Provider and service selects, capability badges, the sign-in panel, and the connected list. Polls every 2 s while open. |
 | `SignInPanel.tsx` | `SignInPanel` | Sign-in buttons, output, and the answer box. |
 | `SyncTab.tsx` | `SyncTab` | The GitHub account (a dropdown when gh has several), Sync now, and the last run with its notes. |
@@ -112,15 +112,15 @@ Shared pieces. Each is used by more than one feature.
 ## Who owns which state
 | state | owner |
 | --- | --- |
-| chats, providers, personas, the open chat, new-chat choices | `useChatSessions` |
+| agents, providers, personas, the open agent, new-agent choices | `useAgents` |
 | messages, busy, the run being followed | `useTranscript` |
-| sidebar open, delete confirmation | `ChatCard` |
-| rename draft | `SessionList` |
+| sidebar open, delete confirmation | `AgentCard` |
+| rename draft | `AgentList` |
 | composer draft | `Composer` |
 | room messages, busy, speaking, bots, errors | `useRoom` |
 | memory list, query, note, editor, errors | `MemoryManager` (mounted only while the card is expanded) |
 | graph data, and the note a graph click asked for | `MemoryBody` in `MemoryCard.tsx` |
-| repos, chats, link, pulls | `RepositoriesCard` |
+| repos, agents, link, pulls | `RepositoriesCard` |
 | installed skills, selected skill, dialogs | `SkillsCard` and `useSkills` |
 | scope pill, selected tool | `ToolsCard` and `SkillsCard` |
 | sync status | `useSync` |
@@ -130,16 +130,16 @@ Shared pieces. Each is used by more than one feature.
 
 ## Polling and events
 - Room: 1.5 s, while mounted.
-- Chat run follow: 600 ms, while a run is going.
+- Agent run follow: 600 ms, while a run is going.
 - Providers in Settings: 2 s, while Settings is open.
 - Repos while cloning: 1.5 s.
 - Sync while running: 1.5 s.
 - Memory search: 200 ms debounce.
-- Window events: `sessions-changed` (chat list changed) and `personas-changed` (persona changed). See `api/events.ts`.
+- Window events: `agents-changed` (agent list changed) and `personas-changed` (persona changed). See `api/events.ts`.
 
 ## Styling and theme
 - `styles.css`: the Nord theme tokens in `@plugin "daisyui/theme"`. Dark only.
-- Card glow: `.glow` uses `--glow` for a 0.5px border, an outer glow, and a 5% tint. Each card has a color: chat frost, bots violet, memory green, repositories orange, tasks yellow, activity blue, skills teal, MCP red, and tools orange.
+- Card glow: `.glow` uses `--glow` for a 0.5px border, an outer glow, and a 5% tint. Each card has a color: agent frost, bots violet, memory green, repositories orange, tasks yellow, activity blue, skills teal, MCP red, and tools orange.
 - Card entrances: `ui/Card.tsx` draws a random duration (0.4–1.2 s) and delay (0–0.5 s) on mount, and sets them as `--enter-duration` and `--enter-delay`. The order changes on every page load.
 - Expanded cards step their text up one size. Tables, pills, badges, and detail text all follow this rule.
 - Dialogs are native `<dialog>` elements. Focus outlines are off.

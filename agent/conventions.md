@@ -38,6 +38,7 @@ Docs:
     node src/backend/app/sync/github.test.mjs
     node src/backend/app/sync/merge.test.mjs
     node src/backend/app/sync/sync.test.mjs
+    node src/backend/storage/db.test.mjs
 
 The backend tests need `npm run build:backend` first. The skill, tool, and sync tests use a temporary `MIP_HOME`.
 
@@ -107,10 +108,11 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - A write to a synced table must set its change time (see `data-model.md`). A write that skips it is lost in a GitHub sync merge.
 - mip never stores the GitHub token. Each sync gets it from `gh auth token` and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
 - Sync refuses a public `dotmip` repo, and it refuses an empty database when the last sync had data.
+- The synced repo keeps the names `chats/` (folder) and `chats` (part) from before the agent rename. Other machines read them, so they change only with a migration on every machine. The code uses `agent` for everything else.
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
 - Tool guidance lives in each tool's `guide`, never in a persona. The built-in persona keeps identity and style only. An unedited copy of the old built-in persona is updated at startup; an edited one is left alone.
 - A skill can be created from a form or imported from a folder. Both paths check the same header rules. Create never replaces an installed skill, and import asks for review first.
-- Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders. A skill is read only through `skill_read` and `skill_file`, and only in a chat that enabled it.
+- Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders. A skill is read only through `skill_read` and `skill_file`, and only in an agent that enabled it.
 - Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools.
 - Each kind of run has its own tool lists. A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
 - Expanded cards step their text up one size. Put that in `RunScopePills` and the card's own classes, not in one-off styles.

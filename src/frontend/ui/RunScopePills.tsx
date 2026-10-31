@@ -1,6 +1,6 @@
 import { useCardExpansion } from "./Card";
 
-// Which kind of run a card's list is for: everything, the agents' side (chat conversations), or the bots' side.
+// Which kind of run a card's list is for: everything, the agents' side (agent conversations), or the bots' side.
 export type RunScope = "all" | "agent" | "bot";
 
 const OPTIONS: [RunScope, string][] = [

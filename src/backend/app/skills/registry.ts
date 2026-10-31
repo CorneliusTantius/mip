@@ -1,11 +1,11 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { SKILLS_DIR } from "../../storage/paths.js";
-import { enabledSkillNames, removeSkillEnablements, saveChatSkills } from "../../storage/skills.js";
+import { enabledSkillNames, removeSkillEnablements, saveAgentSkills } from "../../storage/skills.js";
 import { AppError, errorMessage } from "../errors.js";
 import { isSafeRelativePath, isTextFile, isValidName, MAX_READ_BYTES, MAX_SKILL_MD_BYTES, parseSkill } from "./format.js";
 
-// The skill registry: the folders under MIP_HOME/skills, one per skill. Only this module reads them. A chat can use only the
+// The skill registry: the folders under MIP_HOME/skills, one per skill. Only this module reads them. An agent can use only the
 // skills it has enabled, and a skill is read only through the tools in app/tools/skills.ts.
 const SKILL_FILE = "SKILL.md";
 
@@ -68,40 +68,40 @@ export function readSkillFile(name: string, path: string): string {
   return readFileSync(full, "utf8");
 }
 
-// The skills a chat has enabled, as they are installed now. A skill that was removed is left out.
-export function enabledSkills(chatId: string): SkillSummary[] {
-  const names = new Set(enabledSkillNames(chatId));
+// The skills an agent has enabled, as they are installed now. A skill that was removed is left out.
+export function enabledSkills(agentId: string): SkillSummary[] {
+  const names = new Set(enabledSkillNames(agentId));
   return listSkills().skills.filter((skill) => names.has(skill.name));
 }
 
-// The skill a chat may read. Refused unless the chat has enabled it.
-export function enabledSkill(chatId: string, name: string): SkillDetail {
-  if (!enabledSkillNames(chatId).includes(name)) throw new Error(`skill "${name}" is not enabled for this chat`);
+// The skill an agent may read. Refused unless the agent has enabled it.
+export function enabledSkill(agentId: string, name: string): SkillDetail {
+  if (!enabledSkillNames(agentId).includes(name)) throw new Error(`skill "${name}" is not enabled for this agent`);
   return loadSkill(name);
 }
 
-// The part of the system prompt that lists a chat's skills. Empty when the chat has none enabled.
-export function skillsPrompt(chatId: string): string {
-  const skills = enabledSkills(chatId);
+// The part of the system prompt that lists an agent's skills. Empty when the agent has none enabled.
+export function skillsPrompt(agentId: string): string {
+  const skills = enabledSkills(agentId);
   if (skills.length === 0) return "";
   return [
-    "Skills enabled for this chat. Each one holds instructions for a kind of task.",
+    "Skills enabled for this agent. Each one holds instructions for a kind of task.",
     "When a task matches a skill, call skill_read with its name first, and follow it. Call skill_file to read a file the skill names.",
     ...skills.map((skill) => `- ${skill.name}: ${skill.description}`),
   ].join("\n");
 }
 
-// Replaces a chat's enabled skills. Every name must be an installed skill.
-export function setChatSkills(chatId: string, names: string[]): string[] {
+// Replaces an agent's enabled skills. Every name must be an installed skill.
+export function setAgentSkills(agentId: string, names: string[]): string[] {
   const installed = new Set(listSkills().skills.map((skill) => skill.name));
   const unknown = names.filter((name) => !installed.has(name));
   if (unknown.length > 0) throw new AppError(400, `no such skill: ${unknown.join(", ")}`);
   const unique = [...new Set(names)].sort();
-  saveChatSkills(chatId, unique);
+  saveAgentSkills(agentId, unique);
   return unique;
 }
 
-// Removes an installed skill, and takes it away from every chat that had it enabled.
+// Removes an installed skill, and takes it away from every agent that had it enabled.
 export function removeSkill(name: string): void {
   loadSkill(name);
   rmSync(skillFolder(name), { recursive: true, force: true });

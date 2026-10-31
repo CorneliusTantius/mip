@@ -2,21 +2,21 @@ import { mkdirSync, rmSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { MIP_HOME } from "../../storage/paths.js";
 
-// Where a chat's folder is. Doesn't create it.
-export function workspacePath(sessionId: string): string {
-  return join(MIP_HOME, "workspaces", sessionId);
+// Where an agent's folder is. Doesn't create it.
+export function workspacePath(agentId: string): string {
+  return join(MIP_HOME, "workspaces", agentId);
 }
 
-// Each agent (chat) gets its own folder, named after its chat id. Created on first use.
-export function workspaceFor(sessionId: string): string {
-  const dir = workspacePath(sessionId);
+// Each agent (agent) gets its own folder, named after its agent id. Created on first use.
+export function workspaceFor(agentId: string): string {
+  const dir = workspacePath(agentId);
   mkdirSync(dir, { recursive: true });
   return dir;
 }
 
-// Deletes a chat's folder with everything in it, including its repository copies.
-export function removeWorkspace(sessionId: string): void {
-  rmSync(workspacePath(sessionId), { recursive: true, force: true });
+// Deletes an agent's folder with everything in it, including its repository copies.
+export function removeWorkspace(agentId: string): void {
+  rmSync(workspacePath(agentId), { recursive: true, force: true });
 }
 
 // Turns a path from the model into an absolute path inside the workspace. Anything outside is refused.

@@ -1,25 +1,25 @@
 import { useRef, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
-import type { ChatDetail, ChatMessage, RunEvent } from "../../api/types";
+import type { AgentDetail, AgentMessage, RunEvent } from "../../api/types";
 
 // How long to wait between asks for a run's new events.
 const POLL_MS = 600;
 
-// The messages of the open chat, and the reply being written into it.
-// A run keeps going on the server even when the page closes, so opening a chat picks up a run that is still going.
+// The messages of the open agent, and the reply being written into it.
+// A run keeps going on the server even when the page closes, so opening an agent picks up a run that is still going.
 // `onRunSaved` runs after a run finishes and its messages are saved.
 export function useTranscript(onRunSaved: () => void) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [busy, setBusy] = useState(false);
-  // The run this chat is following. It is cleared when the user moves to another chat, which stops the old follow loop.
+  // The run this agent is following. It is cleared when the user moves to another agent, which stops the old follow loop.
   const following = useRef<string | undefined>(undefined);
 
   // Changes the last message, which is the assistant reply that is still arriving.
-  function updateReply(change: (reply: ChatMessage) => ChatMessage) {
+  function updateReply(change: (reply: AgentMessage) => AgentMessage) {
     setMessages((list) => [...list.slice(0, -1), change(list[list.length - 1])]);
   }
 
-  // Shows the events the chat displays: text, tool names, and errors. Other events are ignored.
+  // Shows the events the agent displays: text, tool names, and errors. Other events are ignored.
   function applyEvent(event: RunEvent) {
     if (event.type === "text") updateReply((r) => ({ ...r, text: r.text + (event.text ?? "") }));
     if (event.type === "tool_call") {
@@ -36,8 +36,8 @@ export function useTranscript(onRunSaved: () => void) {
   }
 
   // Follows a run by asking the server for the events it has not shown yet, until the run finishes.
-  // Then the saved messages replace the streamed ones, so the chat shows what was stored.
-  function follow(runId: string, sessionId: string) {
+  // Then the saved messages replace the streamed ones, so the agent shows what was stored.
+  function follow(runId: string, agentId: string) {
     following.current = runId;
     setBusy(true);
     setMessages((list) => [...list, { role: "assistant", text: "", tools: [], calls: [] }]);
@@ -57,7 +57,7 @@ export function useTranscript(onRunSaved: () => void) {
       }
       following.current = undefined;
       setBusy(false);
-      await load(sessionId);
+      await load(agentId);
       onRunSaved();
     })().catch((err: unknown) => {
       following.current = undefined;
@@ -66,27 +66,27 @@ export function useTranscript(onRunSaved: () => void) {
     });
   }
 
-  // Opens a chat: its saved messages, and the run still going in it, if there is one.
-  async function load(sessionId: string): Promise<void> {
+  // Opens an agent: its saved messages, and the run still going in it, if there is one.
+  async function load(agentId: string): Promise<void> {
     following.current = undefined;
     setBusy(false);
-    const data = await api.get<ChatDetail>(`/api/sessions/${sessionId}`);
+    const data = await api.get<AgentDetail>(`/api/agents/${agentId}`);
     setMessages(data.messages);
-    if (data.activeRunId) follow(data.activeRunId, sessionId);
+    if (data.activeRunId) follow(data.activeRunId, agentId);
   }
 
   // Starts a run with the message. A failed start appears as an error in the transcript.
-  async function send(sessionId: string, prompt: string): Promise<void> {
+  async function send(agentId: string, prompt: string): Promise<void> {
     try {
-      const data = await api.post<{ runId: string }>("/api/run", { sessionId, prompt });
+      const data = await api.post<{ runId: string }>("/api/run", { agentId, prompt });
       setMessages((list) => [...list, { role: "user", text: prompt, tools: [], calls: [] }]);
-      follow(data.runId, sessionId);
+      follow(data.runId, agentId);
     } catch (err) {
       setMessages((list) => [...list, { role: "assistant", text: "", tools: [], calls: [], error: errorText(err) }]);
     }
   }
 
-  // Empties the transcript, for when its chat is deleted.
+  // Empties the transcript, for when its agent is deleted.
   function clear() {
     following.current = undefined;
     setBusy(false);

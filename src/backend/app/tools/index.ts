@@ -28,17 +28,17 @@ const SEARCH_TOOLS: ToolSpec[] = [toolSearchTool, toolCallTool].map(guarded);
 // The one registry of tool definitions. Each kind of run takes its lists from here, so a definition exists in one place.
 export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS];
 
-// Agents (the chats) are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
+// Agents (the agents) are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
 export const AGENT_TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...SEARCH_TOOLS];
 export const AGENT_DEFERRED: ToolSpec[] = DEFERRED_TOOLS;
 // Bots get none for now, which is what room turns have always used.
 export const BOT_TOOLS: ToolSpec[] = [];
 export const BOT_DEFERRED: ToolSpec[] = [];
 
-// What one run may do: the folder its tools work in, the chat it belongs to, the tools it is offered, and the deferred tools it may run.
+// What one run may do: the folder its tools work in, the agent it belongs to, the tools it is offered, and the deferred tools it may run.
 export interface RunContext {
   workspace: string;
-  chatId: string;
+  agentId: string;
   tools: ToolSpec[];
   deferred?: ToolSpec[];
 }

@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
 import { BotsCard } from "./features/bots/BotsCard";
-import { ChatCard } from "./features/chat/ChatCard";
+import { AgentCard } from "./features/agent/AgentCard";
 import { MemoryCard } from "./features/memory/MemoryCard";
 import { RepositoriesCard } from "./features/repos/RepositoriesCard";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
@@ -33,9 +33,9 @@ export function App() {
           </button>
         </div>
 
-        {/* The chat and the bots room are the tall cards. Desktops put them side by side, both as tall as the window allows. */}
+        {/* The agent and the bots room are the tall cards. Desktops put them side by side, both as tall as the window allows. */}
         <div className="col-span-12 h-[min(44rem,80vh)] xl:col-span-8">
-          <ChatCard />
+          <AgentCard />
         </div>
         <div className="col-span-12 h-[min(40rem,80vh)] xl:col-span-4 xl:h-[min(44rem,80vh)]">
           <BotsCard />

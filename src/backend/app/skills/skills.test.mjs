@@ -1,4 +1,4 @@
-// Checks the skill registry end to end: review before install, refusals, per-chat enablement, the skill tools, and the tool lists.
+// Checks the skill registry end to end: review before install, refusals, per-agent enablement, the skill tools, and the tool lists.
 // Run after a build: node src/backend/app/skills/skills.test.mjs
 // It sets MIP_HOME to a temporary folder before the modules load, so the real skills folder is not touched.
 import assert from "node:assert/strict";
@@ -13,7 +13,7 @@ process.env.MIP_HOME = join(root, "mip-home");
 
 try {
   const { confirmImport, discardImport, stageImport } = await import(`${DIST}app/skills/imports.js`);
-  const { enabledSkill, listSkills, loadSkill, readSkillFile, removeSkill, setChatSkills, skillsPrompt } = await import(`${DIST}app/skills/registry.js`);
+  const { enabledSkill, listSkills, loadSkill, readSkillFile, removeSkill, setAgentSkills, skillsPrompt } = await import(`${DIST}app/skills/registry.js`);
   const { enabledSkillNames } = await import(`${DIST}storage/skills.js`);
   const { BOT_TOOLS, AGENT_TOOLS, TOOLS, describeTools, registerRun, releaseRun, runContextForToken } = await import(`${DIST}app/tools/index.js`);
   const { SKILLS_DIR } = await import(`${DIST}storage/paths.js`);
@@ -72,48 +72,48 @@ try {
   discardImport(again.id);
   assert.match(loadSkill("codeword").body, /PELICAN-42/);
 
-  // Per-chat enablement: only the chat that enabled a skill can read it.
-  assert.deepEqual(setChatSkills("chat-a", ["codeword"]), ["codeword"]);
-  assert.match(skillsPrompt("chat-a"), /- codeword: The project codeword\./);
-  assert.equal(enabledSkill("chat-a", "codeword").name, "codeword");
-  assert.throws(() => enabledSkill("chat-b", "codeword"), /not enabled for this chat/);
-  assert.equal(skillsPrompt("chat-b"), "", "a chat with no skills gets no skills section");
-  assert.throws(() => setChatSkills("chat-a", ["missing-skill"]), /no such skill/);
+  // Per-agent enablement: only the agent that enabled a skill can read it.
+  assert.deepEqual(setAgentSkills("agent-a", ["codeword"]), ["codeword"]);
+  assert.match(skillsPrompt("agent-a"), /- codeword: The project codeword\./);
+  assert.equal(enabledSkill("agent-a", "codeword").name, "codeword");
+  assert.throws(() => enabledSkill("agent-b", "codeword"), /not enabled for this agent/);
+  assert.equal(skillsPrompt("agent-b"), "", "an agent with no skills gets no skills section");
+  assert.throws(() => setAgentSkills("agent-a", ["missing-skill"]), /no such skill/);
 
   // A replaced skill keeps its enablement, and the new text is what gets read.
   const second = stageImport(updated);
   confirmImport(second.id);
-  assert.match(enabledSkill("chat-a", "codeword").body, /HERON-7/);
+  assert.match(enabledSkill("agent-a", "codeword").body, /HERON-7/);
 
   // Reference files: only listed files are readable, and nothing outside the skill is.
   assert.throws(() => readSkillFile("codeword", "../SKILL.md"), /has no file/);
   assert.throws(() => readSkillFile("codeword", "notes/other.md"), /has no file/);
 
-  // The skill tools. A run without a chat has no skills. Refused calls come back as failed results, not exceptions.
+  // The skill tools. A run without an agent has no skills. Refused calls come back as failed results, not exceptions.
   const skillRead = TOOLS.find((tool) => tool.name === "skill_read");
   const skillFile = TOOLS.find((tool) => tool.name === "skill_file");
-  const noChat = await skillRead.run({ name: "codeword" }, { workspace: root });
-  assert.equal(noChat.isError, true);
-  const inChat = await skillRead.run({ name: "codeword" }, { workspace: root, chatId: "chat-a" });
-  assert.equal(inChat.isError, false);
-  assert.match(inChat.text, /HERON-7/);
-  assert.match(inChat.text, /notes\/history\.md/, "the reply lists the files the skill names");
-  const otherChat = await skillRead.run({ name: "codeword" }, { workspace: root, chatId: "chat-b" });
-  assert.equal(otherChat.isError, true);
-  const file = await skillFile.run({ name: "codeword", path: "notes/history.md" }, { workspace: root, chatId: "chat-a" });
+  const noAgent = await skillRead.run({ name: "codeword" }, { workspace: root });
+  assert.equal(noAgent.isError, true);
+  const inAgent = await skillRead.run({ name: "codeword" }, { workspace: root, agentId: "agent-a" });
+  assert.equal(inAgent.isError, false);
+  assert.match(inAgent.text, /HERON-7/);
+  assert.match(inAgent.text, /notes\/history\.md/, "the reply lists the files the skill names");
+  const otherAgent = await skillRead.run({ name: "codeword" }, { workspace: root, agentId: "agent-b" });
+  assert.equal(otherAgent.isError, true);
+  const file = await skillFile.run({ name: "codeword", path: "notes/history.md" }, { workspace: root, agentId: "agent-a" });
   assert.equal(file.text, "Chosen in 2026.");
-  const escape = await skillFile.run({ name: "codeword", path: "../SKILL.md" }, { workspace: root, chatId: "chat-a" });
+  const escape = await skillFile.run({ name: "codeword", path: "../SKILL.md" }, { workspace: root, agentId: "agent-a" });
   assert.equal(escape.isError, true);
 
-  // One registry, two lists: chats get every tool, bots get none for now. A run's token carries its own list.
+  // One registry, two lists: agents get every tool, bots get none for now. A run's token carries its own list.
   assert.ok(AGENT_TOOLS.some((tool) => tool.name === "skill_read") && AGENT_TOOLS.some((tool) => tool.name === "bash"));
   assert.deepEqual(BOT_TOOLS, []);
-  const token = registerRun({ workspace: root, chatId: "chat-a", tools: BOT_TOOLS });
+  const token = registerRun({ workspace: root, agentId: "agent-a", tools: BOT_TOOLS });
   assert.deepEqual(runContextForToken(token).tools, []);
   releaseRun(token);
   assert.equal(runContextForToken(token), undefined, "a released token opens nothing");
 
-  // The registry lists every tool with the kinds of run that may use it: chats get all of them, bots none.
+  // The registry lists every tool with the kinds of run that may use it: agents get all of them, bots none.
   const described = describeTools();
   assert.equal(described.length, TOOLS.length);
   assert.ok(described.every((tool) => tool.agent === true && tool.bot === false));
@@ -126,10 +126,10 @@ try {
   assert.equal(listing.skills.length, 1);
   assert.equal(listing.problems[0].folder, "broken");
 
-  // Removing a skill takes it away from the chats that had it enabled.
+  // Removing a skill takes it away from the agents that had it enabled.
   removeSkill("codeword");
-  assert.deepEqual(enabledSkillNames("chat-a"), []);
-  assert.equal(skillsPrompt("chat-a"), "");
+  assert.deepEqual(enabledSkillNames("agent-a"), []);
+  assert.equal(skillsPrompt("agent-a"), "");
   assert.equal(existsSync(join(SKILLS_DIR, "codeword")), false);
 
   // Create from a form. The skill reads back like an import, and an installed skill is never replaced.

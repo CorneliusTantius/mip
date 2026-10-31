@@ -13,8 +13,8 @@ export function SyncTab() {
       <section className="flex flex-col gap-2">
         <h3 className="font-semibold">GitHub account</h3>
         <p className="text-sm opacity-70">
-          Sync keeps your chats, notes, personas, and bots in a private repo named dotmip. It uses an account the GitHub CLI (gh) is signed in
-          to. Repository clones, chat files, and provider logins stay on this machine.
+          Sync keeps your agents, notes, personas, and bots in a private repo named dotmip. It uses an account the GitHub CLI (gh) is signed in
+          to. Repository clones, agent files, and provider logins stay on this machine.
         </p>
 
         {accounts.length > 1 ? (

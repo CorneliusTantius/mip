@@ -1,4 +1,4 @@
-import type { PullResult, Repo, Session } from "../../api/types";
+import type { PullResult, Repo, Agent } from "../../api/types";
 import { useCardExpansion } from "../../ui/Card";
 import { OptionDropdown } from "../../ui/OptionDropdown";
 
@@ -18,24 +18,24 @@ function StatusBadge({ status }: { status: Repo["status"] }) {
   return <span className="badge badge-sm badge-error badge-soft">failed</span>;
 }
 
-// One repository: its name, status, branch, and link, the last pull's result, the chats that have a copy, and the controls.
+// One repository: its name, status, branch, and link, the last pull's result, the agents that have a copy, and the controls.
 export function RepoRow({
   repo,
-  chats,
+  agents,
   pull,
   onCopy,
   onRemove,
 }: {
   repo: Repo;
-  chats: Session[];
+  agents: Agent[];
   pull?: Pick<PullResult, "ok" | "message">;
-  onCopy: (sessionId: string) => void;
+  onCopy: (agentId: string) => void;
   onRemove: () => void;
 }) {
-  // Chats that do not have a copy yet.
-  const options = chats
-    .filter((chat) => !repo.copies.some((copied) => copied.sessionId === chat.id))
-    .map((chat) => ({ value: chat.id, label: chat.title || "New session" }));
+  // Agents that do not have a copy yet.
+  const options = agents
+    .filter((agent) => !repo.copies.some((copied) => copied.agentId === agent.id))
+    .map((agent) => ({ value: agent.id, label: agent.title || "New agent" }));
   const { expanded } = useCardExpansion();
   const small = expanded ? "text-sm" : "text-xs";
 
@@ -56,16 +56,16 @@ export function RepoRow({
       {pull && <p className={`${small} ${pull.ok ? "opacity-70" : "text-error"}`}>{pull.message}</p>}
       <div className="flex flex-wrap items-center gap-1.5">
         {repo.copies.map((copied) => (
-          <span key={copied.sessionId} className="badge badge-outline max-w-40 truncate" title={copied.title}>
-            {copied.title || "New session"}
+          <span key={copied.agentId} className="badge badge-outline max-w-40 truncate" title={copied.title}>
+            {copied.title || "New agent"}
           </span>
         ))}
         {repo.status === "ready" && (
           <OptionDropdown
-            label={`Copy ${repo.name} to a chat`}
+            label={`Copy ${repo.name} to an agent`}
             value=""
             options={options}
-            placeholder={chats.length === 0 ? "Create a chat first" : options.length ? "Copy to a chat" : "Every chat has a copy"}
+            placeholder={agents.length === 0 ? "Create an agent first" : options.length ? "Copy to an agent" : "Every agent has a copy"}
             disabled={options.length === 0}
             onChange={onCopy}
           />

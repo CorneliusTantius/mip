@@ -3,7 +3,7 @@ import { existsSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { REPOS_DIR } from "../storage/paths.js";
 import { type Repo, deleteRepo, getRepo, getRepoByName, insertRepo, listRepos, setRepoStatus } from "../storage/repos.js";
-import { getSession, listSessions } from "../storage/sessions.js";
+import { getAgent, listAgents } from "../storage/agents.js";
 import { AppError } from "./errors.js";
 import { runGit } from "./git.js";
 import { workspaceFor, workspacePath } from "./tools/workspace.js";
@@ -42,22 +42,22 @@ async function branchOf(repo: Repo): Promise<string | null> {
   }
 }
 
-// Every repository, with its branch, and the chats that have their own copy of it.
+// Every repository, with its branch, and the agents that have their own copy of it.
 export async function listRepoCards() {
-  const chats = listSessions();
+  const agents = listAgents();
   return Promise.all(
     listRepos().map(async (repo) => ({
       ...repo,
       branch: await branchOf(repo),
-      copies: chats
-        .filter((chat) => existsSync(join(workspacePath(chat.id), repo.name, ".git")))
-        .map((chat) => ({ sessionId: chat.id, title: chat.title })),
+      copies: agents
+        .filter((agent) => existsSync(join(workspacePath(agent.id), repo.name, ".git")))
+        .map((agent) => ({ agentId: agent.id, title: agent.title })),
     })),
   );
 }
 
 // Brings every ready repository up to date with its upstream. Fast-forward only, so no merge commits appear.
-// Chats' copies are separate clones and are not pulled. Returns one result per repository.
+// Agents' copies are separate clones and are not pulled. Returns one result per repository.
 export async function pullAllRepos(): Promise<{ id: string; name: string; ok: boolean; message: string }[]> {
   const results = [];
   for (const repo of listRepos().filter((r) => r.status === "ready")) {
@@ -97,16 +97,16 @@ export function addRepo(urlInput: unknown): Repo {
   return repo;
 }
 
-// Gives a chat its own copy of a ready repository: a separate clone in the chat's workspace.
+// Gives an agent its own copy of a ready repository: a separate clone in the agent's workspace.
 // The copy's origin is the real link, so pushing from it goes to that remote, not to the master clone.
-export async function copyRepoToChat(repoId: string, sessionIdInput: unknown): Promise<void> {
+export async function copyRepoToAgent(repoId: string, agentIdInput: unknown): Promise<void> {
   const repo = requireRepo(repoId);
   if (repo.status !== "ready") throw new AppError(409, `${repo.name} isn't ready yet`);
-  const sessionId = String(sessionIdInput ?? "");
-  if (!getSession(sessionId)) throw new AppError(404, "no such chat");
+  const agentId = String(agentIdInput ?? "");
+  if (!getAgent(agentId)) throw new AppError(404, "no such agent");
 
-  const dest = join(workspaceFor(sessionId), repo.name);
-  if (existsSync(dest)) throw new AppError(409, `this chat already has ${repo.name}`);
+  const dest = join(workspaceFor(agentId), repo.name);
+  if (existsSync(dest)) throw new AppError(409, `this agent already has ${repo.name}`);
   try {
     await runGit(["clone", "--", join(REPOS_DIR, repo.name), dest]);
     await runGit(["-C", dest, "remote", "set-url", "origin", repo.url]);
@@ -116,7 +116,7 @@ export async function copyRepoToChat(repoId: string, sessionIdInput: unknown): P
   }
 }
 
-// Removes a master clone. Chats' copies are separate clones, so they keep working.
+// Removes a master clone. Agents' copies are separate clones, so they keep working.
 export function removeRepo(repoId: string): void {
   const repo = requireRepo(repoId);
   if (repo.status === "cloning") throw new AppError(409, `${repo.name} is still cloning`);

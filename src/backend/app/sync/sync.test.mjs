@@ -26,7 +26,7 @@ function run() {
     const code = `
       const engine = await import(${JSON.stringify(`${DIST}app/sync/engine.js`)});
       const notes = await import(${JSON.stringify(`${DIST}storage/notes.js`)});
-      const sessions = await import(${JSON.stringify(`${DIST}storage/sessions.js`)});
+      const agents = await import(${JSON.stringify(`${DIST}storage/agents.js`)});
       const remote = ${JSON.stringify(remote)};
       const result = await (async () => { ${script} })();
       console.log(JSON.stringify(result ?? null));
@@ -40,7 +40,7 @@ function run() {
 
   // What a machine shows after a sync: its notes by title, and its chats with their messages.
   const READ = `
-    const chats = sessions.listSessions().map((s) => ({ id: s.id, title: s.title, messages: sessions.listMessages(s.id).map((m) => m.text) }));
+    const chats = agents.listAgents().map((s) => ({ id: s.id, title: s.title, messages: agents.listMessages(s.id).map((m) => m.text) }));
     const noteBody = (title) => notes.getNoteByTitle(title)?.body ?? null;
     return { chats, ideas: noteBody("Ideas"), temp: noteBody("Temp") };
   `;
@@ -53,10 +53,10 @@ function run() {
   const first = machine(a, `
     notes.saveNote({ id: "n-ideas", title: "Ideas", body: "from A" }, [], []);
     notes.saveNote({ id: "n-temp", title: "Temp", body: "delete me" }, [], []);
-    const chat = sessions.createSession("pi", "default", "Plans");
-    sessions.addMessage(chat.id, { role: "user", text: "hello from A", tools: [], error: null });
+    const agent = agents.insertAgent("pi", "default", "Plans");
+    agents.addMessage(agent.id, { role: "user", text: "hello from A", tools: [], error: null });
     const run = await engine.syncWith(remote);
-    return { run, chatId: chat.id };
+    return { run, agentId: agent.id };
   `);
   assert.equal(first.run.ok, true);
   assert.ok(first.run.pushed > 0, "the first sync pushes what machine A has");
@@ -71,7 +71,7 @@ function run() {
   // Machine B edits the note and adds a message, then syncs.
   machine(b, `
     notes.saveNote({ id: notes.getNoteByTitle("Ideas").id, title: "Ideas", body: "from B" }, [], []);
-    sessions.addMessage(${JSON.stringify(first.chatId)}, { role: "assistant", text: "hi from B", tools: [], error: null });
+    agents.addMessage(${JSON.stringify(first.agentId)}, { role: "assistant", text: "hi from B", tools: [], error: null });
     return await engine.syncWith(remote);
   `);
 
@@ -80,7 +80,7 @@ function run() {
     "const run =",
     `notes.saveNote({ id: notes.getNoteByTitle("Ideas").id, title: "Ideas", body: "from A later" }, [], []);
      notes.deleteNote(notes.getNoteByTitle("Temp").id);
-     sessions.addMessage(${JSON.stringify(first.chatId)}, { role: "user", text: "from A again", tools: [], error: null });
+     agents.addMessage(${JSON.stringify(first.agentId)}, { role: "user", text: "from A again", tools: [], error: null });
      const run =`,
   ));
   assert.equal(third.run.ok, true);
@@ -117,7 +117,7 @@ function run() {
   assert.match(files, /notes\/ideas\.json/);
   assert.match(files, /chats\/.*\.json/);
   assert.match(files, /room\.json/);
-  assert.doesNotMatch(files, /sessions\/|auth|github\.json|token/i);
+  assert.doesNotMatch(files, /agents\/|auth|github\.json|token/i);
 
   console.log("sync tests passed");
 }

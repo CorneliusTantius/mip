@@ -4,7 +4,7 @@ Facts only, for fast and accurate work. Hand-written files name files and functi
 
 ## Read order
 1. `architecture.md`: processes, layers, folder rules, where data lives, what is in memory, and the tools.
-2. `flows.md`: what happens step by step: runs, chat follow, room turns, memory, repos, sign-in, tools, GitHub sync, skills, tool calls, tool search.
+2. `flows.md`: what happens step by step: runs, agent follow, room turns, memory, repos, sign-in, tools, GitHub sync, skills, tool calls, tool search.
 3. `backend.md`: each backend module, grouped by folder, with its job and main exports.
 4. `frontend.md`: each frontend module, grouped by feature, with its job, its state owner, and the polling.
 5. `api.md`: every HTTP route, with its status codes, body, and errors.

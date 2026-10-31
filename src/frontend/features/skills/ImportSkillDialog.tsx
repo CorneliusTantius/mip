@@ -85,7 +85,7 @@ export function ImportSkillDialog({ open, onClose, onInstalled }: { open: boolea
           </p>
           <p className="opacity-70">Files: {preview.files.join(", ")}</p>
           {preview.replaces !== null && (
-            <p className="text-warning">A skill named {preview.name} is installed. Installing replaces it. Chats that had it enabled keep it enabled.</p>
+            <p className="text-warning">A skill named {preview.name} is installed. Installing replaces it. Agents that had it enabled keep it enabled.</p>
           )}
           <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-box bg-base-300/60 p-3 text-xs">{preview.skillMd}</pre>
           <div className="modal-action">

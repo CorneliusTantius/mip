@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AgentEvent, AgentProvider, ThinkingLevel } from "../adapters/contract.js";
-import { activeRunForSession, appendRunEvent, createRun, getRun, listRunEvents, setRunStatus } from "../storage/runs.js";
-import { addMessage, getSession, saveProviderSession, type Session } from "../storage/sessions.js";
+import { activeRunForAgent, appendRunEvent, createRun, getRun, listRunEvents, setRunStatus } from "../storage/runs.js";
+import { addMessage, getAgent, saveProviderSession, type Agent } from "../storage/agents.js";
 import { HOST, PORT } from "./config.js";
 import { AppError } from "./errors.js";
 import { recallFor } from "./memory.js";
@@ -14,22 +14,22 @@ import { ToolCallLog } from "./tools/calls.js";
 import { workspaceFor } from "./tools/workspace.js";
 
 // Starts a turn and returns its run id. The run is not tied to the browser: it keeps going if the page closes,
-// and each event is saved as it arrives, so the chat can pick it up again later. The chat's model and thinking level apply.
-export function startRun(input: { sessionId: string; prompt: string }): string {
-  const session = getSession(input.sessionId);
-  if (!session) throw new AppError(404, "no such session");
+// and each event is saved as it arrives, so the agent can pick it up again later. The agent's model and thinking level apply.
+export function startRun(input: { agentId: string; prompt: string }): string {
+  const agent = getAgent(input.agentId);
+  if (!agent) throw new AppError(404, "no such agent");
   const prompt = input.prompt.trim();
   if (!prompt) throw new AppError(400, "prompt is required");
-  if (activeRunForSession(session.id)) throw new AppError(409, "this chat is still running");
+  if (activeRunForAgent(agent.id)) throw new AppError(409, "this agent is still running");
 
-  const provider = findProvider(session.providerId);
+  const provider = findProvider(agent.providerId);
   const runId = randomUUID();
-  createRun(runId, session.id);
-  addMessage(session.id, { role: "user", text: prompt, tools: [], error: null });
+  createRun(runId, agent.id);
+  addMessage(agent.id, { role: "user", text: prompt, tools: [], error: null });
 
-  const workspace = workspaceFor(session.id);
-  const token = registerRun({ workspace, chatId: session.id, tools: AGENT_TOOLS, deferred: AGENT_DEFERRED });
-  execute({ runId, session, provider, prompt, workspace, token }).catch((err: unknown) => {
+  const workspace = workspaceFor(agent.id);
+  const token = registerRun({ workspace, agentId: agent.id, tools: AGENT_TOOLS, deferred: AGENT_DEFERRED });
+  execute({ runId, agent, provider, prompt, workspace, token }).catch((err: unknown) => {
     console.error(`run ${runId} failed to save:`, err);
   });
   return runId;
@@ -42,13 +42,13 @@ export function readRun(runId: string, after: number) {
   return { status: run.status, events: listRunEvents(runId, after) };
 }
 
-export function activeRunId(sessionId: string): string | undefined {
-  return activeRunForSession(sessionId)?.id;
+export function activeRunId(agentId: string): string | undefined {
+  return activeRunForAgent(agentId)?.id;
 }
 
 interface RunJob {
   runId: string;
-  session: Session;
+  agent: Agent;
   provider: AgentProvider;
   prompt: string;
   workspace: string;
@@ -67,18 +67,18 @@ async function execute(job: RunJob): Promise<void> {
   try {
     for await (const event of job.provider.run({
       prompt: job.prompt,
-      // The persona's prompt, the repositories in the workspace, the skills the chat enabled, the guides of the tools offered, and any shared notes that match this message.
-      systemPrompt: [personaPrompt(job.session.personaId), repoNote(job.workspace), skillsPrompt(job.session.id), toolGuidesPrompt(AGENT_TOOLS), recallFor(job.prompt)]
+      // The persona's prompt, the repositories in the workspace, the skills the agent enabled, the guides of the tools offered, and any shared notes that match this message.
+      systemPrompt: [personaPrompt(job.agent.personaId), repoNote(job.workspace), skillsPrompt(job.agent.id), toolGuidesPrompt(AGENT_TOOLS), recallFor(job.prompt)]
         .filter(Boolean)
         .join("\n\n"),
       tools: AGENT_TOOLS,
       deferredTools: AGENT_DEFERRED,
       workspace: job.workspace,
-      chatId: job.session.id,
+      agentId: job.agent.id,
       toolServer: { url: `http://${HOST}:${PORT}/mcp`, token: job.token },
-      model: job.session.model ?? undefined,
-      thinking: (job.session.thinking as ThinkingLevel | null) ?? undefined,
-      sessionId: job.session.providerSessionId ?? undefined,
+      model: job.agent.model ?? undefined,
+      thinking: (job.agent.thinking as ThinkingLevel | null) ?? undefined,
+      sessionId: job.agent.providerSessionId ?? undefined,
     })) {
       if (event.type === "text") text += event.text;
       if (event.type === "tool_call") {
@@ -97,7 +97,7 @@ async function execute(job: RunJob): Promise<void> {
     releaseRun(job.token);
   }
 
-  addMessage(job.session.id, { role: "assistant", text, tools, calls: calls.calls, error });
-  saveProviderSession(job.session.id, providerSessionId);
+  addMessage(job.agent.id, { role: "assistant", text, tools, calls: calls.calls, error });
+  saveProviderSession(job.agent.id, providerSessionId);
   setRunStatus(job.runId, error ? "error" : "done");
 }

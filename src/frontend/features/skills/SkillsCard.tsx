@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
-import type { Bot, Session, SkillDetail, SkillSummary } from "../../api/types";
+import type { Bot, Agent, SkillDetail, SkillSummary } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
@@ -9,7 +9,7 @@ import { CreateSkillDialog } from "./CreateSkillDialog";
 import { ImportSkillDialog } from "./ImportSkillDialog";
 import { useSkills } from "./useSkills";
 
-// The skills mip's agents can use. Each chat picks its own from its Skills button, and the pill here shows who has what.
+// The skills mip's agents can use. Each agent picks its own from its Skills button, and the pill here shows who has what.
 export function SkillsCard() {
   return (
     <Card glow="teal">
@@ -126,7 +126,7 @@ function SkillsBody() {
       <ConfirmDialog
         open={!!removing}
         title="Remove this skill?"
-        message={`"${removing?.name}" is deleted from mip. Chats stop using it.`}
+        message={`"${removing?.name}" is deleted from mip. Agents stop using it.`}
         error={removeError}
         onConfirm={remove}
         onCancel={() => setRemoving(undefined)}
@@ -135,19 +135,19 @@ function SkillsBody() {
   );
 }
 
-// Each agent (a chat conversation) with the skills it has enabled. Reads the chat list each time the view opens.
+// Each agent (an agent conversation) with the skills it has enabled. Reads the agent list each time the view opens.
 function AgentSkills() {
   const { expanded } = useCardExpansion();
-  const [chats, setChats] = useState<Session[]>();
+  const [agents, setAgents] = useState<Agent[]>();
   const [error, setError] = useState<string>();
 
   useEffect(() => {
-    api.get<{ sessions: Session[] }>("/api/sessions").then((data) => setChats(data.sessions), (err) => setError(errorText(err)));
+    api.get<{ agents: Agent[] }>("/api/agents").then((data) => setAgents(data.agents), (err) => setError(errorText(err)));
   }, []);
 
   if (error) return <ErrorAlert message={error} />;
-  if (!chats) return <p className="py-4 text-center text-sm opacity-60">Loading chats…</p>;
-  if (chats.length === 0) return <p className="py-4 text-center text-sm opacity-60">No chats yet.</p>;
+  if (!agents) return <p className="py-4 text-center text-sm opacity-60">Loading agents…</p>;
+  if (agents.length === 0) return <p className="py-4 text-center text-sm opacity-60">No agents yet.</p>;
   return (
     <table className={`table ${expanded ? "table-sm" : "table-xs"}`}>
       <thead>
@@ -157,10 +157,10 @@ function AgentSkills() {
         </tr>
       </thead>
       <tbody>
-        {chats.map((chat) => (
-          <tr key={chat.id}>
-            <td className="truncate">{chat.title || "New session"}</td>
-            <td>{chat.skills && chat.skills.length > 0 ? chat.skills.join(", ") : <span className="opacity-50">none</span>}</td>
+        {agents.map((agent) => (
+          <tr key={agent.id}>
+            <td className="truncate">{agent.title || "New agent"}</td>
+            <td>{agent.skills && agent.skills.length > 0 ? agent.skills.join(", ") : <span className="opacity-50">none</span>}</td>
           </tr>
         ))}
       </tbody>

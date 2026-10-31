@@ -5,7 +5,7 @@ import { fail, ok } from "./result.js";
 // Memory is shared: every agent sees the same notes.
 export const memorySearchTool: ToolSpec = {
   name: "memory_search",
-  guide: "Searches the notes shared by all chats, by words. Check it when the user refers to something from before, before you say you do not know.",
+  guide: "Searches the notes shared by all agents, by words. Check it when the user refers to something from before, before you say you do not know.",
   description: "Search the notes shared by all agents. Returns the matching note titles with a snippet of each.",
   inputSchema: {
     type: "object",

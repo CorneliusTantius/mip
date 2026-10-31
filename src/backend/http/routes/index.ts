@@ -6,7 +6,7 @@ import { providerRoutes } from "./providers.js";
 import { repoRoutes } from "./repos.js";
 import { roomRoutes } from "./room.js";
 import { runRoutes } from "./runs.js";
-import { sessionRoutes } from "./sessions.js";
+import { agentRoutes } from "./agents.js";
 import { skillRoutes } from "./skills.js";
 import { syncRoutes } from "./sync.js";
 import { systemRoutes } from "./system.js";
@@ -16,7 +16,7 @@ import { toolRoutes } from "./tools.js";
 // The Claude CLI's tool endpoint (/mcp) and the web build are served outside this list, in http/server.ts.
 export const routes: Route[] = [
   ...providerRoutes,
-  ...sessionRoutes,
+  ...agentRoutes,
   ...runRoutes,
   ...personaRoutes,
   ...botRoutes,

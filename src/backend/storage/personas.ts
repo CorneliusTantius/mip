@@ -1,6 +1,6 @@
 import { db, type Row } from "./db.js";
 
-// A persona is a name and a system prompt. Exactly one persona is the default for new chats.
+// A persona is a name and a system prompt. Exactly one persona is the default for new agents.
 export interface Persona {
   id: string;
   name: string;

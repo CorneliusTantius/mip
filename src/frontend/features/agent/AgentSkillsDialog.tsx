@@ -4,25 +4,25 @@ import type { SkillSummary } from "../../api/types";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { Modal } from "../../ui/Modal";
 
-// Chooses which installed skills this chat may use. A chat can read only the skills checked here.
-export function ChatSkillsDialog({ open, sessionId, onClose }: { open: boolean; sessionId: string; onClose: () => void }) {
+// Chooses which installed skills this agent may use. An agent can read only the skills checked here.
+export function AgentSkillsDialog({ open, agentId, onClose }: { open: boolean; agentId: string; onClose: () => void }) {
   const [installed, setInstalled] = useState<SkillSummary[]>([]);
   const [chosen, setChosen] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
 
-  // Each time the dialog opens, it reads the installed skills and what this chat has enabled.
+  // Each time the dialog opens, it reads the installed skills and what this agent has enabled.
   useEffect(() => {
     if (!open) return;
     setError(undefined);
-    Promise.all([api.get<{ skills: SkillSummary[] }>("/api/skills"), api.get<{ skills: string[] }>(`/api/sessions/${sessionId}`)]).then(
-      ([list, chat]) => {
+    Promise.all([api.get<{ skills: SkillSummary[] }>("/api/skills"), api.get<{ skills: string[] }>(`/api/agents/${agentId}`)]).then(
+      ([list, agent]) => {
         setInstalled(list.skills);
-        setChosen(chat.skills);
+        setChosen(agent.skills);
       },
       (err) => setError(errorText(err)),
     );
-  }, [open, sessionId]);
+  }, [open, agentId]);
 
   function toggle(name: string) {
     setChosen((current) => (current.includes(name) ? current.filter((item) => item !== name) : [...current, name]));
@@ -32,7 +32,7 @@ export function ChatSkillsDialog({ open, sessionId, onClose }: { open: boolean; 
     setSaving(true);
     setError(undefined);
     try {
-      await api.put(`/api/sessions/${sessionId}/skills`, { skills: chosen });
+      await api.put(`/api/agents/${agentId}/skills`, { skills: chosen });
       onClose();
     } catch (err) {
       setError(errorText(err));
@@ -42,9 +42,9 @@ export function ChatSkillsDialog({ open, sessionId, onClose }: { open: boolean; 
 
   return (
     <Modal open={open} onClose={onClose} glow="teal" boxClassName="max-w-lg">
-      <h3 className="text-lg font-semibold">Skills for this chat</h3>
+      <h3 className="text-lg font-semibold">Skills for this agent</h3>
       <p className="py-2 text-sm opacity-70">
-        Only the checked skills can be read in this chat. Changes apply to the next message. Skills are imported from the Skills card.
+        Only the checked skills can be read in this agent. Changes apply to the next message. Skills are imported from the Skills card.
       </p>
 
       {installed.length === 0 ? (

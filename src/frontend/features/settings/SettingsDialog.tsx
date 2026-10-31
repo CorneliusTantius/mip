@@ -4,7 +4,7 @@ import { ProviderTab } from "./ProviderTab";
 import { SyncTab } from "./SyncTab";
 import { UpdateTab } from "./UpdateTab";
 
-// Settings: the provider sign-ins, syncing data to GitHub, and updating mip. Personas are managed from the chat card. It opens from the gear in the header.
+// Settings: the provider sign-ins, syncing data to GitHub, and updating mip. Personas are managed from the agent card. It opens from the gear in the header.
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [tab, setTab] = useState<"provider" | "sync" | "update">("provider");
 

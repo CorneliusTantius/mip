@@ -55,7 +55,7 @@ export const toolSearchTool: ToolSpec = {
   },
   async run(input, context) {
     const deferred = context.deferred ?? [];
-    if (deferred.length === 0) return ok("No other tools are available in this chat.");
+    if (deferred.length === 0) return ok("No other tools are available in this agent.");
     const found = searchTools(deferred, String(input.query ?? ""));
     if (found.length === 0) return ok("No tool matches. Try different words.");
     return ok(found.map(describe).join("\n\n"));

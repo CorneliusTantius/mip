@@ -33,7 +33,7 @@ try {
   // tool_search returns each match with its guide, so the guide reaches the model when the tool is found.
   const found = await toolSearchTool.run({ query: "memory notes" }, { workspace: root, deferred: AGENT_DEFERRED });
   assert.equal(found.isError, false);
-  assert.match(found.text, /guide: Searches the notes shared by all chats/);
+  assert.match(found.text, /guide: Searches the notes shared by all agents/);
 
   // The persona keeps who the assistant is and how it answers. Tool guidance is not in it any more.
   const prompt = defaultPersona().systemPrompt;
