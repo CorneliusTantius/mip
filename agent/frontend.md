@@ -37,6 +37,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
   6. `div` `col-span-12 grid md:grid-cols-2 xl:grid-cols-4` → `EmptyCard` Tasks, `EmptyCard` Activity, `PlaceholderCard` Skills, `PlaceholderCard` MCP.
 - Dialogs at the end: `SettingsDialog`, `MemoryDialog`.
 - Breakpoints: md 768px, xl 1280px (Tailwind defaults). Desktops side-by-side for chat and bots.
+- Gaps between cards: `gap-4` (16px), `xl:gap-5` (20px) on the main grid and the bottom row.
 
 ## features/chat/
 | file | export (line) | state / job |
@@ -119,7 +120,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 
 ## Styling and theme
 - `styles.css` — Nord theme tokens in `@plugin "daisyui/theme"` (:95). Dark only.
-- Card glow: `.glow` (:132) uses `--glow` for the outer glow (45%) and a 5% tint, with no border line over the card's background. Colors: `.glow-frost` (:138, chat), `.glow-violet` (:141, bots), `.glow-green` (:145, memory), `.glow-orange` (:143, repos), `.glow-yellow` (:144, tasks), `.glow-blue` (:140, activity), `.glow-teal` (:139, skills), `.glow-red` (:142, MCP).
+- Card glow: `.glow` (:132) uses `--glow` for a 0.5px border (55%), the outer glow (45%), and a 5% tint over the card's background. Colors: `.glow-frost` (:138, chat), `.glow-violet` (:141, bots), `.glow-green` (:145, memory), `.glow-orange` (:143, repos), `.glow-yellow` (:144, tasks), `.glow-blue` (:140, activity), `.glow-teal` (:139, skills), `.glow-red` (:142, MCP).
 - Entrance animations (`styles.css:40-70`) are keyed by DOM position (`main > div:nth-child(3|4) > .card`). Keep the grid's child order.
 - Native `<dialog>` modals. Focus outlines are off (`styles.css` top).
 

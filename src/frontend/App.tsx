@@ -36,7 +36,7 @@ export function App() {
     <div className="flex h-full flex-col">
       <Starfield />
 
-      <main className={`${WIDTH} grid min-h-0 flex-1 grid-cols-12 content-start gap-4 overflow-y-auto ${SIDES} pb-4 pt-0 xl:pb-3`}>
+      <main className={`${WIDTH} grid min-h-0 flex-1 grid-cols-12 content-start gap-4 xl:gap-5 overflow-y-auto ${SIDES} pb-4 pt-0 xl:pb-3`}>
         {/* The header scrolls with the page, so it sits inside the scrolling area. */}
         <div className="navbar col-span-12 min-h-10 py-0">
           <span className="flex-1 text-lg font-semibold">mip</span>
@@ -61,7 +61,7 @@ export function App() {
         </div>
 
         {/* Not wired up yet, so they sit below everything else. Two per row on tablets, four on desktops. */}
-        <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-4">
           <EmptyCard title="Tasks" empty="No tasks yet." glow="yellow" />
           <EmptyCard title="Activity" empty="No activity yet." glow="blue" />
           <PlaceholderCard title="Skills" summary="Skills the agents can use. None installed yet." glow="teal" />
