@@ -122,7 +122,7 @@ export function RepositoriesCard() {
   }
 
   return (
-    <section className="card h-full bg-base-200/80">
+    <section className="card glow glow-orange h-full bg-base-200/80">
       <div className="card-body gap-3">
         <div className="flex items-center gap-2">
           <h2 className="card-title mr-auto">Repositories</h2>

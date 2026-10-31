@@ -103,7 +103,7 @@ export function BotsCard() {
   }
 
   return (
-    <section className="card card-border flex h-full shrink-0 bg-base-200/80">
+    <section className="card card-border glow glow-violet flex h-full shrink-0 bg-base-200/80">
       <div className="card-body min-h-0 flex-1 gap-3 p-4">
         <div className="flex items-center gap-2">
           <h2 className="card-title mr-auto">Bots</h2>

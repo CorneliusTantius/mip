@@ -9,8 +9,8 @@ import { Settings } from "./Settings";
 import { Starfield } from "./Starfield";
 
 const PANELS = [
-  { title: "Tasks", empty: "No tasks yet." },
-  { title: "Activity", empty: "No activity yet." },
+  { title: "Tasks", empty: "No tasks yet.", glow: "glow-yellow" },
+  { title: "Activity", empty: "No activity yet.", glow: "glow-blue" },
 ];
 
 // Card sizes, on a 12-column grid. Memory and repositories share a row from tablets up.
@@ -22,7 +22,7 @@ const SIZE = {
 // The page is narrow on a phone and wider on bigger screens. The top bar matches it.
 // From desktop up the page uses the whole window, with a cap on very wide monitors. Top bar and page share the same side padding.
 const WIDTH = "mx-auto w-full max-w-5xl xl:max-w-none 2xl:max-w-[1920px]";
-const SIDES = "px-4 xl:px-3.75";
+const SIDES = "px-4 xl:px-4.75";
 
 // The top bar stays put. Everything below it is one content box that scrolls, with the cards inside.
 export function App() {
@@ -64,15 +64,15 @@ export function App() {
         {/* Not wired up yet, so they sit below everything else. Two per row on tablets, four on desktops. */}
         <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {PANELS.map((panel) => (
-            <section key={panel.title} className="card bg-base-200/80">
+            <section key={panel.title} className={`card glow ${panel.glow} bg-base-200/80`}>
               <div className="card-body">
                 <h2 className="card-title">{panel.title}</h2>
                 <p className="py-6 text-center opacity-60">{panel.empty}</p>
               </div>
             </section>
           ))}
-          <PlaceholderCard title="Skills" summary="Skills the agents can use. None installed yet." />
-          <PlaceholderCard title="MCP" summary="MCP servers that add tools to the agents. None connected yet." />
+          <PlaceholderCard title="Skills" summary="Skills the agents can use. None installed yet." glow="glow-teal" />
+          <PlaceholderCard title="MCP" summary="MCP servers that add tools to the agents. None connected yet." glow="glow-red" />
         </div>
       </main>
 

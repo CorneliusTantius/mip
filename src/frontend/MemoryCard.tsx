@@ -16,7 +16,7 @@ export function MemoryCard({ version, onOpen, onSeeMore }: { version: number; on
   const notes = graph.nodes.filter((node) => !node.missing).length;
 
   return (
-    <section className="card h-full bg-base-200/80">
+    <section className="card glow glow-green h-full bg-base-200/80">
       <div className="card-body gap-3">
         <div className="flex items-center gap-2">
           <h2 className="card-title mr-auto">Memory</h2>

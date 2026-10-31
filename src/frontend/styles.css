@@ -126,3 +126,18 @@ details[open] > .dropdown-content { animation: mip-pop 0.2s ease-out backwards; 
   --depth: 0;
   --noise: 0;
 }
+
+/* Each dashboard card glows in one color from the Nord palette, so the cards read apart. Purple and orange are the
+   aurora colors the theme above leaves out. */
+.glow {
+  border: 1px solid color-mix(in oklab, var(--glow) 55%, transparent);
+  box-shadow: 0 0 16px -4px color-mix(in oklab, var(--glow) 45%, transparent);
+}
+.glow-frost { --glow: #88c0d0; }
+.glow-teal { --glow: #8fbcbb; }
+.glow-blue { --glow: #81a1c1; }
+.glow-violet { --glow: #b48ead; }
+.glow-red { --glow: #bf616a; }
+.glow-orange { --glow: #d08770; }
+.glow-yellow { --glow: #ebcb8b; }
+.glow-green { --glow: #a3be8c; }

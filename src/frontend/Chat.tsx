@@ -261,7 +261,7 @@ export function Chat() {
   }
 
   return (
-    <section className="card card-border flex h-full shrink-0 bg-base-200/80">
+    <section className="card card-border glow glow-frost flex h-full shrink-0 bg-base-200/80">
       <div className="card-body min-h-0 flex-1 gap-3 p-4">
         <div className="flex min-h-0 flex-1">
           {/* On a phone the list is a card over the chat, so the chat keeps its full width. Tapping outside closes it. */}

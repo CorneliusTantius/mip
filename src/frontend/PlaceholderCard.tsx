@@ -3,14 +3,16 @@ import { useRef } from "preact/hooks";
 interface PlaceholderCardProps {
   title: string;
   summary: string;
+  // A glow class from styles.css, such as glow-teal.
+  glow: string;
 }
 
 // A card for a feature that is not built yet. It says what the feature will hold, and its button opens a dialog with the same note.
-export function PlaceholderCard({ title, summary }: PlaceholderCardProps) {
+export function PlaceholderCard({ title, summary, glow }: PlaceholderCardProps) {
   const dialog = useRef<HTMLDialogElement>(null);
 
   return (
-    <section className="card bg-base-200/80">
+    <section className={`card glow ${glow} bg-base-200/80`}>
       <div className="card-body">
         <h2 className="card-title">{title}</h2>
         <p className="py-6 text-center opacity-60">{summary}</p>
