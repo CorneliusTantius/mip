@@ -25,7 +25,7 @@ export async function handleMcp(req: IncomingMessage, res: ServerResponse, messa
     case "tools/call": {
       const tool = run.tools.find((candidate) => candidate.name === params?.name);
       if (!tool) return replyError(res, id, -32602, `unknown tool: ${params?.name}`);
-      const result = await tool.run(params.arguments ?? {}, { workspace: run.workspace, chatId: run.chatId });
+      const result = await tool.run(params.arguments ?? {}, { workspace: run.workspace, chatId: run.chatId, deferred: run.deferred });
       return reply(res, id, { content: [{ type: "text", text: result.text }], isError: result.isError });
     }
     default:

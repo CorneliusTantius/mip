@@ -50,6 +50,7 @@ function ToolRow({ tool, expandable }: { tool: ToolInfo; expandable: boolean }) 
   const summary = (
     <span className="flex min-w-0 items-center gap-2 text-sm">
       <strong className="truncate">{tool.name}</strong>
+      <span className="badge badge-ghost badge-xs">{tool.load}</span>
       <Access tool={tool} />
     </span>
   );

@@ -129,6 +129,14 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 - **Tools card.** `features/tools/ToolsCard.tsx` lists the tool registry from `GET /api/tools`: each tool with whether chats and bots may use it. Collapsed, it shows four. Expanded, each tool opens to its description and inputs.
 - **Not synced.** Tool details stay on the machine that ran them. The GitHub sync carries tool names but not calls.
 
+## 18. Tool search
+- **Offered and deferred.** `app/tools/index.ts` splits the registry. `BASIC_TOOLS` (bash, read, edit, write, skill_read) are offered to every chat run. `DEFERRED_TOOLS` (the three memory tools and skill_file) are not. The two search tools, `tool_search` and `tool_call`, are offered.
+- **A chat run.** `runs.ts` passes `CHAT_TOOLS` as the offered list and `CHAT_DEFERRED` as the deferred list, to the run's token and to the provider. The system prompt gets `TOOL_SEARCH_HINT`, which tells the model that more tools exist and how to find them.
+- **tool_search.** `searchTools` scores each deferred tool by the words in its name (two points) and description (one point), best first, up to eight. The reply lists each match with its inputs.
+- **tool_call.** Runs one deferred tool by name with its inputs. It refuses any name not in the run's deferred list, so a basic tool, or a tool a bot was not given, is never run this way.
+- **Other providers.** Claude gets the search tools through `/mcp`, and the deferred list is read from the run's token. Pi gets them as custom tools, with `deferredTools` in its context.
+- **Not built.** Code mode, and external MCP servers. Code mode needs a sandbox first.
+
 ## 16. Skills
 Skills tab: `features/skills/SkillsCard.tsx` (the All / Chat / Bot pill: installed skills, the skills each chat has, or each bot's skills, which is none yet), `CreateSkillDialog.tsx` and `ImportSkillDialog.tsx`, `useSkills.ts`. Chat: the **Skills** button → `features/chat/ChatSkillsDialog.tsx` → `PUT /api/sessions/:id/skills`.
 

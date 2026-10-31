@@ -13,6 +13,7 @@
     npm run typecheck
     npm run build
     node src/backend/app/room-engine.test.mjs
+    node src/backend/app/tools/tool-search.test.mjs
     node src/backend/app/tool-calls.test.mjs
     node src/backend/app/skills/format.test.mjs
     node src/backend/app/skills/skills.test.mjs
@@ -40,7 +41,7 @@ API regression check (used in the 2026-10-31 refactor): record each route's stat
 
 ### Add an agent tool
 1. Create `src/backend/app/tools/<name>.ts` exporting a `ToolSpec` (`adapters/contract.ts:24`). Return `ok(text)` or `fail(text)` from `tools/result.ts`.
-2. Add it to the `TOOLS` array in `src/backend/app/tools/index.ts`. Chats get it through `CHAT_TOOLS`, which is `TOOLS`. Bots get it only if you add it to `BOT_TOOLS`. Every provider gets the list through its own adapter: Claude through `/mcp`, Pi as a custom tool.
+2. Add it to `BASIC_TOOLS` (always offered) or `DEFERRED_TOOLS` (found with `tool_search`) in `src/backend/app/tools/index.ts`. It is in the registry `TOOLS` through either list. Chats get it through `CHAT_TOOLS` or `CHAT_DEFERRED`. Bots get it only when you add it to `BOT_TOOLS` or `BOT_DEFERRED`, and room turns also need a workspace and a run token, which they don't have yet. Every provider gets the list through its own adapter: Claude through `/mcp`, Pi as a custom tool.
 3. Paths must go through `inWorkspace` (`tools/workspace.ts:23`).
 4. Update `agent/backend.md` and `agent/flows.md` §6.
 

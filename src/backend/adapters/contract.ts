@@ -19,6 +19,8 @@ export interface ToolContext {
   workspace: string;
   // The chat the run belongs to. Skill tools use it to check which skills the chat has enabled.
   chatId?: string;
+  // The deferred tools this run may run through tool_call. Only tool_search and tool_call read them.
+  deferred?: ToolSpec[];
   signal?: AbortSignal;
 }
 
@@ -59,6 +61,8 @@ export interface RunOptions {
   workspace?: string;
   // The chat the run belongs to. Passed on to the tools.
   chatId?: string;
+  // The deferred tools the run may run through tool_call. They are not offered to the model.
+  deferredTools?: ToolSpec[];
   // Where the CLI reaches the app's tools, and the token that opens this run's workspace there.
   toolServer?: { url: string; token: string };
   signal?: AbortSignal;

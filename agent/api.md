@@ -99,7 +99,7 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 | DELETE | /api/skills/imports/:importId | :30 | 200 | `{ok:true}`. Drops the staged import | |
 
 ## Tools — `routes/tools.ts`
-`GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, inputSchema, chat, bot}`. `chat` and `bot` say whether that kind of run may use the tool. Chats get every tool, and bots get none for now.
+`GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, inputSchema, load, chat, bot}`. `load` is `basic` (always offered), `deferred` (found with `tool_search`, run with `tool_call`), or `search` (the two tools that do the finding). `chat` and `bot` say whether that kind of run may use the tool. Chats can use every tool, and bots none for now.
 
 ## Sessions — enabled skills
 `GET /api/sessions/:sessionId` also returns `skills`, the names the chat has enabled. Replace them with:

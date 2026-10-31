@@ -124,7 +124,7 @@ Each reply keeps the tool calls it made, with their inputs and results. Click **
 
 ## Tools
 
-Every provider gets the same seven tools, defined in `src/backend/app/tools/`: `read`, `write`, `edit`, `bash`, and the three memory tools.
+Every provider gets the same tools, defined in `src/backend/app/tools/`. Five are always offered: `bash`, `read`, `edit`, `write`, and `skill_read`. Four are deferred: the three memory tools and `skill_file`. The model finds a deferred tool with `tool_search`, then runs it with `tool_call`, so the list of tools stays short.
 
 - **Pi** gets them as custom tools. Pi's own copies are off.
 - **Claude** reaches them through the app's `/mcp` endpoint. Each run gets a token that opens only that run's workspace, and the token stops working when the run ends. Claude's built-in tools are off for these runs.
