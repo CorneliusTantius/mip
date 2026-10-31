@@ -78,4 +78,12 @@ assert.equal(isSilent("Sounds good"), false);
   assert.deepEqual(room.spoke, [null]);
 }
 
+// 7. A bot that is already waiting its turn is not queued a second time.
+{
+  const room = fakeRoom({ replies: { Alice: ["@Bob ping"], Bob: ["PASS"] }, queue: [alice, bob] });
+  await room.run;
+  assert.deepEqual(room.spoke, ["Alice", "Bob", null]);
+  assert.equal(room.said.length, 1);
+}
+
 console.log("room-engine: all checks passed");

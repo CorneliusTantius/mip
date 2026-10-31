@@ -118,15 +118,13 @@ function ProviderTab({ open }: { open: boolean }) {
 
           {target && (
             <>
-              <div className="mt-4 flex items-end gap-2">
-                <fieldset className="fieldset min-w-0 flex-1">
-                  <legend className="fieldset-legend">Service</legend>
-                  <select className="select w-full" value={target.id} onChange={(e) => setTargetId(e.currentTarget.value)}>
-                    {provider.targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                </fieldset>
-                <TargetButtons provider={provider} target={target} />
-              </div>
+              <fieldset className="fieldset mt-4">
+                <legend className="fieldset-legend">Service</legend>
+                <select className="select w-full" value={target.id} onChange={(e) => setTargetId(e.currentTarget.value)}>
+                  {provider.targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </fieldset>
+              <TargetButtons provider={provider} target={target} />
               <TargetProgress key={provider.id + target.id} provider={provider} target={target} />
             </>
           )}
@@ -150,14 +148,14 @@ function ProviderTab({ open }: { open: boolean }) {
   );
 }
 
-// Status and the sign-in buttons for the selected service. Sits next to the Service select.
+// Status and the sign-in buttons for the selected service. Sits under the Service select.
 function TargetButtons({ provider, target }: { provider: Provider; target: Target }) {
   const { auth, progress } = target;
   const status = auth.loggedIn ? "Signed in" + (auth.method ? " · " + auth.method : "") : "Not signed in";
 
   return (
-    <div className="flex shrink-0 items-center gap-2 pb-0.5">
-      <span className={"badge " + (auth.loggedIn ? "badge-success" : "badge-ghost")}>{status}</span>
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <span className={"badge h-auto max-w-full whitespace-normal break-all py-2 " + (auth.loggedIn ? "badge-success" : "badge-ghost")}>{status}</span>
       {auth.loggedIn ? (
         <button className="btn btn-sm" disabled={progress.running} onClick={() => signOut(provider, target)}>
           Sign out
@@ -186,7 +184,7 @@ function TargetProgress({ provider, target }: { provider: Provider; target: Targ
     <div className="mt-3 flex flex-col gap-2">
       {progress.output.length > 0 && (
         <div className="mockup-code text-sm">
-          <pre><code>{progress.output.join("\n")}</code></pre>
+          <pre className="whitespace-pre-wrap break-all"><code>{progress.output.join("\n")}</code></pre>
         </div>
       )}
       {progress.error && <div role="alert" className="alert alert-error"><span>{progress.error}</span></div>}

@@ -12,12 +12,10 @@ const PANELS = [
   { title: "Activity", empty: "No activity yet." },
 ];
 
-// Card sizes, on a 12-column grid. Large is the chat. Medium is memory and repositories. Small is tasks and activity.
-// Phones stack every card at full width. Tablets put two cards side by side. Desktops show a side column of small cards.
+// Card sizes, on a 12-column grid. The chat and the bots room take the full width. Memory and repositories share a row.
+// Phones stack every card at full width. Tablets and desktops put two medium cards side by side.
 const SIZE = {
-  large: "col-span-12 xl:col-span-9",
   medium: "col-span-12 md:col-span-6",
-  small: "col-span-12 xl:col-span-3",
 };
 // The page is narrow on a phone and wider on bigger screens. The top bar matches it.
 // From desktop up the page uses the whole window, with a cap on very wide monitors. Top bar and page share the same side padding.
@@ -49,19 +47,8 @@ export function App() {
       </div>
 
       <main className={`${WIDTH} grid min-h-0 flex-1 grid-cols-12 content-start gap-4 overflow-y-auto ${SIDES} pb-4 pt-0 xl:pb-3`}>
-        <div className={SIZE.large}>
+        <div className="col-span-12">
           <Chat />
-        </div>
-        {/* Two small cards side by side on tablets, stacked in the side column on desktops. */}
-        <div className={`${SIZE.small} grid gap-4 md:grid-cols-2 xl:grid-cols-1 xl:grid-rows-2`}>
-          {PANELS.map((panel) => (
-            <section key={panel.title} className="card bg-base-200/80">
-              <div className="card-body">
-                <h2 className="card-title">{panel.title}</h2>
-                <p className="py-6 text-center opacity-60">{panel.empty}</p>
-              </div>
-            </section>
-          ))}
         </div>
         <div className="col-span-12">
           <BotsCard />
@@ -71,6 +58,17 @@ export function App() {
         </div>
         <div className={SIZE.medium}>
           <RepositoriesCard />
+        </div>
+        {/* Not wired up yet, so they sit below everything else. Side by side from tablets up. */}
+        <div className="col-span-12 grid gap-4 md:grid-cols-2">
+          {PANELS.map((panel) => (
+            <section key={panel.title} className="card bg-base-200/80">
+              <div className="card-body">
+                <h2 className="card-title">{panel.title}</h2>
+                <p className="py-6 text-center opacity-60">{panel.empty}</p>
+              </div>
+            </section>
+          ))}
         </div>
       </main>
 

@@ -58,7 +58,8 @@ export async function converseRoom<B extends RoomBot>(options: ConverseOptions<B
       if (isSilent(text)) continue;
       options.say({ kind: "bot", bot, text: text.trim() });
       for (const next of mentionedBots(text, options.bots)) {
-        if (next.id !== bot.id) queue.push(next);
+        // A bot already waiting its turn reads the latest history when it speaks, so it is not queued twice.
+        if (next.id !== bot.id && !queue.some((waiting) => waiting.id === next.id)) queue.push(next);
       }
     }
   } finally {

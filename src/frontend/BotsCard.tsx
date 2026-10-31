@@ -22,6 +22,11 @@ export function BotsCard() {
   // The last message this page has, so each poll asks only for what is new.
   const lastId = useRef(0);
   const log = useRef<HTMLDivElement>(null);
+  const field = useRef<HTMLInputElement>(null);
+  // Where the cursor sits in the draft, and which mention suggestion is highlighted.
+  const [caret, setCaret] = useState(0);
+  const [picked, setPicked] = useState(0);
+  const [hidden, setHidden] = useState(false);
 
   const loadBots = () =>
     fetch("/api/bots")
@@ -59,7 +64,42 @@ export function BotsCard() {
     const data = await res.json();
     if (!res.ok) return setError(data.error);
     setDraft("");
+    setCaret(0);
     poll();
+  }
+
+  // The "@partial" word under the cursor, if there is one. Group 2 is the partial name.
+  const mention = /(^|\s)@([A-Za-z0-9_-]*)$/.exec(draft.slice(0, caret));
+  const matches = mention ? bots.filter((bot) => bot.name.toLowerCase().startsWith(mention[2].toLowerCase())) : [];
+  // Once the name is typed out in full, the list steps aside so Enter sends the message.
+  const candidates = hidden || (matches.length === 1 && matches[0].name.toLowerCase() === mention?.[2].toLowerCase()) ? [] : matches;
+  const active = Math.min(picked, candidates.length - 1);
+
+  function changeDraft(input: HTMLInputElement) {
+    setDraft(input.value);
+    setCaret(input.selectionStart ?? input.value.length);
+    setPicked(0);
+    setHidden(false);
+  }
+
+  // Replaces the partial name under the cursor with the full name and a space.
+  function pick(bot: BotInfo) {
+    if (!mention) return;
+    const at = caret - mention[0].length + mention[1].length;
+    const end = at + bot.name.length + 2;
+    setDraft(`${draft.slice(0, at)}@${bot.name} ${draft.slice(caret)}`);
+    setCaret(end);
+    requestAnimationFrame(() => field.current?.setSelectionRange(end, end));
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (candidates.length === 0) return;
+    if (e.key === "ArrowDown") setPicked((active + 1) % candidates.length);
+    else if (e.key === "ArrowUp") setPicked((active - 1 + candidates.length) % candidates.length);
+    else if (e.key === "Enter" || e.key === "Tab") pick(candidates[active]);
+    else if (e.key === "Escape") setHidden(true);
+    else return;
+    e.preventDefault();
   }
 
   return (
@@ -97,24 +137,57 @@ export function BotsCard() {
           )}
         </div>
 
-        {busy && <p className="text-xs opacity-70">{speaking ? `${speaking} is writing…` : "The bots are talking…"}</p>}
-        {error && (
-          <div role="alert" className="alert alert-error py-2 text-sm">
-            <span>{error}</span>
-          </div>
-        )}
-        <form className="join w-full" onSubmit={send}>
-          <input
-            className="input join-item w-full"
-            placeholder={bots.length ? "Message the room. @Name asks a bot first." : "Create a bot first"}
-            value={draft}
-            disabled={busy || bots.length === 0}
-            onInput={(e) => setDraft(e.currentTarget.value)}
-          />
-          <button className="btn btn-primary join-item" disabled={busy || bots.length === 0 || !draft.trim()}>
-            Send
-          </button>
-        </form>
+        {/* A fixed-height line, so showing or hiding the status never moves the transcript. */}
+        <p role="status" className="flex h-5 flex-none items-center gap-2 text-xs">
+          {error ? (
+            <span className="truncate text-error">{error}</span>
+          ) : (
+            busy && (
+              <>
+                <span className="loading loading-dots loading-xs opacity-70" />
+                <span className="opacity-70">{speaking ? `${speaking} is writing` : "The bots are talking"}</span>
+              </>
+            )
+          )}
+        </p>
+        <div className="relative">
+          {candidates.length > 0 && (
+            <ul role="listbox" className="menu absolute bottom-full left-0 z-10 mb-1 w-56 rounded-box border border-base-300 bg-base-200 p-1 shadow-lg">
+              {candidates.map((bot, i) => (
+                <li key={bot.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={i === active}
+                    className={i === active ? "active" : ""}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      pick(bot);
+                    }}
+                  >
+                    @{bot.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form className="join w-full" onSubmit={send}>
+            <input
+              ref={field}
+              className="input join-item w-full"
+              placeholder={bots.length ? "Message the room. @Name asks a bot first." : "Create a bot first"}
+              value={draft}
+              disabled={busy || bots.length === 0}
+              onInput={(e) => changeDraft(e.currentTarget)}
+              onKeyDown={onKeyDown}
+              onKeyUp={(e) => setCaret(e.currentTarget.selectionStart ?? 0)}
+              onClick={(e) => setCaret(e.currentTarget.selectionStart ?? 0)}
+            />
+            <button className="btn btn-primary join-item" disabled={busy || bots.length === 0 || !draft.trim()}>
+              Send
+            </button>
+          </form>
+        </div>
       </div>
 
       <BotsDialog
