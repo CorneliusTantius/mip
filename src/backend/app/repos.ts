@@ -21,6 +21,12 @@ import { workspaceFor, workspacePath } from "./tools/workspace.js";
 const CLONE_LINK = /^(https?|ssh|git|file):\/\/\S+$|^[\w.-]+@[\w.-]+:\S+$/;
 // A folder name: letters, digits, dots, dashes and underscores, not starting with a dot.
 const FOLDER_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+// A link with no scheme, such as github.com/owner/repo. It is taken as https.
+const HOST_LINK = /^[\w.-]+\.[a-z]{2,}\/\S+$/i;
+
+function withScheme(link: string): string {
+  return HOST_LINK.test(link) ? `https://${link}` : link;
+}
 
 // The folder name for a clone, taken from the end of the link: "https://github.com/me/mip.git" gives "mip".
 function repoNameFromUrl(url: string): string {
@@ -47,8 +53,8 @@ export function listRepoCards() {
 
 // Starts a clone in the background, into the repos folder. The repository shows as "cloning" until git finishes.
 export function addRepo(urlInput: unknown): Repo {
-  const url = String(urlInput ?? "").trim();
-  if (!CLONE_LINK.test(url)) throw new AppError(400, "paste a git clone link, such as https://github.com/owner/repo.git");
+  const url = withScheme(String(urlInput ?? "").trim());
+  if (!CLONE_LINK.test(url)) throw new AppError(400, "paste a git clone link, such as github.com/owner/repo");
   const name = repoNameFromUrl(url);
   if (!FOLDER_NAME.test(name)) throw new AppError(400, `can't use "${name}" as a folder name`);
 
