@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { ChatMessage } from "../../api/types";
+import { toolLabel } from "../../ui/toolName";
 
 // The messages of the open chat. It scrolls to the newest message as they arrive. Tools a reply used show as badges.
 export function Transcript({ messages, busy, emptyText }: { messages: ChatMessage[]; busy: boolean; emptyText: string }) {
@@ -16,8 +17,8 @@ export function Transcript({ messages, busy, emptyText }: { messages: ChatMessag
         <div key={i} className={"chat " + (m.role === "user" ? "chat-end" : "chat-start")}>
           <div className={"chat-bubble whitespace-pre-wrap " + (m.error ? "chat-bubble-error" : m.role === "user" ? "chat-bubble-primary" : "")}>
             {m.tools.map((tool, n) => (
-              <span key={n} className="badge badge-sm badge-outline mr-1">
-                {tool}
+              <span key={n} className="badge badge-sm badge-outline mr-1" title={tool}>
+                {toolLabel(tool)}
               </span>
             ))}
             {m.text || m.error || (busy && i === messages.length - 1 ? <span className="loading loading-dots loading-sm" /> : null)}
