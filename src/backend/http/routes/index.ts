@@ -7,6 +7,7 @@ import { repoRoutes } from "./repos.js";
 import { roomRoutes } from "./room.js";
 import { runRoutes } from "./runs.js";
 import { sessionRoutes } from "./sessions.js";
+import { skillRoutes } from "./skills.js";
 import { syncRoutes } from "./sync.js";
 import { systemRoutes } from "./system.js";
 
@@ -22,5 +23,6 @@ export const routes: Route[] = [
   ...repoRoutes,
   ...memoryRoutes,
   ...syncRoutes,
+  ...skillRoutes,
   ...systemRoutes,
 ];

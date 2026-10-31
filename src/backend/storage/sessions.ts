@@ -106,6 +106,7 @@ export function deleteSession(id: string): void {
     db.prepare("DELETE FROM run_events WHERE run_id IN (SELECT id FROM runs WHERE session_id = ?)").run(id);
     db.prepare("DELETE FROM runs WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM messages WHERE session_id = ?").run(id);
+    db.prepare("DELETE FROM skill_enablements WHERE session_id = ?").run(id);
     db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
     db.exec("COMMIT");
   } catch (err) {

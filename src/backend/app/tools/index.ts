@@ -3,6 +3,7 @@ import type { ToolSpec } from "../../adapters/contract.js";
 import { bashTool } from "./bash.js";
 import { editTool, readTool, writeTool } from "./files.js";
 import { memoryEditTool, memoryReadTool, memorySearchTool } from "./memory.js";
+import { skillFileTool, skillReadTool } from "./skills.js";
 
 // A tool that throws reports the error as a failed result, the same as any other failure.
 const guarded = (tool: ToolSpec): ToolSpec => ({
@@ -16,28 +17,44 @@ const guarded = (tool: ToolSpec): ToolSpec => ({
   },
 });
 
-// The default tools: the four Pi ships with, plus the shared memory. Every provider gets these through its own adapter.
-// Memory tools can search, read, and edit notes. Creating and deleting notes is left to the user in the memory screen.
-export const TOOLS: ToolSpec[] = [readTool, bashTool, editTool, writeTool, memorySearchTool, memoryReadTool, memoryEditTool].map(guarded);
+// The one registry of tool definitions. Each kind of run takes its list from here, so a definition exists in one place.
+export const TOOLS: ToolSpec[] = [
+  readTool,
+  bashTool,
+  editTool,
+  writeTool,
+  memorySearchTool,
+  memoryReadTool,
+  memoryEditTool,
+  skillReadTool,
+  skillFileTool,
+].map(guarded);
 
-export function findTool(name: string): ToolSpec | undefined {
-  return TOOLS.find((tool) => tool.name === name);
+// Chats get every tool. Bots get none for now, which is what room turns have always used.
+export const CHAT_TOOLS: ToolSpec[] = TOOLS;
+export const BOT_TOOLS: ToolSpec[] = [];
+
+// What one run may do: the folder its tools work in, the chat it belongs to, and the tools it is offered.
+export interface RunContext {
+  workspace: string;
+  chatId: string;
+  tools: ToolSpec[];
 }
 
-// Each run gets its own token for the tool endpoint, and the token opens only that run's workspace.
+// Each run gets its own token for the tool endpoint. The token opens only that run's context, and only its tools are callable.
 // The token is released when the run ends, so it stops working after that.
-const runWorkspaces = new Map<string, string>();
+const runs = new Map<string, RunContext>();
 
-export function registerRun(workspace: string): string {
+export function registerRun(context: RunContext): string {
   const token = randomUUID();
-  runWorkspaces.set(token, workspace);
+  runs.set(token, context);
   return token;
 }
 
 export function releaseRun(token: string): void {
-  runWorkspaces.delete(token);
+  runs.delete(token);
 }
 
-export function workspaceForToken(token: string | undefined): string | undefined {
-  return token ? runWorkspaces.get(token) : undefined;
+export function runContextForToken(token: string | undefined): RunContext | undefined {
+  return token ? runs.get(token) : undefined;
 }

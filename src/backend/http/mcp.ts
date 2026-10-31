@@ -1,13 +1,13 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { findTool, TOOLS, workspaceForToken } from "../app/tools/index.js";
+import { runContextForToken } from "../app/tools/index.js";
 import { sendJson } from "./respond.js";
 
 // Tool calls from the Claude CLI. It speaks the Model Context Protocol, which is JSON-RPC 2.0 over HTTP.
-// The bearer token picks the run, and so the workspace the calls work in.
+// The bearer token picks the run. The run's folder, chat, and tool list come from that token, so a run can only call its own tools.
 export async function handleMcp(req: IncomingMessage, res: ServerResponse, message: any): Promise<void> {
   const token = req.headers.authorization?.replace(/^Bearer /, "");
-  const workspace = workspaceForToken(token);
-  if (!workspace) return sendJson(res, 401, { error: "unauthorized" });
+  const run = runContextForToken(token);
+  if (!run) return sendJson(res, 401, { error: "unauthorized" });
 
   const { id, method, params } = message;
   // Notifications have no id, and get no reply body.
@@ -21,11 +21,11 @@ export async function handleMcp(req: IncomingMessage, res: ServerResponse, messa
         serverInfo: { name: "mip", version: "0.1.0" },
       });
     case "tools/list":
-      return reply(res, id, { tools: TOOLS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) });
+      return reply(res, id, { tools: run.tools.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) });
     case "tools/call": {
-      const tool = findTool(params?.name);
+      const tool = run.tools.find((candidate) => candidate.name === params?.name);
       if (!tool) return replyError(res, id, -32602, `unknown tool: ${params?.name}`);
-      const result = await tool.run(params.arguments ?? {}, { workspace });
+      const result = await tool.run(params.arguments ?? {}, { workspace: run.workspace, chatId: run.chatId });
       return reply(res, id, { content: [{ type: "text", text: result.text }], isError: result.isError });
     }
     default:

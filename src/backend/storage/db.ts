@@ -89,6 +89,11 @@ db.exec(`
     error TEXT,
     created_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS skill_enablements (
+    session_id TEXT NOT NULL,
+    skill TEXT NOT NULL,
+    PRIMARY KEY (session_id, skill)
+  );
 `);
 
 // Migrations for databases made before some columns existed. Each one adds the column only when it is missing.

@@ -85,6 +85,25 @@ Both need `Content-Type: application/json`, or they return 415. A page on anothe
 | POST | /api/system/update | :17 | 200 | `{output}` (git's output, from `app/system.ts` `pullLatest`) | `git pull --ff-only` in the checkout. Non-fast-forward or git errors come back as `error`. |
 | POST | /api/system/restart | :22 | 202 | `{restarting: true}` | The server exits about 300 ms later. A detached shell waits, runs `npm install` and `npm run build` (output to `MIP_HOME/restart.log`), then starts the server again. |
 
+## Skills — `routes/skills.ts`
+Installed skills are folders under `MIP_HOME/skills`. Installing is two steps: an import is staged and checked, and the registry changes only when it is confirmed. Writes need `Content-Type: application/json`, or they return 415.
+
+| method | path | handler | status | body | errors |
+| --- | --- | --- | --- | --- | --- |
+| GET | /api/skills | :9 | 200 | `{skills: SkillSummary[], problems: {folder, error}[]}` | |
+| GET | /api/skills/:name | :10 | 200 | `SkillDetail`: `{name, description, body, files}` | 404 no such skill; 409 the skill is not valid |
+| DELETE | /api/skills/:name | :11 | 200 | `{ok:true}`. The skill is removed from every chat | 404 |
+| POST | /api/skills/imports | :14 | 201 | `{id, name, description, files, source, skillMd, replaces}` (body `{path}`, a full folder path) | 400 not a folder, no SKILL.md, a symbolic link, a non-text file, too large, bad header; 415 |
+| POST | /api/skills/imports/:importId/confirm | :19 | 200 | `SkillDetail`. Replaces a skill with the same name | 404 no such import; 415 |
+| DELETE | /api/skills/imports/:importId | :24 | 200 | `{ok:true}`. Drops the staged import | |
+
+## Sessions — enabled skills
+`GET /api/sessions/:sessionId` also returns `skills`, the names the chat has enabled. Replace them with:
+
+| method | path | handler | status | body | errors |
+| --- | --- | --- | --- | --- | --- |
+| PUT | /api/sessions/:sessionId/skills | :14 | 200 | `{skills: string[]}` (body `{skills: [names]}`) | 400 a name is not an installed skill, or the body is not a list of names; 404 no such session |
+
 ## Sync — `routes/sync.ts`
 GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is signed in to on this machine. The run needs `Content-Type: application/json`, or it returns 415. The run is in the background: poll `GET /api/sync` until `running` is false.
 

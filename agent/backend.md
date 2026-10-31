@@ -8,7 +8,8 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `http/respond.ts` — `Reply` (:4), `ok` (:9), `created` (:10), `accepted` (:12), `ack` (:14, `{ok:true}`), `notFound` (:15), `sendJson` (:18), `readJson` (:24, empty body → `{}`), `requireJson` (refuses non-JSON with 415). Touchpoints: all routes, `mcp.ts`.
 - `http/routes/index.ts` — `routes` (:13). Concatenates the domain route lists. Add a new domain here.
 - `http/routes/system.ts` — `systemRoutes` (:6). `POST /api/system/update` pulls, `POST /api/system/restart` restarts. Both need JSON (`requireJson`).
-- `http/routes/sync.ts` — `syncRoutes`. The GitHub sign-in and sync runs, all JSON for writes. Lines in `api.md`.
+- `http/routes/sync.ts` — `syncRoutes`. The gh accounts, the account choice, and the sync runs, all JSON for writes. Lines in `api.md`.
+- `http/routes/skills.ts` — `skillRoutes`. The installed skills, their text, removal, and the two-step import. Lines in `api.md`.
 - `http/routes/{sessions,runs,personas,bots,room,repos,memory,providers}.ts` — one `Route[]` each. Handlers are small: read body → call an `app/*` function → return a `Reply`. Lines: see `api.md`.
 - `http/mcp.ts` — `handleMcp` (:7). JSON-RPC 2.0 for `initialize`, `tools/list`, `tools/call`. 401 without a live run token. Touchpoints: Claude CLI (via `adapters/claude-cli.ts` `mcpConfig`), `app/tools`.
 - `http/static.ts` — `serveStatic` (:18). Serves `dist/frontend` (path check keeps requests inside it). Misses return false.
@@ -27,7 +28,11 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `app/personas.ts` — `DEFAULT_PERSONA_ID` (:7), `DEFAULT_SYSTEM_PROMPT` (:10), seed (:29-32), `allPersonas` (:34), `defaultPersona` (:38), `hasPersona` (:42), `personaPrompt` (:47), `createPersona` (:51), `editPersona` (:57), `makeDefaultPersona` (:64), `removePersona` (:70). Built-in `default` cannot be deleted.
 - `app/memory.ts` — notes. `LINK` (:6), `TAG` (:7), `parseLinks`/`parseTags` (private), `writeNote` (:24), `readNote` (:36), `searchMemory` (:43), `memoryList` (:50), `memoryGraph` (:55), `forgetNote` (:76), `recallFor` (:83). Touchpoints: `routes/memory.ts`, `runs.ts`, `tools/memory.ts`.
 - `app/repos.ts` — repositories. `CLONE_LINK` (:12), `FOLDER_NAME` (:14), `HOST_LINK` (:16), `withScheme` (:18), `repoNameFromUrl` (private), `requireRepo` (private), `branchOf` (private), `listRepoCards` (:46), `pullAllRepos` (:61), `addRepo` (:78), `copyRepoToChat` (:102), `removeRepo` (:120), `repoNote` (:128). Touchpoints: `routes/repos.ts`, `runs.ts`, `tools/workspace.ts`.
-- `app/tools/index.ts` — `guarded` (:8), `TOOLS` (:21), `findTool` (:23), `runWorkspaces` (:29), `registerRun` (:31), `releaseRun` (:37), `workspaceForToken` (:41).
+- `app/tools/index.ts` — `guarded`, `TOOLS` (the one registry), `CHAT_TOOLS` (all of it), `BOT_TOOLS` (none for now), `RunContext` (folder, chat, tool list), `registerRun(context)` (returns the token), `releaseRun`, `runContextForToken` (what `http/mcp.ts` uses to check a call).
+- `app/tools/skills.ts` — `skillReadTool` and `skillFileTool`. Both need the run's chat, and both check it has the skill enabled.
+- `app/skills/format.ts` — pure rules: `parseSkill` (the SKILL.md header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
+- `app/skills/registry.ts` — the installed skills: `listSkills` (valid skills, and folders that are not), `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt` (the list in the system prompt), `setChatSkills`, `removeSkill`.
+- `app/skills/imports.ts` — the two-step install. `stageImport` copies and checks a folder into `skills/.staging/<id>`, and `confirmImport` moves it into place. `discardImport` drops it. Tested by `skills.test.mjs`.
 - `app/tools/result.ts` — `ok` (:4), `fail` (:5). Tool result helpers.
 - `app/tools/files.ts` — `readTool` (:10, offset/limit, 2000 lines / 50 KB cap), `writeTool` (:33), `editTool` (:52, exact unique `oldText`). All use `inWorkspace`.
 - `app/tools/bash.ts` — `bashTool` (:7). `spawn("bash", ["-c", cmd], {cwd: workspace})`. Output keeps last 50 KB. Timeout default 120 s. Not sandboxed.
@@ -59,6 +64,7 @@ Format: `file` — purpose. Key exports (line). Touchpoints: who calls it, what 
 - `storage/bots.ts` — `Bot` (:4), `listBots`, `getBot`, `getBotByName`, `insertBot`, `updateBot`, `deleteBot`.
 - `storage/room.ts` — `RoomMessage` (:4), `addRoomMessage` (:17), `roomMessagesAfter` (:25).
 - `storage/sync.ts` — the rows GitHub sync reads and writes: `read*Rows` and `write*Row` for personas, bots, notes, chats (with `readMessageRows`/`insertMessageRow`), and room messages. `remove*Row` returns false where the database must keep the row (a default or used persona, a chat with a running run).
+- `storage/skills.ts` — `enabledSkillNames`, `saveChatSkills` (replaces a chat's list in one step), `removeSkillEnablements`. The table `skill_enablements` is created in `db.ts`.
 
 ## Rules that hold across the backend
 - App code throws `AppError` for client mistakes. Routes don't catch.

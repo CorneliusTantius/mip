@@ -8,7 +8,8 @@ import { recallFor } from "./memory.js";
 import { personaPrompt } from "./personas.js";
 import { findProvider } from "./providers.js";
 import { repoNote } from "./repos.js";
-import { registerRun, releaseRun, TOOLS } from "./tools/index.js";
+import { CHAT_TOOLS, registerRun, releaseRun } from "./tools/index.js";
+import { skillsPrompt } from "./skills/registry.js";
 import { workspaceFor } from "./tools/workspace.js";
 
 // Starts a turn and returns its run id. The run is not tied to the browser: it keeps going if the page closes,
@@ -26,7 +27,7 @@ export function startRun(input: { sessionId: string; prompt: string }): string {
   addMessage(session.id, { role: "user", text: prompt, tools: [], error: null });
 
   const workspace = workspaceFor(session.id);
-  const token = registerRun(workspace);
+  const token = registerRun({ workspace, chatId: session.id, tools: CHAT_TOOLS });
   execute({ runId, session, provider, prompt, workspace, token }).catch((err: unknown) => {
     console.error(`run ${runId} failed to save:`, err);
   });
@@ -64,10 +65,13 @@ async function execute(job: RunJob): Promise<void> {
   try {
     for await (const event of job.provider.run({
       prompt: job.prompt,
-      // The persona's prompt, the repositories in the workspace, and any shared notes that match this message.
-      systemPrompt: [personaPrompt(job.session.personaId), repoNote(job.workspace), recallFor(job.prompt)].filter(Boolean).join("\n\n"),
-      tools: TOOLS,
+      // The persona's prompt, the repositories in the workspace, the skills the chat enabled, and any shared notes that match this message.
+      systemPrompt: [personaPrompt(job.session.personaId), repoNote(job.workspace), skillsPrompt(job.session.id), recallFor(job.prompt)]
+        .filter(Boolean)
+        .join("\n\n"),
+      tools: CHAT_TOOLS,
       workspace: job.workspace,
+      chatId: job.session.id,
       toolServer: { url: `http://${HOST}:${PORT}/mcp`, token: job.token },
       model: job.session.model ?? undefined,
       thinking: (job.session.thinking as ThinkingLevel | null) ?? undefined,

@@ -10,6 +10,8 @@ export const SESSIONS_DIR = join(MIP_HOME, "sessions");
 export const REPOS_DIR = join(MIP_HOME, "repos");
 // GitHub sync: the sign-in token, the merge base, and a local copy of the dotmip repo.
 export const SYNC_DIR = join(MIP_HOME, "sync");
+// Installed skills. Each one is a folder with a SKILL.md. Only the app reads this folder, never another tool's skills.
+export const SKILLS_DIR = join(MIP_HOME, "skills");
 
 export function ensureMipDirs(): void {
   for (const dir of [DATA_DIR, REPOS_DIR, join(SESSIONS_DIR, "claude"), join(SESSIONS_DIR, "pi")]) {

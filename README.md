@@ -112,6 +112,12 @@ Memory is one set of notes shared by every chat. Notes live in SQLite with a ful
 - The **Memory card** on the main page draws the notes as a graph. Drag to pan, scroll to zoom, double-click to reset, hover a dot to see its links, and click a dot to open its note.
 - Expand the **Memory card** with its expand button to get the memory screen, where you can search, read, create, edit, and delete notes. Links and backlinks are clickable. A click on a dot in the graph expands the card on that note.
 
+## Skills
+
+A skill is a folder with a `SKILL.md`: a header that gives its name and a one-line description, then its instructions. It can also hold text files that the instructions name. Add one from the **Skills** card: give the folder's full path, review what will be installed, then confirm. Only text files are accepted. Scripts, binaries, and symbolic links are refused, so a skill is instructions and cannot run code by itself.
+
+Each chat picks its skills with its **Skills** button. A chat can read only the skills it has enabled. The model sees their names and descriptions, and reads the full text with `skill_read` when a task needs it. mip reads only its own skills folder (`~/.mip/skills`), never your Claude Code or Pi skill folders.
+
 ## Tools
 
 Every provider gets the same seven tools, defined in `src/backend/app/tools/`: `read`, `write`, `edit`, `bash`, and the three memory tools.
@@ -176,6 +182,13 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/sync` | GitHub sync status: the gh accounts, the one in use, and the last run |
 | PUT | `/api/sync/account` | Choose the gh account sync uses. Body: `{ login }` |
 | POST | `/api/sync/run` | Start a sync in the background. Poll `GET /api/sync` for the result |
+| GET | `/api/skills` | Installed skills, and any folders that could not be read |
+| GET | `/api/skills/:name` | One skill with its instructions |
+| DELETE | `/api/skills/:name` | Remove a skill from mip and from every chat |
+| POST | `/api/skills/imports` | Stage a skill folder for review. Body: `{ path }` |
+| POST | `/api/skills/imports/:id/confirm` | Install a staged skill |
+| DELETE | `/api/skills/imports/:id` | Drop a staged skill without installing it |
+| PUT | `/api/sessions/:id/skills` | Choose the skills a chat may use. Body: `{ skills: [names] }` |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 
 ## Storage
@@ -189,6 +202,7 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
   sessions/claude/      Claude CLI config, login, and chat files
   sessions/pi/          Pi session files
   sync/                 GitHub sync: merge base and the local dotmip copy (no token)
+  skills/               Installed skills (text only)
   workspaces/<chat id>/ Each chat's files, and its repository copies
 ```
 

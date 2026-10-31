@@ -3,6 +3,7 @@ import { errorText } from "../../api/client";
 import type { Session } from "../../api/types";
 import { Card, ExpandButton } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
+import { ChatSkillsDialog } from "./ChatSkillsDialog";
 import { PersonasDialog } from "./PersonasDialog";
 import { ChatHeader } from "./ChatHeader";
 import { Composer } from "./Composer";
@@ -22,6 +23,7 @@ export function ChatCard() {
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [pendingDelete, setPendingDelete] = useState<Session>();
   const [managingPersonas, setManagingPersonas] = useState(false);
+  const [choosingSkills, setChoosingSkills] = useState(false);
   const [deleteError, setDeleteError] = useState<string>();
 
   // Opens the newest chat on first load.
@@ -87,7 +89,14 @@ export function ChatCard() {
               title={session?.title || "Chat"}
               badges={session && [chats.personaName(session.personaId), chats.providerName(session.providerId)]}
               onToggleSessions={() => setSidebarOpen(!sidebarOpen)}
-              trailing={<ExpandButton />}
+              trailing={
+                <>
+                  <button className="btn btn-ghost btn-sm" disabled={!session} onClick={() => setChoosingSkills(true)}>
+                    Skills
+                  </button>
+                  <ExpandButton />
+                </>
+              }
             />
             <Transcript
               key={chats.currentId}
@@ -107,6 +116,7 @@ export function ChatCard() {
       </div>
 
       <PersonasDialog open={managingPersonas} onClose={() => setManagingPersonas(false)} />
+      {session && <ChatSkillsDialog open={choosingSkills} sessionId={session.id} onClose={() => setChoosingSkills(false)} />}
 
       <ConfirmDialog
         open={!!pendingDelete}

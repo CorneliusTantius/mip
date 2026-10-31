@@ -30,6 +30,7 @@ The imports graph is in `imports.md`. Nothing in `app` imports `http`. `app/prov
 | `sessions/pi/` | Pi session files | `adapters/pi.ts` |
 | `repos/<name>/` | master clones of repositories | `app/repos.ts` |
 | `workspaces/<sessionId>/` | a chat's files, plus its repository copies in `<name>/` | tools, `app/repos.ts` |
+| `skills/<name>/` | installed skills, text only, with `.mip-source.json`. `skills/.staging/` holds unconfirmed imports | `app/skills/imports.ts` |
 | `sync/` | GitHub sync: `base.json`, `state.json`, `dotmip/` (local clone). No token is stored; `gh` provides it | `app/sync/*` |
 
 Deleting a chat removes `workspaces/<id>` (`app/tools/workspace.ts:18`). Provider files are left alone.
@@ -56,7 +57,8 @@ On startup, `storage/db.ts:114-115` marks runs left `running` as `error`, and re
 
 ## Tools
 - `ToolSpec` (`contract.ts:24`): `name`, `description`, `inputSchema`, `run(input, {workspace, signal})`.
-- Seven tools, defined in `app/tools/*.ts`, wrapped by `guarded` (exceptions become error results), exported as `TOOLS` (`app/tools/index.ts:21`).
+- Nine tools, defined in `app/tools/*.ts`, wrapped by `guarded` (exceptions become error results), held in one registry, `TOOLS` (`app/tools/index.ts`). Each kind of run takes a list from it: `CHAT_TOOLS` (all of them) and `BOT_TOOLS` (none for now). A run's token carries its folder, chat, and list, so the MCP endpoint only calls tools that run was offered.
+- Skills: `skill_read` and `skill_file` read installed skills, and only for a chat that enabled them (`app/skills/registry.ts`). Claude runs with `--disable-slash-commands`, and Pi with `noSkills`, so their own skill folders are never used.
 - Claude gets them through `/mcp` (JSON-RPC over HTTP, `http/mcp.ts:7`), with `--strict-mcp-config`, built-in tools off (`--tools ""`), and `--allowedTools mcp__mip__<name>`.
 - Pi gets them as custom tools (`adapters/pi.ts` `toPiTool`), with its built-in tools off (`noTools: "builtin"`).
 - Paths are confined to the workspace by `inWorkspace` (`app/tools/workspace.ts:23`). `bash` is not sandboxed.

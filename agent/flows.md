@@ -121,3 +121,13 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 - **What syncs:** personas, bots, notes, chats with their messages, and the room. **Not:** provider logins (`sessions/`), repo clones, chat workspaces, the default-persona flag, and the provider session id (so a synced chat starts a new model conversation on another machine).
 - **Limits:** the later edit is decided by each machine's clock. A chat with a running run is not deleted by a sync. A persona still used by a chat is not deleted.
 - Tests: `app/sync/github.test.mjs` (reading gh's accounts and picking one), `app/sync/merge.test.mjs` (the rules), and `app/sync/sync.test.mjs` (two machines and a local bare repo, through real git). Neither needs GitHub. The GitHub calls (`gitHubAccount`, `ensureRepo`) are checked only by hand, with a real `gh` login.
+
+## 16. Skills
+Skills tab: `features/skills/SkillsCard.tsx` (list, text, remove), `ImportSkillDialog.tsx` (two steps), `useSkills.ts`. Chat: the **Skills** button → `features/chat/ChatSkillsDialog.tsx` → `PUT /api/sessions/:id/skills`.
+
+- **Import.** `POST /api/skills/imports` → `stageImport`: a full folder path, not a symbolic link, with a SKILL.md at the top. Every file is copied into `skills/.staging/<id>` and checked: text types only, at most 50 files and 512 KB, no links, and a valid header (`parseSkill`). Nothing is installed yet. `confirmImport` moves the staged folder into `skills/<name>/` and replaces any skill with that name. Chats keep their enablement. Staged imports older than a day are cleared.
+- **Enable.** `setChatSkills` checks each name is installed, then replaces the chat's rows in `skill_enablements`. Removing a skill deletes its rows. Deleting a chat deletes its rows.
+- **A run.** `runs.ts` adds `skillsPrompt(chatId)` to the system prompt: the enabled skills' names and descriptions, nothing more. The run's token carries the chat id and the tool list (`CHAT_TOOLS`).
+- **Reading.** The model calls `skill_read(name)`. `enabledSkill` refuses a skill the chat did not enable, and otherwise returns the body and the list of files. `skill_file(name, path)` checks the same, then `readSkillFile` allows only the paths the listing shows, relative and within the skill, with a 64 KB cap.
+- **Other agents.** Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Neither reads its own skill folders.
+- Tests: `app/skills/format.test.mjs` (the header and file rules) and `app/skills/skills.test.mjs` (import review, refusals, enablement, the tools, the tool lists, and removal), both with a temporary `MIP_HOME`.

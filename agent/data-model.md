@@ -18,6 +18,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), created_at, updated_at | id | `storage/bots.ts` | `app/bots.ts` |
 | `room_messages` | id (autoincrement), kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, created_at | id | `storage/room.ts` | `app/room.ts` |
 | `repos` | id, name (UNIQUE), url, status (`cloning`/`ready`/`error`), error (nullable), created_at | id | `storage/repos.ts` | `app/repos.ts`, `db.ts` (recovery) |
+| `skill_enablements` | session_id, skill (the skill's name) | (session_id, skill) | `storage/skills.ts` (+ `sessions.ts` delete) | `app/skills/registry.ts` |
 
 ## Invariants
 - A chat has at most one `running` run (`app/runs.ts:21`).
@@ -36,6 +37,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `MIP_HOME/workspaces/<sessionId>/` | `app/tools/workspace.ts` `workspaceFor` | chat files and `<name>/` repo copies |
 | `MIP_HOME/sessions/claude/` | `adapters/claude-cli.ts` (`CLAUDE_CONFIG_DIR`) | CLI login, transcripts |
 | `MIP_HOME/sessions/pi/` | `adapters/pi.ts` | Pi sessions |
+| `MIP_HOME/skills/<name>/` | `app/skills/imports.ts` (confirm) | an installed skill: `SKILL.md`, text files, and `.mip-source.json` (source path and hash). `skills/.staging/` holds imports not yet confirmed |
 | `MIP_HOME/sync/` | `app/sync/*` | `base.json` (`{repo, snapshot}`: the state at the last sync with that repo), `state.json` (chosen account, last run), `dotmip/` (local clone of the GitHub repo). No token is stored |
 
 ## Identifiers

@@ -4,6 +4,7 @@ import { addRoomMessage, type RoomMessage, roomMessagesAfter } from "../storage/
 import { AppError } from "./errors.js";
 import { findProvider } from "./providers.js";
 import { converseRoom, mentionedBots } from "./room-engine.js";
+import { BOT_TOOLS } from "./tools/index.js";
 
 // How many turns one message can set off, and how much of the room each bot sees.
 const MAX_TURNS = 8;
@@ -86,7 +87,7 @@ async function runTurn(bot: Bot, bots: Bot[]): Promise<string> {
   for await (const event of findProvider(bot.providerId).run({
     prompt,
     systemPrompt,
-    tools: [],
+    tools: BOT_TOOLS,
     model: bot.model ?? undefined,
     thinking: (bot.thinking as ThinkingLevel | null) ?? undefined,
   })) {

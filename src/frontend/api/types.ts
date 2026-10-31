@@ -153,3 +153,33 @@ export interface SyncStatus {
   error: string | null;
   lastSync: SyncRun | null;
 }
+
+// An installed skill. Its files are the text files it holds besides SKILL.md.
+export interface SkillSummary {
+  name: string;
+  description: string;
+  files: string[];
+}
+
+// One skill with its instructions (the SKILL.md body).
+export interface SkillDetail extends SkillSummary {
+  body: string;
+}
+
+// A skill folder in the registry that could not be read.
+export interface SkillProblem {
+  folder: string;
+  error: string;
+}
+
+// An import waiting for confirmation. Nothing is installed until it is confirmed.
+export interface SkillImport {
+  id: string;
+  name: string;
+  description: string;
+  files: string[];
+  source: string;
+  skillMd: string;
+  // The SKILL.md this import would replace, when a skill with the same name is installed.
+  replaces: string | null;
+}

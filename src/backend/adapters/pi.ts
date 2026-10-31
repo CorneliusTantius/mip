@@ -91,14 +91,14 @@ function toAppEvent(event: AgentSessionEvent): AgentEvent | undefined {
 }
 
 // Wraps an app tool for Pi. Pi shows the call and the result; the app's function does the work.
-function toPiTool(tool: ToolSpec, workspace: string): ToolDefinition {
+function toPiTool(tool: ToolSpec, context: { workspace: string; chatId?: string }): ToolDefinition {
   return {
     name: tool.name,
     label: tool.name,
     description: tool.description,
     parameters: Type.Unsafe(tool.inputSchema),
     async execute(_id, params, signal) {
-      const result = await tool.run(params, { workspace, signal });
+      const result = await tool.run(params, { ...context, signal });
       if (result.isError) throw new Error(result.text);
       return { content: [{ type: "text", text: result.text }], details: undefined };
     },
@@ -219,6 +219,8 @@ export class PiProvider implements AgentProvider {
         cwd,
         agentDir: getAgentDir(),
         noContextFiles: true,
+        // Pi's own skills are off. A chat uses only the skills enabled for it, through the app's skill tools.
+        noSkills: true,
         systemPrompt: options.systemPrompt,
       });
       await resourceLoader.reload();
@@ -231,7 +233,7 @@ export class PiProvider implements AgentProvider {
         resourceLoader,
         // Pi's own copies of these tools are off. The app's copies are on.
         noTools: "builtin",
-        customTools: (options.tools ?? []).map((tool) => toPiTool(tool, options.workspace ?? process.cwd())),
+        customTools: (options.tools ?? []).map((tool) => toPiTool(tool, { workspace: options.workspace ?? process.cwd(), chatId: options.chatId })),
       });
 
       const unsubscribe = session.subscribe((event) => {

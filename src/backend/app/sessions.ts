@@ -5,6 +5,7 @@ import { defaultPersona, hasPersona } from "./personas.js";
 import { findProvider, hasProvider } from "./providers.js";
 import { removeWorkspace } from "./tools/workspace.js";
 import { activeRunId } from "./runs.js";
+import { enabledSkills, setChatSkills } from "./skills/registry.js";
 
 export function listChats(): Session[] {
   return listSessions();
@@ -18,9 +19,21 @@ export function createChat(providerId: unknown, personaId: unknown = defaultPers
   return createSession(providerId, personaId, pickAgentName(taken));
 }
 
-// A chat with its messages, and the id of the run still going in it, if any.
+// A chat with its messages, the id of the run still going in it (if any), and the names of the skills it has enabled.
 export function getChat(id: string) {
-  return { session: requireSession(id), messages: listMessages(id), activeRunId: activeRunId(id) };
+  return {
+    session: requireSession(id),
+    messages: listMessages(id),
+    activeRunId: activeRunId(id),
+    skills: enabledSkills(id).map((skill) => skill.name),
+  };
+}
+
+// Replaces the skills a chat has enabled. Each name must be an installed skill.
+export function chooseChatSkills(id: string, names: unknown): string[] {
+  requireSession(id);
+  if (!Array.isArray(names) || !names.every((name) => typeof name === "string")) throw new AppError(400, "skills must be a list of names");
+  return setChatSkills(id, names);
 }
 
 // Renames a chat and/or sets its model and thinking level. Empty values mean the provider's default.

@@ -251,7 +251,8 @@ export class ClaudeCliProvider implements AgentProvider {
   async *run(options: RunOptions): AsyncGenerator<AgentEvent> {
     // A new run gets a known session id, so the caller can resume it later.
     const sessionId = options.sessionId ?? randomUUID();
-    const args = ["-p", options.prompt, "--output-format", "stream-json", "--verbose", "--include-partial-messages"];
+    // Claude Code's own skills and commands are off. A chat uses only the skills enabled for it, through the app's skill tools.
+    const args = ["-p", options.prompt, "--output-format", "stream-json", "--verbose", "--include-partial-messages", "--disable-slash-commands"];
     // The app's tools replace Claude Code's built-in ones for this run. Only the app's tools are allowed.
     if (options.toolServer && options.tools?.length) {
       args.push(

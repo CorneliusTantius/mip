@@ -13,6 +13,8 @@
     npm run typecheck
     npm run build
     node src/backend/app/room-engine.test.mjs
+    node src/backend/app/skills/format.test.mjs
+    node src/backend/app/skills/skills.test.mjs
     node src/backend/app/sync/github.test.mjs
     node src/backend/app/sync/merge.test.mjs
     node src/backend/app/sync/sync.test.mjs
@@ -37,7 +39,7 @@ API regression check (used in the 2026-10-31 refactor): record each route's stat
 
 ### Add an agent tool
 1. Create `src/backend/app/tools/<name>.ts` exporting a `ToolSpec` (`adapters/contract.ts:24`). Return `ok(text)` or `fail(text)` from `tools/result.ts`.
-2. Add it to the `TOOLS` array in `src/backend/app/tools/index.ts:21`. Every provider gets it: Claude through `/mcp`, Pi as a custom tool.
+2. Add it to the `TOOLS` array in `src/backend/app/tools/index.ts`. Chats get it through `CHAT_TOOLS`, which is `TOOLS`. Bots get it only if you add it to `BOT_TOOLS`. Every provider gets the list through its own adapter: Claude through `/mcp`, Pi as a custom tool.
 3. Paths must go through `inWorkspace` (`tools/workspace.ts:23`).
 4. Update `agent/backend.md` and `agent/flows.md` §6.
 
@@ -78,6 +80,9 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - mip never stores the GitHub token. Each sync gets it from `gh auth token` (`ghToken`, `app/sync/github.ts`) and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
 - Sync refuses a public `dotmip` repo and an empty database when the last sync had data (`app/sync/engine.ts`).
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
+- Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders (`app/skills/format.ts`, `imports.ts`). A skill is read only through `skill_read` and `skill_file`, and only in a chat that enabled it.
+- Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools. Don't enable either tool's own skill folders.
+- Each kind of run has its own tool list (`CHAT_TOOLS` and `BOT_TOOLS` in `app/tools/index.ts`). A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
 
 ## Git
 - Push every change to `origin main`, as the GitHub account CorneliusTantius. No attribution lines (no Co-Authored-By, no "Generated with").

@@ -17,6 +17,8 @@ export interface ToolResult {
 // What a tool may use while it runs: the agent's workspace folder, and a signal that fires when the run is stopped.
 export interface ToolContext {
   workspace: string;
+  // The chat the run belongs to. Skill tools use it to check which skills the chat has enabled.
+  chatId?: string;
   signal?: AbortSignal;
 }
 
@@ -55,6 +57,8 @@ export interface RunOptions {
   tools?: ToolSpec[];
   // The folder the tools work in.
   workspace?: string;
+  // The chat the run belongs to. Passed on to the tools.
+  chatId?: string;
   // Where the CLI reaches the app's tools, and the token that opens this run's workspace there.
   toolServer?: { url: string; token: string };
   signal?: AbortSignal;

@@ -5,6 +5,7 @@ import { MemoryCard } from "./features/memory/MemoryCard";
 import { RepositoriesCard } from "./features/repos/RepositoriesCard";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
 import { PlaceholderCard } from "./features/upcoming/PlaceholderCard";
+import { SkillsCard } from "./features/skills/SkillsCard";
 import { Icon } from "./ui/Icon";
 import { Starfield } from "./ui/Starfield";
 
@@ -50,7 +51,7 @@ export function App() {
         <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-4">
           <PlaceholderCard title="Tasks" summary="No tasks yet." glow="yellow" />
           <PlaceholderCard title="Activity" summary="No activity yet." glow="blue" />
-          <PlaceholderCard title="Skills" summary="Skills the agents can use. None installed yet." glow="teal" />
+          <SkillsCard />
           <PlaceholderCard title="MCP" summary="MCP servers that add tools to the agents. None connected yet." glow="red" />
         </div>
       </main>
