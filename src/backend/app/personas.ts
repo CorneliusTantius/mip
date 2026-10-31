@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { countSessionsWithPersona, deletePersona, getPersona, insertPersona, listPersonas, type Persona, setDefaultPersona, updatePersona } from "../storage/store.js";
+import { deletePersona, getPersona, insertPersona, listPersonas, type Persona, setDefaultPersona, updatePersona } from "../storage/personas.js";
+import { countSessionsWithPersona } from "../storage/sessions.js";
 import { AppError } from "./errors.js";
 
 // The built-in persona. It always exists and can't be deleted. It is also the fallback when a chat's persona is missing.

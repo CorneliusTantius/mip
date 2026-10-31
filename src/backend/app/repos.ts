@@ -2,17 +2,8 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { REPOS_DIR } from "../storage/paths.js";
-import {
-  deleteRepo,
-  getRepo,
-  getRepoByName,
-  getSession,
-  insertRepo,
-  listRepos,
-  listSessions,
-  type Repo,
-  setRepoStatus,
-} from "../storage/store.js";
+import { type Repo, deleteRepo, getRepo, getRepoByName, insertRepo, listRepos, setRepoStatus } from "../storage/repos.js";
+import { getSession, listSessions } from "../storage/sessions.js";
 import { AppError } from "./errors.js";
 import { runGit } from "./git.js";
 import { workspaceFor, workspacePath } from "./tools/workspace.js";

@@ -1,5 +1,6 @@
 import type { ThinkingLevel } from "../adapters/contract.js";
-import { addRoomMessage, type Bot, listBots, type RoomMessage, roomMessagesAfter } from "../storage/store.js";
+import { type Bot, listBots } from "../storage/bots.js";
+import { addRoomMessage, type RoomMessage, roomMessagesAfter } from "../storage/room.js";
 import { AppError } from "./errors.js";
 import { findProvider } from "./providers.js";
 import { converseRoom, mentionedBots } from "./room-engine.js";

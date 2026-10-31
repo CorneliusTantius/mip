@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { allLinks, deleteNote, getNoteByTitle, linksFrom, linksTo, listNotes, saveNote, searchNotes, tagsOf } from "../storage/store.js";
+import { allLinks, deleteNote, getNoteByTitle, linksFrom, linksTo, listNotes, saveNote, searchNotes, tagsOf } from "../storage/notes.js";
 import { AppError } from "./errors.js";
 
 // [[Title]] or [[Title|alias]] makes a link. #tag marks a tag.

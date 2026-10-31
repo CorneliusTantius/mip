@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { deleteBot, getBot, getBotByName, insertBot, listBots, type Bot, updateBot } from "../storage/store.js";
+import { type Bot, deleteBot, getBot, getBotByName, insertBot, listBots, updateBot } from "../storage/bots.js";
 import { AppError } from "./errors.js";
 import { findProvider, hasProvider } from "./providers.js";
 

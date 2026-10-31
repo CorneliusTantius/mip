@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AgentEvent, AgentProvider, ThinkingLevel } from "../adapters/contract.js";
-import { activeRunForSession, addMessage, appendRunEvent, createRun, finishRun, getRun, getSession, listRunEvents, type Session, setRunStatus } from "../storage/store.js";
+import { activeRunForSession, appendRunEvent, createRun, getRun, listRunEvents, setRunStatus } from "../storage/runs.js";
+import { addMessage, getSession, saveProviderSession, type Session } from "../storage/sessions.js";
 import { HOST, PORT } from "./config.js";
 import { AppError } from "./errors.js";
 import { recallFor } from "./memory.js";
@@ -86,6 +87,6 @@ async function execute(job: RunJob): Promise<void> {
   }
 
   addMessage(job.session.id, { role: "assistant", text, tools, error });
-  finishRun(job.session.id, providerSessionId);
+  saveProviderSession(job.session.id, providerSessionId);
   setRunStatus(job.runId, error ? "error" : "done");
 }

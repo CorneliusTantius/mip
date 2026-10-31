@@ -1,4 +1,4 @@
-import { createSession, deleteSession, getSession, listMessages, listSessions, renameSession, setSessionSettings, type Session } from "../storage/store.js";
+import { createSession, deleteSession, getSession, listMessages, listSessions, renameSession, setSessionSettings, type Session } from "../storage/sessions.js";
 import { AppError } from "./errors.js";
 import { pickAgentName } from "./names.js";
 import { defaultPersona, hasPersona } from "./personas.js";
