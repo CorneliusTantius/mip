@@ -50,7 +50,7 @@ export function RoomDialog({ open, room, bots, onClose }: { open: boolean; room?
 
   return (
     <>
-      <Modal open={open} onClose={() => onClose(false)}>
+      <Modal open={open} onClose={() => onClose(false)} glow="violet">
         <form className="flex flex-col gap-3" onSubmit={save}>
           <h3 className="text-lg font-semibold">{room ? "Room settings" : "New room"}</h3>
 
@@ -103,6 +103,7 @@ export function RoomDialog({ open, room, bots, onClose }: { open: boolean; room?
         title="Delete room"
         message={`Delete ${room?.name ?? "this room"}? Its messages are deleted too. Bots stay as they are.`}
         error={error}
+        glow="violet"
         onConfirm={remove}
         onCancel={() => setDeleting(false)}
       />
