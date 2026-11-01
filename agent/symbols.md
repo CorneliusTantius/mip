@@ -454,12 +454,15 @@
 | src/frontend/features/bots/mentions.ts | 46 | function | completeMention |
 | src/frontend/features/bots/useRoom.ts | 18 | function | useRoom |
 | src/frontend/features/bots/useRooms.ts | 7 | function | useRooms |
-| src/frontend/features/mcp/AddMcpDialog.tsx | 10 | function | AddMcpDialog |
-| src/frontend/features/mcp/McpCard.tsx | 13 | function | McpCard |
+| src/frontend/features/mcp/AddMcpDialog.tsx | 12 | function | AddMcpDialog |
+| src/frontend/features/mcp/McpCard.tsx | 14 | function | McpCard |
 | src/frontend/features/mcp/mcpForm.ts | 5 | function | parseHeaders |
 | src/frontend/features/mcp/mcpForm.ts | 17 | function | parseEnv |
 | src/frontend/features/mcp/mcpForm.ts | 29 | function | parseArgs |
 | src/frontend/features/mcp/mcpSummary.ts | 5 | function | summaryLine |
+| src/frontend/features/mcp/signInWindow.ts | 3 | function | openSignInTab |
+| src/frontend/features/mcp/signInWindow.ts | 11 | function | goToSignIn |
+| src/frontend/features/mcp/signInWindow.ts | 22 | function | isWebLink |
 | src/frontend/features/mcp/useMcpServers.ts | 12 | function | useMcpServers |
 | src/frontend/features/memory/MemoryCard.tsx | 10 | function | MemoryCard |
 | src/frontend/features/memory/MemoryGraph.tsx | 13 | function | MemoryGraph |

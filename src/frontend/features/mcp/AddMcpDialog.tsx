@@ -1,13 +1,23 @@
 import { useState } from "preact/hooks";
 import { errorText } from "../../api/client";
-import type { NewMcpServer } from "../../api/types";
+import type { McpStatus, NewMcpServer } from "../../api/types";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { Modal } from "../../ui/Modal";
 import { parseArgs, parseEnv, parseHeaders } from "./mcpForm";
+import { goToSignIn, isWebLink, openSignInTab } from "./signInWindow";
 
-// The form that adds an MCP server. OAuth is the default: the user gives the server's address, and signs in on the server's own page.
-// Manual entry is for a server without OAuth: a web address with headers, or a local command with its arguments and environment.
-export function AddMcpDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (server: NewMcpServer) => Promise<void> }) {
+// The form that adds an MCP server. OAuth is the default: the user gives the server's address, and the one button adds the server and opens
+// its sign-in page in a new tab. Manual entry is for a server without OAuth: a web address with headers, or a local command with its
+// arguments and environment.
+export function AddMcpDialog({
+  open,
+  onClose,
+  onAdd,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAdd: (server: NewMcpServer) => Promise<McpStatus>;
+}) {
   const [mode, setMode] = useState<"oauth" | "manual">("oauth");
   const [kind, setKind] = useState<"web" | "command">("web");
   const [name, setName] = useState("");
@@ -18,6 +28,8 @@ export function AddMcpDialog({ open, onClose, onAdd }: { open: boolean; onClose:
   const [env, setEnv] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  // The sign-in link of a server that was added while the browser blocked the sign-in tab. The dialog then offers the link as a button.
+  const [signInLink, setSignInLink] = useState<string>();
 
   function reset() {
     setMode("oauth");
@@ -29,6 +41,7 @@ export function AddMcpDialog({ open, onClose, onAdd }: { open: boolean; onClose:
     setArgs("");
     setEnv("");
     setError(undefined);
+    setSignInLink(undefined);
   }
 
   function close() {
@@ -48,15 +61,48 @@ export function AddMcpDialog({ open, onClose, onAdd }: { open: boolean; onClose:
   async function submit(e: Event) {
     e.preventDefault();
     setError(undefined);
+    let server: NewMcpServer;
+    try {
+      server = build();
+    } catch (err) {
+      setError(errorText(err));
+      return;
+    }
+    // An OAuth server's sign-in tab is opened now, from this click. Its address is set once the server has answered.
+    const tab = server.transport === "oauth" ? openSignInTab() : null;
     setBusy(true);
     try {
-      await onAdd(build());
-      close();
+      const status = await onAdd(server);
+      const link = status.servers.find((candidate) => candidate.name === server.name)?.signInUrl;
+      if (goToSignIn(tab, link)) close();
+      else if (isWebLink(link)) setSignInLink(link);
+      else close();
     } catch (err) {
+      tab?.close();
       setError(errorText(err));
     } finally {
       setBusy(false);
     }
+  }
+
+  // The server is added, but the browser blocked its sign-in tab. The link is offered as a button, which opens the page itself.
+  if (signInLink) {
+    return (
+      <Modal open={open} onClose={close} closeButton glow="red">
+        <div className="flex flex-col gap-3">
+          <h3 className="text-lg font-semibold">Sign in to {name.trim()}</h3>
+          <div className="text-sm opacity-70">The server is added. Your browser blocked the sign-in tab, so open the server's sign-in page from here.</div>
+          <div className="modal-action mt-0">
+            <button type="button" className="btn btn-ghost" onClick={close}>
+              Close
+            </button>
+            <a className="btn btn-primary" href={signInLink} target="_blank" rel="noopener noreferrer">
+              Open sign-in page
+            </a>
+          </div>
+        </div>
+      </Modal>
+    );
   }
 
   return (
@@ -82,7 +128,7 @@ export function AddMcpDialog({ open, onClose, onAdd }: { open: boolean; onClose:
         {mode === "oauth" && (
           <>
             <div className="text-sm opacity-70">
-              mip opens the server's own sign-in page in a new tab. You sign in there, and the server sends you back to mip.
+              mip adds the server, then opens its sign-in page in a new tab. You sign in there, and the server sends you back to mip.
             </div>
             <label className="flex flex-col gap-1 text-sm">
               Server address
@@ -148,7 +194,7 @@ export function AddMcpDialog({ open, onClose, onAdd }: { open: boolean; onClose:
           </button>
           <button className="btn btn-primary" disabled={busy}>
             {busy && <span className="loading loading-spinner loading-xs" />}
-            Add server
+            {mode === "oauth" ? "Add and sign in" : "Add server"}
           </button>
         </div>
       </form>

@@ -53,6 +53,7 @@ Docs:
     node src/frontend/features/agent/skillCommand.test.mjs
     node src/frontend/features/mcp/mcpSummary.test.mjs
     node src/frontend/features/mcp/mcpForm.test.mjs
+    node src/frontend/features/mcp/signInWindow.test.mjs
 
 The backend tests need `npm run build:backend` first. The skill, tool, and sync tests use a temporary `MIP_HOME`.
 

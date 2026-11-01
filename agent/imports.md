@@ -134,12 +134,14 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/frontend/features/bots/mentions.ts | - | src/frontend/features/bots/MentionInput.tsx, src/frontend/features/bots/MessageText.tsx, src/frontend/features/bots/mentions.test.mjs |
 | src/frontend/features/bots/useRoom.ts | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/hooks.ts | src/frontend/features/bots/BotsCard.tsx |
 | src/frontend/features/bots/useRooms.ts | src/frontend/api/client.ts, src/frontend/api/types.ts | src/frontend/features/bots/BotsCard.tsx |
-| src/frontend/features/mcp/AddMcpDialog.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx, src/frontend/features/mcp/mcpForm.ts | src/frontend/features/mcp/McpCard.tsx |
-| src/frontend/features/mcp/McpCard.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/Card.tsx, src/frontend/ui/ConfirmDialog.tsx, src/frontend/ui/ErrorAlert.tsx, src/frontend/features/mcp/AddMcpDialog.tsx, src/frontend/features/mcp/mcpSummary.ts, src/frontend/features/mcp/useMcpServers.ts | src/frontend/App.tsx |
+| src/frontend/features/mcp/AddMcpDialog.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx, src/frontend/features/mcp/mcpForm.ts, src/frontend/features/mcp/signInWindow.ts | src/frontend/features/mcp/McpCard.tsx |
+| src/frontend/features/mcp/McpCard.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/Card.tsx, src/frontend/ui/ConfirmDialog.tsx, src/frontend/ui/ErrorAlert.tsx, src/frontend/features/mcp/AddMcpDialog.tsx, src/frontend/features/mcp/mcpSummary.ts, src/frontend/features/mcp/signInWindow.ts, src/frontend/features/mcp/useMcpServers.ts | src/frontend/App.tsx |
 | src/frontend/features/mcp/mcpForm.test.mjs | src/frontend/features/mcp/mcpForm.ts | - |
 | src/frontend/features/mcp/mcpForm.ts | - | src/frontend/features/mcp/AddMcpDialog.tsx, src/frontend/features/mcp/mcpForm.test.mjs |
 | src/frontend/features/mcp/mcpSummary.test.mjs | src/frontend/features/mcp/mcpSummary.ts | - |
 | src/frontend/features/mcp/mcpSummary.ts | src/frontend/api/types.ts | src/frontend/features/mcp/McpCard.tsx, src/frontend/features/mcp/mcpSummary.test.mjs |
+| src/frontend/features/mcp/signInWindow.test.mjs | src/frontend/features/mcp/signInWindow.ts | - |
+| src/frontend/features/mcp/signInWindow.ts | - | src/frontend/features/mcp/AddMcpDialog.tsx, src/frontend/features/mcp/McpCard.tsx, src/frontend/features/mcp/signInWindow.test.mjs |
 | src/frontend/features/mcp/useMcpServers.ts | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/hooks.ts | src/frontend/features/mcp/McpCard.tsx |
 | src/frontend/features/memory/MemoryCard.tsx | src/frontend/api/client.ts, src/frontend/ui/Card.tsx, src/frontend/features/memory/graph-layout.ts, src/frontend/features/memory/MemoryGraph.tsx, src/frontend/features/memory/MemoryManager.tsx | src/frontend/App.tsx |
 | src/frontend/features/memory/MemoryGraph.tsx | src/frontend/features/memory/graph-layout.ts | src/frontend/features/memory/MemoryCard.tsx |

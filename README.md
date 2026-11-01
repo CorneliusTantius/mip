@@ -131,7 +131,7 @@ mip can connect to MCP servers and give agents their tools. List them in `~/.mip
 }
 ```
 
-You can also add a server from the MCP card with **Add server**. OAuth sign-in is the default: give the server's address, then press **Sign in** on its row and sign in on the server's own page. Choose **Manual entry** for a server without OAuth: a web address with headers, or a local command with its arguments and environment. A command runs on this machine. **Remove** takes a server out of the file.
+You can also add a server from the MCP card with **Add server**. OAuth sign-in is the default: give the server's address and press **Add and sign in**. The server's own sign-in page opens in a new tab, and you sign in there. If the browser blocks the tab, the dialog offers the page as a button. A server's row also has a **Sign in** button. Choose **Manual entry** for a server without OAuth: a web address with headers, or a local command with its arguments and environment. A command runs on this machine. **Remove** takes a server out of the file.
 
 After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots get them too. The file can hold tokens. Sync carries the servers, tokens included, to your private dotmip repo.
 

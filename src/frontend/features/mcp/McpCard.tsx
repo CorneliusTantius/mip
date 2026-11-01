@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { AddMcpDialog } from "./AddMcpDialog";
 import { summaryLine } from "./mcpSummary";
+import { goToSignIn, isWebLink, openSignInTab } from "./signInWindow";
 import { useMcpServers } from "./useMcpServers";
 
 // The MCP servers in mcp.json. Each one shows whether it is connected and the tools it offers, and an error when it is not. A server
@@ -42,6 +43,13 @@ function McpBody() {
     setRemoveError(undefined);
   }
 
+  // Starts a server's sign-in, and opens its sign-in page in a new tab once the server has answered with the link.
+  async function startSignIn(name: string) {
+    const tab = openSignInTab();
+    const next = await signIn(name);
+    goToSignIn(tab, next?.servers.find((server) => server.name === name)?.signInUrl);
+  }
+
   return (
     <CardBody
       title="MCP"
@@ -75,7 +83,7 @@ function McpBody() {
               key={server.name}
               server={server}
               busy={busy}
-              onSignIn={() => void signIn(server.name)}
+              onSignIn={() => void startSignIn(server.name)}
               onRemove={() => setPendingRemove(server.name)}
             />
           ))}
@@ -112,8 +120,7 @@ function McpBody() {
 function ServerRow({ server, busy, onSignIn, onRemove }: { server: McpServer; busy: boolean; onSignIn: () => void; onRemove: () => void }) {
   const { expanded } = useCardExpansion();
   const size = expanded ? "badge-sm" : "badge-xs";
-  // Only a web link is offered as a button, so a link from a server's own metadata cannot open anything else.
-  const link = server.signInUrl && /^https?:\/\//.test(server.signInUrl) ? server.signInUrl : null;
+  const link = isWebLink(server.signInUrl) ? server.signInUrl : null;
   return (
     <li className="flex min-w-0 flex-col gap-1 rounded-box border border-base-300 p-2">
       <div className="flex flex-wrap items-center gap-2">

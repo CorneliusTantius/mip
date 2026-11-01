@@ -23,24 +23,29 @@ export function useMcpServers() {
     }
   }
 
-  // A change whose failure is shown on the card.
-  async function change(run: () => Promise<McpStatus>): Promise<void> {
+  // A change whose failure is shown on the card. Returns the new state, or nothing when the change failed.
+  async function change(run: () => Promise<McpStatus>): Promise<McpStatus | undefined> {
     setBusy(true);
     setError(undefined);
     try {
-      setStatus(await run());
+      const next = await run();
+      setStatus(next);
+      return next;
     } catch (err) {
       setError(errorText(err));
+      return undefined;
     } finally {
       setBusy(false);
     }
   }
 
   // A change whose caller shows the failure. The error is thrown to it.
-  async function apply(run: () => Promise<McpStatus>): Promise<void> {
+  async function apply(run: () => Promise<McpStatus>): Promise<McpStatus> {
     setBusy(true);
     try {
-      setStatus(await run());
+      const next = await run();
+      setStatus(next);
+      return next;
     } finally {
       setBusy(false);
     }
