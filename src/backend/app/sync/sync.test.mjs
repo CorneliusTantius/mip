@@ -181,6 +181,53 @@ function run() {
   assert.equal(stale.run.ok, true);
   assert.deepEqual(stale.agents, [], "the delete reaches machine E through its legacy base");
 
+  // MCP servers sync with their tokens. Machine A adds two servers, and machine B gets both, with their values, in a file only this user reads.
+  const PATHS = `const fs = await import("node:fs"); const paths = await import(${JSON.stringify(`${DIST}storage/paths.js`)});`;
+  const HTTP = `{ type: "http", url: "http://127.0.0.1:47891/mcp", headers: { Authorization: "Bearer s3cret" } }`;
+  machine(a, `${PATHS}
+    fs.writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { docs: ${HTTP}, local: { command: "node", args: ["server.mjs"], env: { TOKEN: "t0k" } } } }));
+    return { run: await engine.syncWith(remote) };
+  `);
+  const mcpB = machine(b, `${PATHS}
+    const run = await engine.syncWith(remote);
+    const file = JSON.parse(fs.readFileSync(paths.MCP_CONFIG_FILE, "utf8"));
+    return { run, servers: file.mcpServers, mode: (fs.statSync(paths.MCP_CONFIG_FILE).mode & 0o777).toString(8) };
+  `);
+  assert.equal(mcpB.run.ok, true);
+  assert.equal(mcpB.servers.docs.headers.Authorization, "Bearer s3cret", "machine B gets the token");
+  assert.deepEqual(mcpB.servers.local.env, { TOKEN: "t0k" });
+  assert.equal(mcpB.servers.local.type, "stdio");
+  assert.equal(mcpB.mode, "600", "the config file is readable only by this user");
+  assert.match(lsTree(bare), /^mcp\/docs\.json$/m);
+  assert.match(lsTree(bare), /^mcp\/local\.json$/m);
+  assert.match(execFileSync("git", ["--git-dir", bare, "show", "main:mcp/docs.json"], { encoding: "utf8" }), /s3cret/);
+
+  // Machine A removes one server. Machine B loses it too.
+  machine(a, `${PATHS}
+    fs.writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { docs: ${HTTP} } }));
+    return await engine.syncWith(remote);
+  `);
+  const mcpB2 = machine(b, `${PATHS}
+    const run = await engine.syncWith(remote);
+    return { run, servers: Object.keys(JSON.parse(fs.readFileSync(paths.MCP_CONFIG_FILE, "utf8")).mcpServers) };
+  `);
+  assert.deepEqual(mcpB2.servers, ["docs"], "a server removed on one machine is removed on the other");
+  assert.doesNotMatch(lsTree(bare), /mcp\/local\.json/);
+
+  // Machine B's file is broken. The sync stops before anything changes, so GitHub keeps every server.
+  const broken = machine(b, `${PATHS}
+    fs.writeFileSync(paths.MCP_CONFIG_FILE, "{not json");
+    try {
+      await engine.syncWith(remote);
+      return { refused: false };
+    } catch (err) {
+      return { refused: true, message: err.message };
+    }
+  `);
+  assert.equal(broken.refused, true);
+  assert.match(broken.message, /mcp\.json has a problem/);
+  assert.match(lsTree(bare), /^mcp\/docs\.json$/m, "a file with a problem deletes nothing on GitHub");
+
   console.log("sync tests passed");
 }
 

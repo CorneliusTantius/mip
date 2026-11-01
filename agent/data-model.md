@@ -41,7 +41,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `MIP_HOME/workspaces/<agentId>/` | `app/tools/workspace.ts` `workspaceFor` | agent files and `<name>/` repo copies |
 | `MIP_HOME/sessions/claude/` | `adapters/claude-cli.ts` (`CLAUDE_CONFIG_DIR`) | CLI login, transcripts |
 | `MIP_HOME/sessions/pi/` | `adapters/pi.ts` | Pi sessions |
-| `MIP_HOME/data/mcp.json` | `app/mcp/config.ts` (read at startup and on reload) | the MCP servers: a `mcpServers` map of stdio commands or Streamable HTTP links. It can hold tokens, so it is never synced |
+| `MIP_HOME/data/mcp.json` | `app/mcp/config.ts` (read at startup and on reload) | the MCP servers: a `mcpServers` map of stdio commands or Streamable HTTP links. Its tokens sync to the private dotmip repo, under `mcp/` |
 | `MIP_HOME/data/device-id` | `app/installation.ts` | this installation's UUID, for Pi's ChatGPT sign-in. Not synced, so each machine has its own |
 | `MIP_HOME/skills/<name>/` | `app/skills/imports.ts` (confirm) | an installed skill: `SKILL.md`, text files, and `.mip-source.json` (source path and hash). `skills/.staging/` holds imports not yet confirmed |
 | `MIP_HOME/sync/` | `app/sync/*` | `base.json` (`{repo, snapshot}`: the state at the last sync with that repo), `state.json` (chosen account, last run), `dotmip/` (local clone of the GitHub repo). No token is stored |

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { MCP_CONFIG_FILE } from "../../storage/paths.js";
 import { errorMessage } from "../errors.js";
 
@@ -12,6 +12,18 @@ export type McpServerConfig =
 export interface McpConfigProblem {
   server: string;
   error: string;
+}
+
+// One server as the file and the sync record hold it. A field its transport does not use is absent. Environment values and headers
+// are included, since the file holds them, and the sync repo is private.
+export interface McpServerEntry {
+  name: string;
+  transport: "stdio" | "http";
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+  headers?: Record<string, string>;
 }
 
 // A server name: a letter or digit, then letters, digits, dashes or underscores, up to 32 characters. It becomes part of each tool's name.
@@ -43,6 +55,25 @@ export function parseMcpConfig(text: string): { servers: McpServerConfig[]; prob
 export function readMcpConfig(): { servers: McpServerConfig[]; problems: McpConfigProblem[] } {
   if (!existsSync(MCP_CONFIG_FILE)) return { servers: [], problems: [] };
   return parseMcpConfig(readFileSync(MCP_CONFIG_FILE, "utf8"));
+}
+
+// The text of a config file that holds these servers, in the shape parseMcpConfig reads. Servers are written in name order.
+export function mcpConfigText(servers: McpServerEntry[]): string {
+  const entries = [...servers]
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    .map((server) => [
+      server.name,
+      server.transport === "stdio"
+        ? { type: "stdio", command: server.command, args: server.args ?? [], env: server.env ?? {} }
+        : { type: "http", url: server.url, headers: server.headers ?? {} },
+    ]);
+  return `${JSON.stringify({ mcpServers: Object.fromEntries(entries) }, null, 2)}\n`;
+}
+
+// Writes the config file readable only by this user, since it holds tokens.
+export function writeMcpConfigText(text: string): void {
+  writeFileSync(MCP_CONFIG_FILE, text, { mode: 0o600 });
+  chmodSync(MCP_CONFIG_FILE, 0o600);
 }
 
 function parseServer(name: string, entry: unknown): McpServerConfig {

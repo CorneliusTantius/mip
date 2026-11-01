@@ -49,12 +49,12 @@ The Claude CLI runs without `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so i
 
 ## Sync to GitHub
 
-Settings → **Sync** keeps your agents, notes, personas, and bots in a private repo named `dotmip` on your GitHub account. Repository clones, agent files, and provider logins stay on this machine.
+Settings → **Sync** keeps your agents, notes, personas, bots, and MCP servers in a private repo named `dotmip` on your GitHub account. MCP servers come with their tokens, so keep that repo private. Repository clones, agent files, and provider logins stay on this machine.
 
 1. Sign in to the GitHub CLI once on this machine: `gh auth login`. Sync uses one of the accounts it is signed in to. If there is more than one, pick the account in Settings → Sync. mip never stores a token.
 2. Click **Sync now** in Settings → Sync. It creates `dotmip` if it does not exist, pulls changes, merges them with this machine, and pushes the result.
 
-When both machines edited the same note, persona, bot, or agent setting, the newer edit wins. The sync log says so. Messages from both sides are kept, and an edit beats a delete. An agent that is running is not deleted by a sync. The clocks on both machines must be right.
+When both machines edited the same note, persona, bot, or agent setting, the newer edit wins. The sync log says so. For an MCP server edited on both sides, GitHub's copy is kept. Messages from both sides are kept, and an edit beats a delete. An agent that is running is not deleted by a sync. The clocks on both machines must be right.
 
 An agent synced from another machine shows its history, but the model starts a new conversation there, because provider session files are not synced.
 
@@ -127,7 +127,7 @@ mip can connect to MCP servers and give agents their tools. List them in `~/.mip
 }
 ```
 
-After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots get them too. The file can hold tokens, so it is never synced.
+After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots get them too. The file can hold tokens. Sync carries the servers, tokens included, to your private dotmip repo.
 
 ## Skills
 
@@ -226,7 +226,7 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
 ```
 ~/.mip/
   data/mip.db           SQLite: personas, agents, messages, runs, memory, repositories
-  data/mcp.json         MCP servers to connect to. It can hold tokens, so it never syncs
+  data/mcp.json         MCP servers to connect to, tokens included. Sync carries them to the dotmip repo
   repos/<name>/         Master clones from the Repositories card
   sessions/claude/      Claude CLI config, login, and transcripts
   sessions/pi/          Pi session files

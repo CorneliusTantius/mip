@@ -4,13 +4,13 @@ import { SYNC_DIR } from "../../storage/paths.js";
 import { errorMessage } from "../errors.js";
 import { runGit } from "../git.js";
 import { MAIN_ROOM_ID } from "../../storage/rooms.js";
-import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type NoteRecord, type PersonaRecord, type RoomMessageRecord, type RoomRecord, type Snapshot } from "./merge.js";
+import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type McpServerRecord, type NoteRecord, type PersonaRecord, type RoomMessageRecord, type RoomRecord, type Snapshot } from "./merge.js";
 
 // The local copy of the dotmip repo. Sync reads its files, writes the merged state, and commits and pushes. Edits made
 // here by hand are overwritten by the next sync.
 export const REPO_DIR = join(SYNC_DIR, "dotmip");
 // One folder per part. The rooms are one file, a list, and the room messages are one file, a list in order, since they are only ever added.
-const FOLDERS = ["personas", "bots", "notes", "agents"] as const;
+const FOLDERS = ["personas", "bots", "notes", "agents", "mcp"] as const;
 // Folders that older versions wrote. They are removed on every sync, once the records have moved to their new folder.
 const LEGACY_FOLDERS = ["chats"] as const;
 const ROOMS_FILE = "rooms.json";
@@ -25,6 +25,7 @@ Data synced from mip. mip writes this repo; edits made here are overwritten by t
 - agents/: agents with their messages, one file each
 - rooms.json: the bots' rooms, each with its name and its bots
 - room.json: the messages of every room, in order, each with the id of its room
+- mcp/: MCP servers, one file each. They hold their tokens and environment values, so keep this repo private.
 
 Not stored here: provider logins, repository clones, and agent workspaces.
 `;
@@ -64,6 +65,7 @@ export function readTree(): Snapshot {
     bots: indexBy(readFolder<BotRecord>("bots"), keyOf.bot),
     notes: indexBy(readFolder<NoteRecord>("notes"), keyOf.note),
     agents: indexBy(readFolder<AgentRecord>(agentsFolder()), keyOf.agent),
+    mcp: indexBy(readFolder<McpServerRecord>("mcp"), keyOf.mcp),
     rooms: indexBy(existsSync(join(REPO_DIR, ROOMS_FILE)) ? readJson<RoomRecord[]>(ROOMS_FILE) : [], keyOf.room),
     // A message written before rooms has no room, so it belongs to Main.
     room: indexBy(
@@ -89,6 +91,7 @@ export function writeTree(snapshot: Snapshot): void {
   writeRecords("bots", snapshot.bots);
   writeRecords("notes", snapshot.notes);
   writeRecords("agents", snapshot.agents);
+  writeRecords("mcp", snapshot.mcp);
   writeJson(ROOMS_FILE, Object.keys(snapshot.rooms).sort().map((key) => snapshot.rooms[key]));
   writeJson(ROOM_FILE, Object.keys(snapshot.room).sort().map((key) => snapshot.room[key]));
   writeFileSync(join(REPO_DIR, "README.md"), README);

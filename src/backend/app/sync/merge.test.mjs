@@ -126,4 +126,24 @@ const withAgents = (...agents) => ({ ...emptySnapshot(), agents: indexBy(agents,
 // A snapshot saved before the rename kept its agents under chats. Reading it gives them under agents.
 assert.deepEqual(Object.keys(snapshotFromSaved({ chats: indexBy([agent("c1", "Agent", 10, [])], keyOf.agent) }).agents), ["c1"]);
 
+// MCP servers: a server changed on one side only is taken from that side, and a deletion on one side reaches the other.
+const server = (name, url) => ({ name, transport: "http", url, headers: { Authorization: "Bearer s3cret" } });
+const withMcp = (...servers) => ({ ...emptySnapshot(), mcp: indexBy(servers, keyOf.mcp) });
+{
+  const base = withMcp(server("docs", "https://a.test/mcp"), server("notes", "https://n.test/mcp"));
+  const local = withMcp(server("docs", "https://a.test/v2"), server("notes", "https://n.test/mcp"));
+  const { merged, notes } = mergeSnapshots(base, local, base);
+  assert.equal(merged.mcp.docs.url, "https://a.test/v2", "an edit on this side is kept");
+  assert.deepEqual(notes, []);
+  const removed = withMcp(server("docs", "https://a.test/mcp"));
+  const gone = mergeSnapshots(base, removed, base);
+  assert.deepEqual(Object.keys(gone.merged.mcp), ["docs"], "a server removed here is removed on GitHub too");
+  // Both sides changed the same server: GitHub's copy is kept, and the log says so.
+  const both = mergeSnapshots(base, local, withMcp(server("docs", "https://a.test/remote"), server("notes", "https://n.test/mcp")));
+  assert.equal(both.merged.mcp.docs.url, "https://a.test/remote");
+  assert.match(both.notes.join("\n"), /MCP server "docs" was changed on both sides; kept the copy on GitHub/);
+  // A snapshot saved before this part existed has no servers, so its base is empty and nothing is removed.
+  assert.deepEqual(snapshotFromSaved({ notes: {} }).mcp, {});
+}
+
 console.log("merge tests passed");

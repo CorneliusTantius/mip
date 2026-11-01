@@ -48,6 +48,7 @@ Flat files, one per domain:
 ## app/mcp/: external MCP servers
 - `config.ts`: `parseMcpConfig` (pure) and `readMcpConfig`. Reads `data/mcp.json`: a stdio server has a `command`, `args`, and `env`, and a Streamable HTTP server has a `url` and `headers`. A bad entry is reported by name, and the others still load. Tested by `mcp.test.mjs`.
 - `manager.ts`: `startMcpServers` connects every configured server in parallel, with 30 s for the start and the tool list. `closeMcpServers`, `mcpTools` (the tools of the connected servers), `mcpStatus`, and `mcpToolName` (`mcp_<server>_<tool>`, cut to 64 characters). A tool whose name another tool already has is skipped and reported. A connection that drops marks its server as error.
+- Sync: `app/sync/snapshot.ts` reads these servers as the `mcp` part, and rewrites mcp.json when a sync changes them, after the new text is checked to load. `merge.ts` keeps GitHub's copy when both sides changed one server.
 
 ## app/skills/: installed skills
 - `format.ts`: pure rules. `parseSkill` (the `SKILL.md` header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.

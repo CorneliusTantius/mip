@@ -37,7 +37,7 @@ Dependency direction is one way: `http → app → adapters | storage`, and `sto
 | path | contents | written by |
 | --- | --- | --- |
 | `data/mip.db` | all app data (SQLite, `node:sqlite`) | `storage/*` |
-| `data/mcp.json` | the MCP servers mip connects to. It can hold tokens, so it never syncs | `app/mcp/config.ts` |
+| `data/mcp.json` | the MCP servers mip connects to, with their tokens. Synced to the private dotmip repo | `app/mcp/config.ts`, `app/sync/snapshot.ts` |
 | `sessions/claude/` | Claude CLI config (`CLAUDE_CONFIG_DIR`): login, CLI transcripts | `adapters/claude-cli.ts` |
 | `sessions/pi/` | Pi session files | `adapters/pi.ts` |
 | `repos/<name>/` | master clones of repositories | `app/repos.ts` |

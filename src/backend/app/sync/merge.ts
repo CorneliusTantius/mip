@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { McpServerEntry } from "../mcp/config.js";
 
 // The data GitHub sync keeps, in the form the dotmip repo stores it. Records hold no local ids, so two machines can share them.
 // Each record has a change time, which decides the winner when both sides edited it. Pure: no database and no git.
@@ -66,6 +67,9 @@ export interface RoomMessageRecord {
   text: string;
 }
 
+// One MCP server from mcp.json, with its tokens and environment values. It has no change time (the file does not keep one).
+export type McpServerRecord = McpServerEntry;
+
 // The whole synced state. Each part maps a record's key to the record. The keys are in keyOf below.
 export interface Snapshot {
   personas: Record<string, PersonaRecord>;
@@ -74,12 +78,13 @@ export interface Snapshot {
   agents: Record<string, AgentRecord>;
   rooms: Record<string, RoomRecord>;
   room: Record<string, RoomMessageRecord>;
+  mcp: Record<string, McpServerRecord>;
 }
 
-export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room"] as const;
+export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room", "mcp"] as const;
 
 export function emptySnapshot(): Snapshot {
-  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {} };
+  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {}, mcp: {} };
 }
 
 export function isEmptySnapshot(snapshot: Snapshot): boolean {
@@ -102,6 +107,7 @@ export const keyOf = {
   room: (room: RoomRecord) => room.id,
   roomMessage: (message: RoomMessageRecord) =>
     `${message.room}:${message.createdAt}:${message.kind}:${message.authorName}:${digest(message.text)}`,
+  mcp: (server: McpServerRecord) => server.name,
 };
 
 function digest(text: string): string {
@@ -139,6 +145,14 @@ export function unionMessages(a: MessageRecord[], b: MessageRecord[]): MessageRe
 function newer<T extends { updatedAt: number }>(local: T, remote: T): T {
   return local.updatedAt > remote.updatedAt ? local : remote;
 }
+
+// An MCP server has no change time, so when both sides changed it, GitHub's copy is kept. The sync log says so, and a server edited on
+// one side only is merged as usual.
+const mcpKind: Kind<McpServerRecord> = {
+  name: "MCP server",
+  label: (server) => server.name,
+  combine: (local, remote) => [remote, `MCP server "${local.name}" was changed on both sides; kept the copy on GitHub`],
+};
 
 // How one part is merged: its name for the sync log, a label for a record, and how two edits of one record are combined.
 interface Kind<T> {
@@ -221,6 +235,7 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     agents: mergeKind(agentKind, base.agents, local.agents, remote.agents, notes),
     rooms,
     room: Object.fromEntries(Object.entries(messages).filter(([, message]) => rooms[message.room] !== undefined)),
+    mcp: mergeKind(mcpKind, base.mcp, local.mcp, remote.mcp, notes),
   };
   return { merged, notes };
 }
