@@ -85,6 +85,15 @@ function toAppEvent(event: AgentSessionEvent): AgentEvent | undefined {
       return { type: "tool_call", id: event.toolCallId, name: event.toolName, input: event.args };
     case "tool_execution_end":
       return { type: "tool_result", id: event.toolCallId, output: textOf(event.result), isError: event.isError };
+    case "agent_end": {
+      // A failed model call ends its message with an error and no text. Pi retries some failures itself, so the error is
+      // reported only when the turn ends without a retry. Otherwise the run would look finished with an empty reply.
+      if (event.willRetry) return undefined;
+      const last = [...event.messages].reverse().find((message) => message.role === "assistant");
+      return last?.role === "assistant" && last.stopReason === "error"
+        ? { type: "error", message: last.errorMessage ?? "The model failed without an error message." }
+        : undefined;
+    }
     default:
       return undefined;
   }

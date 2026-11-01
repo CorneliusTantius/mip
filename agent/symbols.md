@@ -21,8 +21,8 @@
 | src/backend/adapters/contract.ts | 107 | interface | SignInPrompt |
 | src/backend/adapters/contract.ts | 114 | interface | SignInProgress |
 | src/backend/adapters/contract.ts | 121 | interface | AgentProvider |
-| src/backend/adapters/pi.ts | 108 | interface | PiProviderOptions |
-| src/backend/adapters/pi.ts | 115 | class | PiProvider |
+| src/backend/adapters/pi.ts | 117 | interface | PiProviderOptions |
+| src/backend/adapters/pi.ts | 124 | class | PiProvider |
 | src/backend/adapters/sign-in-session.ts | 4 | class | SignInSession |
 | src/backend/app/agents.ts | 12 | function | allAgents |
 | src/backend/app/agents.ts | 17 | function | createAgent |

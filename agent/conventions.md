@@ -102,6 +102,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 ## Gotchas (read before changing these areas)
 - Two copies of the default persona id: `api/constants.ts` and `src/backend/app/personas.ts`.
 - Native `confirm()` is still used in `SignInPanel.tsx` (sign-out). The rest of the app uses `ConfirmDialog`. Prefer `ConfirmDialog` for new code.
+- A Pi run that fails reports the last assistant error when the turn ends without a retry (`agent_end` in `adapters/pi.ts`). Before this, a failed call looked like an empty reply.
 - Pi's `capabilities` says `tools: false, mcp: false`. Pi still gets the app's tools, because the run passes them to every provider. The flags are informational.
 - Room turns get no memory recall, no repository note, and no skills. Only agent runs (`app/runs.ts`) build the system prompt that way.
 - `POST /api/memory` answers 200, while other creates answer 201. This is kept for the dashboard.
