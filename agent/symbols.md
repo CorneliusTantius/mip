@@ -415,11 +415,13 @@
 | src/frontend/features/repos/RepositoriesCard.tsx | 16 | function | RepositoriesCard |
 | src/frontend/features/settings/ProviderTab.tsx | 13 | function | ProviderTab |
 | src/frontend/features/settings/SettingsDialog.tsx | 8 | function | SettingsDialog |
-| src/frontend/features/settings/SignInPanel.tsx | 9 | function | runSignInAction |
-| src/frontend/features/settings/SignInPanel.tsx | 14 | function | confirmSignOut |
-| src/frontend/features/settings/SignInPanel.tsx | 19 | function | SignInPanel |
+| src/frontend/features/settings/SignInPanel.tsx | 10 | function | runSignInAction |
+| src/frontend/features/settings/SignInPanel.tsx | 15 | function | confirmSignOut |
+| src/frontend/features/settings/SignInPanel.tsx | 20 | function | SignInPanel |
 | src/frontend/features/settings/SyncTab.tsx | 6 | function | SyncTab |
 | src/frontend/features/settings/UpdateTab.tsx | 18 | function | UpdateTab |
+| src/frontend/features/settings/outputLinks.ts | 5 | type | OutputPiece |
+| src/frontend/features/settings/outputLinks.ts | 7 | function | splitLinks |
 | src/frontend/features/settings/useSync.ts | 6 | function | useSync |
 | src/frontend/features/skills/CreateSkillDialog.tsx | 7 | function | CreateSkillDialog |
 | src/frontend/features/skills/ImportSkillDialog.tsx | 8 | function | ImportSkillDialog |

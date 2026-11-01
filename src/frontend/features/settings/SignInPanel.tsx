@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { api } from "../../api/client";
 import type { ProviderInfo, SignInTarget } from "../../api/types";
+import { splitLinks } from "./outputLinks";
 
 const METHODS: Record<string, string> = { subscription: "Sign in with subscription", api_key: "Use API key", cli: "Sign in" };
 
@@ -47,6 +48,32 @@ function SignInButtons({ provider, target }: { provider: ProviderInfo; target: S
   );
 }
 
+// One line of sign-in output. Each link in it becomes a button that opens the link in a new tab, in place of the address.
+function OutputLine({ line }: { line: string }) {
+  const parts = splitLinks(line);
+
+  return (
+    <div>
+      {parts.length === 0
+        ? " "
+        : parts.map((part, i) =>
+            typeof part === "string" ? (
+              <span key={i}>{part}</span>
+            ) : (
+              <button
+                key={i}
+                type="button"
+                className="btn btn-primary btn-xs mx-1 align-middle"
+                onClick={() => window.open(part.url, "_blank", "noopener,noreferrer")}
+              >
+                Open link
+              </button>
+            ),
+          )}
+    </div>
+  );
+}
+
 // The sign-in's output, and the answer box when it is waiting for input such as a pasted code.
 function SignInOutput({ provider, target }: { provider: ProviderInfo; target: SignInTarget }) {
   const { progress } = target;
@@ -59,10 +86,10 @@ function SignInOutput({ provider, target }: { provider: ProviderInfo; target: Si
   return (
     <div className="mt-3 flex flex-col gap-2">
       {progress.output.length > 0 && (
-        <div className="mockup-code text-sm">
-          <pre className="whitespace-pre-wrap break-all">
-            <code>{progress.output.join("\n")}</code>
-          </pre>
+        <div className="flex flex-col gap-1 rounded-box bg-base-300 p-3 font-mono text-sm break-all">
+          {progress.output.map((line, i) => (
+            <OutputLine key={i} line={line} />
+          ))}
         </div>
       )}
       {progress.error && (

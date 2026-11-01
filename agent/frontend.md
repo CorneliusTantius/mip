@@ -106,7 +106,8 @@ Shared pieces. Each is used by more than one feature.
 | --- | --- | --- |
 | `SettingsDialog.tsx` | `SettingsDialog` | Tabs: Provider, Sync, and Update. Personas are managed from the agent card. |
 | `ProviderTab.tsx` | `ProviderTab` | Provider and service selects, capability badges, the sign-in panel, and the connected list. Polls every 2 s while open. |
-| `SignInPanel.tsx` | `SignInPanel` | Sign-in buttons, output, and the answer box. |
+| `SignInPanel.tsx` | `SignInPanel` | Sign-in buttons, output, and the answer box. A link in the output is an Open link button that opens a new tab. |
+| `outputLinks.ts` | `splitLinks` | Splits one line of sign-in output into text and links. Tested by `outputLinks.test.mjs`. |
 | `SyncTab.tsx` | `SyncTab` | The GitHub account (a dropdown when gh has several), Sync now, and the last run with its notes. |
 | `useSync.ts` | `useSync` | The sync status. Polls every 1.5 s while a sync runs. |
 | `UpdateTab.tsx` | `UpdateTab` | Pull latest, and Restart. After a restart it waits for the server and reloads the page. |

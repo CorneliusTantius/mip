@@ -131,9 +131,11 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/frontend/features/repos/RepositoriesCard.tsx | src/frontend/api/client.ts, src/frontend/api/events.ts, src/frontend/api/types.ts, src/frontend/ui/Card.tsx, src/frontend/ui/ConfirmDialog.tsx, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/hooks.ts, src/frontend/features/repos/RepoRow.tsx | src/frontend/App.tsx |
 | src/frontend/features/settings/ProviderTab.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/hooks.ts, src/frontend/features/settings/SignInPanel.tsx | src/frontend/features/settings/SettingsDialog.tsx |
 | src/frontend/features/settings/SettingsDialog.tsx | src/frontend/ui/Modal.tsx, src/frontend/features/settings/ProviderTab.tsx, src/frontend/features/settings/SyncTab.tsx, src/frontend/features/settings/UpdateTab.tsx | src/frontend/App.tsx |
-| src/frontend/features/settings/SignInPanel.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts | src/frontend/features/settings/ProviderTab.tsx |
+| src/frontend/features/settings/SignInPanel.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/features/settings/outputLinks.ts | src/frontend/features/settings/ProviderTab.tsx |
 | src/frontend/features/settings/SyncTab.tsx | src/frontend/ui/ErrorAlert.tsx, src/frontend/features/settings/useSync.ts | src/frontend/features/settings/SettingsDialog.tsx |
 | src/frontend/features/settings/UpdateTab.tsx | src/frontend/api/client.ts, src/frontend/ui/ErrorAlert.tsx | src/frontend/features/settings/SettingsDialog.tsx |
+| src/frontend/features/settings/outputLinks.test.mjs | src/frontend/features/settings/outputLinks.ts | - |
+| src/frontend/features/settings/outputLinks.ts | - | src/frontend/features/settings/SignInPanel.tsx, src/frontend/features/settings/outputLinks.test.mjs |
 | src/frontend/features/settings/useSync.ts | src/frontend/api/client.ts, src/frontend/api/types.ts | src/frontend/features/settings/SyncTab.tsx |
 | src/frontend/features/skills/CreateSkillDialog.tsx | src/frontend/api/client.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx | src/frontend/features/skills/SkillsCard.tsx |
 | src/frontend/features/skills/ImportSkillDialog.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx | src/frontend/features/skills/SkillsCard.tsx |
