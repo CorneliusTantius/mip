@@ -2,50 +2,31 @@ import { ImapFlow } from "imapflow";
 import { type ParsedMail, simpleParser } from "mailparser";
 import { type MailAccount } from "./accounts.js";
 import { type MailHeader, headerOf } from "./messages.js";
+import { inSession, newConnection } from "./sessions.js";
 
 // How many of the newest messages the card lists.
 export const LIST_LIMIT = 25;
 
-// The IMAP client for one account. Each read signs in, does its work, and signs out, so nothing stays connected between reads. Automatic
-// IDLE is off, since an IDLE connection would outlive the read. The password is sent only to the account's own server.
-function clientFor(account: MailAccount): ImapFlow {
-  return new ImapFlow({
-    host: account.host,
-    port: account.port,
-    secure: account.secure,
-    auth: { user: account.user, pass: account.password },
-    logger: false,
-    disableAutoIdle: true,
-  });
-}
-
-// Signs out. A session the server already dropped is closed instead, so the caller never waits on a dead socket.
-async function endSession(client: ImapFlow): Promise<void> {
-  try {
-    await client.logout();
-  } catch {
-    client.close();
-  }
-}
-
-// Signs in and counts the mailbox's messages and unread ones. Used to check an account before it is saved, and by its test button.
-export async function checkAccount(account: MailAccount): Promise<{ messages: number; unseen: number }> {
-  const client = clientFor(account);
+// Signs in to an account that is not saved yet, counts its mailbox, and signs out. Used when an account is added, so a wrong password is
+// refused before anything is kept. A saved account reads on its open connection instead.
+export async function signInOnce(account: MailAccount): Promise<{ messages: number; unseen: number }> {
+  const client = newConnection(account);
   try {
     await client.connect();
-    const status = await client.status(account.mailbox, { messages: true, unseen: true });
-    if (!status) throw new Error(`there is no mailbox called ${account.mailbox}`);
-    return { messages: status.messages ?? 0, unseen: status.unseen ?? 0 };
+    return await countMailbox(client, account.mailbox);
   } finally {
-    await endSession(client);
+    await logoutQuietly(client);
   }
+}
+
+// Counts a saved account's mailbox, on its open connection. Used by the account's test button.
+export function checkAccount(account: MailAccount): Promise<{ messages: number; unseen: number }> {
+  return inSession(account, (client) => countMailbox(client, account.mailbox));
 }
 
 // The newest messages of the account's mailbox, newest first. Read-only, so the server keeps every message's read state.
-export async function recentHeaders(account: MailAccount, limit = LIST_LIMIT): Promise<MailHeader[]> {
-  const client = clientFor(account);
-  try {
-    await client.connect();
+export function recentHeaders(account: MailAccount, limit = LIST_LIMIT): Promise<MailHeader[]> {
+  return inSession(account, async (client) => {
     const lock = await client.getMailboxLock(account.mailbox, { readOnly: true });
     try {
       const exists = client.mailbox ? client.mailbox.exists : 0;
@@ -58,17 +39,13 @@ export async function recentHeaders(account: MailAccount, limit = LIST_LIMIT): P
     } finally {
       lock.release();
     }
-  } finally {
-    await endSession(client);
-  }
+  });
 }
 
 // One message by its UID, parsed. The body is fetched with BODY.PEEK, so reading it does not mark it as read. Returns nothing when the
 // mailbox has no message with that UID.
-export async function fetchMessage(account: MailAccount, uid: number): Promise<{ header: MailHeader; parsed: ParsedMail } | undefined> {
-  const client = clientFor(account);
-  try {
-    await client.connect();
+export function fetchMessage(account: MailAccount, uid: number): Promise<{ header: MailHeader; parsed: ParsedMail } | undefined> {
+  return inSession(account, async (client) => {
     const lock = await client.getMailboxLock(account.mailbox, { readOnly: true });
     try {
       const message = await client.fetchOne(String(uid), { uid: true, flags: true, envelope: true, source: true }, { uid: true });
@@ -77,7 +54,21 @@ export async function fetchMessage(account: MailAccount, uid: number): Promise<{
     } finally {
       lock.release();
     }
-  } finally {
-    await endSession(client);
+  });
+}
+
+// Counts the mailbox's messages and unread ones on an open connection.
+async function countMailbox(client: ImapFlow, mailbox: string): Promise<{ messages: number; unseen: number }> {
+  const status = await client.status(mailbox, { messages: true, unseen: true });
+  if (!status) throw new Error(`there is no mailbox called ${mailbox}`);
+  return { messages: status.messages ?? 0, unseen: status.unseen ?? 0 };
+}
+
+// Signs out. A connection the server already dropped is closed instead, so the caller never waits on a dead socket.
+async function logoutQuietly(client: ImapFlow): Promise<void> {
+  try {
+    await client.logout();
+  } catch {
+    client.close();
   }
 }

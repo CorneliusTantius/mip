@@ -28,8 +28,10 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
   const store = messages.map((message) => ({ ...message, flags: new Set(message.flags ?? []) }));
   const fetches = [];
   const sockets = new Set();
+  let connections = 0;
 
   const server = createServer((socket) => {
+    connections += 1;
     sockets.add(socket);
     socket.on("close", () => sockets.delete(socket));
     let pending = "";
@@ -138,6 +140,12 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
       resolve({
         port: server.address().port,
         fetches,
+        // How many connections have been made to the server so far.
+        connectionCount: () => connections,
+        // Drops every open connection, as a server does when it times one out.
+        dropConnections: () => {
+          for (const socket of sockets) socket.destroy();
+        },
         flagsOf: (uid) => [...(store.find((message) => message.uid === uid)?.flags ?? [])],
         stop: () =>
           new Promise((done) => {

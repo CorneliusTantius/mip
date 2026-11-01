@@ -140,7 +140,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - Pi's config lives in mip's data: credentials and model catalogs in the database, settings and custom models in `data/pi/`. Pi never reads `~/.pi`, except the one-time import of its auth file.
 - A rename of a word must skip the names of libraries. daisyUI's chat bubbles use the classes `chat`, `chat-start`, `chat-end`, `chat-header`, `chat-bubble`, and `chat-bubble-*`. The chat-to-agent rename once broke them, so the bubbles rendered as plain text. Check the class names of the library after a rename.
 - Expanded cards step their text up one size. Put that in `RunScopePills` and the card's own classes, not in one-off styles.
-- Mail accounts live in `data/mail.json`, mode 600, and sync never carries them. A read fetches a body with `BODY.PEEK`, so opening a message never marks it read. Each read signs in and out, so no connection is kept.
+- Mail accounts live in `data/mail.json`, mode 600, and sync never carries them. A read fetches a body with `BODY.PEEK`, so opening a message never marks it read. A saved account keeps one connection open between reads, closed after five minutes without a read. A connection the server drops is replaced, and a read that failed on it runs once more.
 
 ## Git
 - Push every change to `origin main`, as the GitHub account CorneliusTantius. No attribution lines (no Co-Authored-By, no "Generated with").

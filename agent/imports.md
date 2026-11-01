@@ -21,13 +21,14 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/installation.test.mjs | - | - |
 | src/backend/app/installation.ts | src/backend/storage/paths.ts | src/backend/app/providers.ts |
 | src/backend/app/mail/accounts.test.mjs | - | - |
-| src/backend/app/mail/accounts.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts |
+| src/backend/app/mail/accounts.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts, src/backend/app/mail/sessions.ts |
 | src/backend/app/mail/fake-imap.test-support.mjs | - | src/backend/app/mail/mail.test.mjs |
-| src/backend/app/mail/imap.ts | src/backend/app/mail/accounts.ts, src/backend/app/mail/messages.ts | src/backend/app/mail/mail.ts |
+| src/backend/app/mail/imap.ts | src/backend/app/mail/accounts.ts, src/backend/app/mail/messages.ts, src/backend/app/mail/sessions.ts | src/backend/app/mail/mail.ts |
 | src/backend/app/mail/mail.test.mjs | src/backend/app/mail/fake-imap.test-support.mjs | - |
-| src/backend/app/mail/mail.ts | src/backend/app/errors.ts, src/backend/app/mail/accounts.ts, src/backend/app/mail/imap.ts, src/backend/app/mail/messages.ts | src/backend/http/routes/mail.ts |
+| src/backend/app/mail/mail.ts | src/backend/app/errors.ts, src/backend/app/mail/accounts.ts, src/backend/app/mail/imap.ts, src/backend/app/mail/messages.ts, src/backend/app/mail/sessions.ts | src/backend/http/routes/mail.ts |
 | src/backend/app/mail/messages.test.mjs | - | - |
 | src/backend/app/mail/messages.ts | - | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts |
+| src/backend/app/mail/sessions.ts | src/backend/app/mail/accounts.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts |
 | src/backend/app/mcp/config.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/mcp/manager.ts, src/backend/app/mcp/servers.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/snapshot.ts |
 | src/backend/app/mcp/manager.ts | src/backend/adapters/contract.ts, src/backend/app/config.ts, src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/mcp/config.ts | src/backend/app/mcp/servers.ts, src/backend/app/sync/engine.ts, src/backend/app/tools/index.ts, src/backend/http/mcp-oauth.ts, src/backend/http/routes/mcp-servers.ts, src/backend/http/server.ts |
 | src/backend/app/mcp/mcp-oauth.test.mjs | - | - |

@@ -123,7 +123,7 @@ Memory is one set of notes shared by every agent. Notes live in SQLite with a fu
 
 mip reads your mail over IMAP, the standard protocol every provider offers. Add an account from the Email card with **Add account**: choose the provider, give the address and an app password, and press **Sign in and add**. mip signs in first, so a wrong address or password is refused and nothing is saved. Gmail needs 2-Step Verification before it makes an app password, and that app password is the one to use, not your Google password. The form has a **Get an app password** button that opens the provider's page for it. For another provider, choose **Other** and give its IMAP server, port, and whether it is encrypted.
 
-The card lists the newest 25 messages of each account's inbox, with unread ones marked, and a message opens in full. Reading does not mark a message as read. The list is read again every 60 seconds while the card is open. The app passwords are kept in `data/mail.json` on this machine, readable only by you, and sync never carries them. **Remove account** takes an account out. Nothing is sent, and agents cannot read mail yet.
+The card lists the newest 25 messages of each account's inbox, with unread ones marked, and a message opens in full. Reading does not mark a message as read. The list is read again every 60 seconds while the card is open, over one connection that stays open between reads and closes after five minutes without one. The app passwords are kept in `data/mail.json` on this machine, readable only by you, and sync never carries them. **Remove account** takes an account out. Nothing is sent, and agents cannot read mail yet.
 
 ## MCP servers
 

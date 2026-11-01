@@ -11,11 +11,12 @@ import {
   saveMailAccount,
   viewOf,
 } from "./accounts.js";
-import { checkAccount, fetchMessage, recentHeaders } from "./imap.js";
+import { checkAccount, fetchMessage, recentHeaders, signInOnce } from "./imap.js";
 import { type MailHeader, type MailMessage, messageOf } from "./messages.js";
+import { closeMailSession } from "./sessions.js";
 
-// The mail accounts as the card and the API use them: adding, removing, testing, and reading. Each read connects to the account's server
-// when it is asked for, and a failure to reach the server is a 502 that says why.
+// The mail accounts as the card and the API use them: adding, removing, testing, and reading. A saved account keeps one connection to its
+// server between reads, opened when it is first needed. A failure to reach the server is a 502 that says why.
 
 const ADDRESS = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -66,7 +67,7 @@ export async function addMailAccount(input: unknown): Promise<MailAccountView> {
     maxBytes: 20_000,
   };
   try {
-    await checkAccount(account);
+    await signInOnce(account);
   } catch (err) {
     throw new AppError(400, `Could not sign in to ${host}: ${reasonOf(err)}`);
   }
@@ -74,9 +75,10 @@ export async function addMailAccount(input: unknown): Promise<MailAccountView> {
   return viewOf(account);
 }
 
-// Removes an account from mail.json. Nothing is sent to the server.
-export function deleteMailAccount(id: string): MailAccountsReply {
+// Removes an account from mail.json, and closes its connection. Nothing is sent to the server.
+export async function deleteMailAccount(id: string): Promise<MailAccountsReply> {
   removeMailAccount(id);
+  await closeMailSession(id);
   return mailAccountsReply();
 }
 

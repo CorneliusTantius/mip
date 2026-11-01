@@ -11,7 +11,7 @@ export const mailRoutes: Route[] = [
     requireJson(req);
     return created(await addMailAccount(await readJson(req)));
   }),
-  del("/api/mail/accounts/:id", ({ params }) => ok(deleteMailAccount(params.id))),
+  del("/api/mail/accounts/:id", async ({ params }) => ok(await deleteMailAccount(params.id))),
   post("/api/mail/accounts/:id/test", async ({ req, params }) => {
     requireJson(req);
     return ok(await testMailAccount(params.id));
