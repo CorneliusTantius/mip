@@ -22,21 +22,22 @@ export function isSilent(text: string): boolean {
   return trimmed === "" || trimmed.toUpperCase() === "PASS";
 }
 
-export type RoomEvent<B> = { kind: "bot"; bot: B; text: string } | { kind: "system"; text: string };
+// What a bot said. Calls are whatever the caller keeps about how the reply was made, such as its tool calls.
+export type RoomEvent<B, C> = { kind: "bot"; bot: B; text: string; calls: C } | { kind: "system"; text: string };
 
-export interface ConverseOptions<B extends RoomBot> {
+export interface ConverseOptions<B extends RoomBot, C> {
   bots: B[];
   // Who speaks first, in order. Bots named in each reply are queued after it.
   queue: B[];
   maxTurns: number;
-  // One turn: the bot's reply. Throws when the provider fails.
-  runTurn(bot: B): Promise<string>;
-  say(event: RoomEvent<B>): void;
+  // One turn: the bot's reply and the calls it made. Throws when the provider fails.
+  runTurn(bot: B): Promise<{ text: string; calls: C }>;
+  say(event: RoomEvent<B, C>): void;
   speaking(name: string | null): void;
 }
 
 // Runs the conversation until nobody is queued, a bot fails, or the turn limit is reached.
-export async function converseRoom<B extends RoomBot>(options: ConverseOptions<B>): Promise<void> {
+export async function converseRoom<B extends RoomBot, C>(options: ConverseOptions<B, C>): Promise<void> {
   const queue = [...options.queue];
   let turns = 0;
   try {
@@ -48,16 +49,16 @@ export async function converseRoom<B extends RoomBot>(options: ConverseOptions<B
       const bot = queue.shift()!;
       turns++;
       options.speaking(bot.name);
-      let text: string;
+      let reply: { text: string; calls: C };
       try {
-        text = await options.runTurn(bot);
+        reply = await options.runTurn(bot);
       } catch (err) {
         options.say({ kind: "system", text: `${bot.name} couldn't reply: ${err instanceof Error ? err.message : String(err)}` });
         return;
       }
-      if (isSilent(text)) continue;
-      options.say({ kind: "bot", bot, text: text.trim() });
-      for (const next of mentionedBots(text, options.bots)) {
+      if (isSilent(reply.text)) continue;
+      options.say({ kind: "bot", bot, text: reply.text.trim(), calls: reply.calls });
+      for (const next of mentionedBots(reply.text, options.bots)) {
         // A bot already waiting its turn reads the latest history when it speaks, so it is not queued twice.
         if (next.id !== bot.id && !queue.some((waiting) => waiting.id === next.id)) queue.push(next);
       }

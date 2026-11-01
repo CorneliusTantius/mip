@@ -128,6 +128,8 @@ export interface RoomMessage {
   botId: string | null;
   authorName: string;
   text: string;
+  // The tool calls a bot's reply made. Empty for people's messages and for replies saved before calls were recorded.
+  calls: ToolCall[];
 }
 
 export interface RepoCopy {

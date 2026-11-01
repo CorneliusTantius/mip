@@ -1,15 +1,20 @@
 import type { ThinkingLevel } from "../../adapters/contract.js";
+import type { ToolCall } from "../../storage/agents.js";
 import { type Bot, listBots } from "../../storage/bots.js";
 import { addRoomMessage, type RoomMessage, roomMessagesAfter } from "../../storage/room.js";
+import { HOST, PORT } from "../config.js";
 import { AppError } from "../errors.js";
 import { findProvider } from "../providers.js";
+import { ToolCallLog } from "../tools/calls.js";
+import { BOT_DEFERRED, BOT_TOOLS, registerRun, releaseRun, toolGuidesPrompt } from "../tools/index.js";
 import { converseRoom, mentionedBots } from "./engine.js";
-import { BOT_TOOLS } from "../tools/index.js";
 
 // How many turns one message can set off, and how much of the room each bot sees.
 const MAX_TURNS = 8;
 const HISTORY = 30;
 const MAX_TEXT = 4000;
+// What every bot is told about the room. The guides of its tools follow it in the system prompt.
+const ROOM_RULES = "You are in a shared room with the user and other bots. Keep each message short.";
 
 // One conversation at a time. These are in memory, so a restart clears them.
 let busy = false;
@@ -41,13 +46,13 @@ export function postToRoom(input: unknown): RoomMessage {
 
   const named = mentionedBots(text, bots);
   busy = true;
-  converseRoom<Bot>({
+  converseRoom<Bot, ToolCall[]>({
     bots,
     queue: named.length > 0 ? named : bots,
     maxTurns: MAX_TURNS,
     runTurn: (bot) => runTurn(bot, bots),
     say: (event) => {
-      if (event.kind === "bot") addRoomMessage({ kind: "bot", botId: event.bot.id, authorName: event.bot.name, text: event.text });
+      if (event.kind === "bot") addRoomMessage({ kind: "bot", botId: event.bot.id, authorName: event.bot.name, text: event.text, calls: event.calls });
       else addRoomMessage({ kind: "system", botId: null, authorName: "System", text: event.text });
     },
     speaking: (name) => {
@@ -64,8 +69,9 @@ export function postToRoom(input: unknown): RoomMessage {
   return message;
 }
 
-// One bot's turn: its persona, the recent room, and no tools. Its reply is the text it writes.
-async function runTurn(bot: Bot, bots: Bot[]): Promise<string> {
+// One bot's turn: its persona, the room's rules, the guides of its tools, and the recent room. Its reply is the text it writes.
+// Its tools are reached through the app's tool endpoint, with a token that works only for this turn.
+async function runTurn(bot: Bot, bots: Bot[]): Promise<{ text: string; calls: ToolCall[] }> {
   const history = roomMessagesAfter(0, HISTORY)
     .map((m) => `${m.authorName}: ${m.text}`)
     .join("\n");
@@ -78,21 +84,28 @@ async function runTurn(bot: Bot, bots: Bot[]): Promise<string> {
     "Mention a bot with @Name when you need it to answer. Reply with PASS if you have nothing to add.",
     `Other bots in the room: ${others.join(", ") || "none"}.`,
   ].join("\n");
-  const systemPrompt = [
-    bot.persona,
-    "You are in a shared room with the user and other bots. Keep each message short. You have no tools in this room.",
-  ].join("\n\n");
+  const systemPrompt = [bot.persona, ROOM_RULES, toolGuidesPrompt(BOT_TOOLS)].filter(Boolean).join("\n\n");
 
+  const token = registerRun({ tools: BOT_TOOLS, deferred: BOT_DEFERRED });
+  const calls = new ToolCallLog();
   let text = "";
-  for await (const event of findProvider(bot.providerId).run({
-    prompt,
-    systemPrompt,
-    tools: BOT_TOOLS,
-    model: bot.model ?? undefined,
-    thinking: (bot.thinking as ThinkingLevel | null) ?? undefined,
-  })) {
-    if (event.type === "text") text += event.text;
-    if (event.type === "error") throw new Error(event.message);
+  try {
+    for await (const event of findProvider(bot.providerId).run({
+      prompt,
+      systemPrompt,
+      tools: BOT_TOOLS,
+      deferredTools: BOT_DEFERRED,
+      toolServer: { url: `http://${HOST}:${PORT}/mcp`, token },
+      model: bot.model ?? undefined,
+      thinking: (bot.thinking as ThinkingLevel | null) ?? undefined,
+    })) {
+      if (event.type === "text") text += event.text;
+      if (event.type === "tool_call") calls.start(event.id, event.name, event.input);
+      if (event.type === "tool_result") calls.finish(event.id, event.output, event.isError);
+      if (event.type === "error") throw new Error(event.message);
+    }
+  } finally {
+    releaseRun(token);
   }
-  return text;
+  return { text, calls: calls.calls };
 }

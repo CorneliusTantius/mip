@@ -155,6 +155,10 @@ if (!hasColumn("agents", "meta_updated_at")) {
 if (!hasColumn("messages", "calls")) {
   db.exec("ALTER TABLE messages ADD COLUMN calls TEXT NOT NULL DEFAULT '[]'");
 }
+// Bot replies in the room made before tool calls were recorded have no details, the same as agent replies.
+if (!hasColumn("room_messages", "calls")) {
+  db.exec("ALTER TABLE room_messages ADD COLUMN calls TEXT NOT NULL DEFAULT '[]'");
+}
 
 // Startup recovery. A run or clone cut off by a server restart can't finish, so it is marked as failed.
 db.prepare("UPDATE runs SET status = 'error' WHERE status = 'running'").run();

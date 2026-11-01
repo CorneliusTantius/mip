@@ -1,8 +1,8 @@
 import { useState } from "preact/hooks";
-import type { ToolCall } from "../../api/types";
-import { Modal } from "../../ui/Modal";
-import { ToolCallDetails } from "../../ui/ToolCallDetails";
-import { toolLabel } from "../../ui/toolName";
+import type { ToolCall } from "../api/types";
+import { Modal } from "./Modal";
+import { ToolCallDetails } from "./ToolCallDetails";
+import { toolLabel } from "./toolName";
 
 // The button at the bottom of a reply. It opens the list of tool calls the reply made.
 export function ToolCallsButton({ calls, names }: { calls: ToolCall[]; names: string[] }) {

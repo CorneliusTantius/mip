@@ -63,7 +63,7 @@ Tokens are removed when the run ends, so a late call fails.
 2. Saves the user message. With no bots, adds a system message and stops.
 3. `mentionedBots` (`app/room/engine.ts`) finds `@Name` for bots in the text. Queue = those bots, or all bots in order if none.
 4. `busy = true`. `converseRoom` (`app/room/engine.ts`) runs turns from the queue:
-   - each turn calls `runTurn` (`room.ts`): prompt = last 30 room messages, "You are X", other bots; system prompt = bot persona + room rules; no tools;
+   - each turn calls `runTurn` (`room.ts`): prompt = last 30 room messages, "You are X", other bots; system prompt = bot persona, room rules, and the guides of `BOT_TOOLS`; tools = `BOT_TOOLS` through a run token that is released when the turn ends; the reply and its tool calls are saved as the bot's message;
    - reply `PASS` or empty → silent, and its mentions are not queued (`isSilent`, );
    - a reply's `@mentions` of other bots are queued (not self, not already waiting);
    - a provider error → system message "X couldn't reply: …" and stop;
@@ -125,7 +125,7 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 
 ## 17. Tool calls
 - **Recording.** `runs.ts` `execute` keeps a `ToolCallLog` (`app/tools/calls.ts`). A `tool_call` event starts a call with its input as JSON text. A `tool_result` event attaches its output and error flag, matched by the call's id. The reply saves the list in `messages.calls` with the tool names. Text longer than 8000 characters is cut with a marker.
-- **Reply button.** `Transcript.tsx` puts "View tool calls (n)" at the bottom of a reply that used tools. `ToolCallsDialog.tsx` lists each call's input and result with `ui/ToolCallDetails.tsx`. A reply saved before details were recorded lists its names only.
+- **Reply button.** `Transcript.tsx` and the room's `RoomTranscript.tsx` put "View tool calls (n)" at the bottom of a reply that used tools. `ui/ToolCallsDialog.tsx` lists each call's input and result with `ui/ToolCallDetails.tsx`. A reply saved before details were recorded lists its names only. Calls stay on this machine: sync does not carry them, for agents or for the room.
 - **Live.** `useTranscript.ts` builds the same list while a reply streams, from `tool_call` and `tool_result` events.
 - **Tools card.** `features/tools/ToolsCard.tsx` lists the tool registry from `GET /api/tools`: each tool with whether agents and bots may use it. The All / Agent / Bot pill filters the list, the same way as the Skills card. Collapsed, it shows four. Clicking a tool opens its description, guide, and inputs in a dialog.
 - **Not synced.** Tool details stay on the machine that ran them. The GitHub sync carries tool names but not calls.

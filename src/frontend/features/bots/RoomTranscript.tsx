@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { Bot, RoomMessage } from "../../api/types";
+import { ToolCallsButton } from "../../ui/ToolCallsDialog";
 import { MessageText } from "./MessageText";
 
 // The room's messages. Replies from people and bots are bubbles. A bot's bubble takes a light tint of its color, and
-// its name takes the color itself. System notes are small centered lines.
+// its name takes the color itself. A reply that used tools has a button at its bottom that lists those tool calls.
+// System notes are small centered lines.
 export function RoomTranscript({
   messages,
   bots,
@@ -42,6 +44,7 @@ export function RoomTranscript({
             </div>
             <div className={`chat-bubble whitespace-pre-wrap ${bubble}`}>
               <MessageText text={message.text} bots={bots} onOpenBot={onOpenBot} />
+              {message.calls.length > 0 && <ToolCallsButton calls={message.calls} names={message.calls.map((call) => call.name)} />}
             </div>
           </div>
         );

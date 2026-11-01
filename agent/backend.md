@@ -27,12 +27,13 @@ Flat files, one per domain:
 - `repos.ts`: repository clones, pull all, copies into agents, and `repoNote`.
 
 ## app/room/: the bots room
-- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus`, `runTurn`. A bot turn gets `BOT_TOOLS` and no workspace yet.
+- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus`, `runTurn`. A bot turn registers its own run token for `BOT_TOOLS`, with no workspace, since none of its tools read one. Its system prompt is the persona, the room rules, and the tool guides.
 - `engine.ts`: pure turn-taking: `mentionedBots`, `isSilent`, `converseRoom`. Tested by `engine.test.mjs`.
 
 ## app/tools/: the tool registry
 - `index.ts`: the registry. `BASIC_TOOLS`, `DEFERRED_TOOLS`, `TOOLS`, `AGENT_TOOLS`, `AGENT_DEFERRED`, `BOT_TOOLS`, `BOT_DEFERRED`. Also `RunContext`, `registerRun`, `releaseRun`, `runContextForToken`, `describeTools` (for `GET /api/tools`), and `toolGuidesPrompt`.
 - `search.ts`: `toolSearchTool`, `toolCallTool`, and the pure `searchTools`. Tested by `tool-search.test.mjs`.
+- `room.ts`: `roomSearchTool` (`room_search`), the one tool only bots get. It searches every room message with `storage/room.ts` `searchRoomMessages`, newest first. Tested by `room-search.test.mjs`.
 - `calls.ts`: `ToolCallLog`. It records a reply's calls, matching results to calls by id, and cuts long text. Tested by `calls.test.mjs`.
 - `files.ts`: `read`, `write`, `edit`. Paths go through `inWorkspace`.
 - `bash.ts`: `bash`. The working directory is the workspace. Output keeps the last 50 KB. The default timeout is 120 seconds. Not sandboxed.

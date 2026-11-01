@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { AgentMessage } from "../../api/types";
-import { ToolCallsButton } from "./ToolCallsDialog";
+import { ToolCallsButton } from "../../ui/ToolCallsDialog";
 
 // The messages of the open agent. It scrolls to the newest message as they arrive. A reply that used tools has a button at its
 // bottom that lists those tool calls.

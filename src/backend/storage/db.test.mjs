@@ -21,7 +21,10 @@ try {
     CREATE TABLE runs (id TEXT PRIMARY KEY, session_id TEXT NOT NULL, status TEXT NOT NULL, started_at INTEGER NOT NULL);
     CREATE TABLE skill_enablements (session_id TEXT NOT NULL, skill TEXT NOT NULL, PRIMARY KEY (session_id, skill));
     CREATE TABLE bots (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE COLLATE NOCASE, persona TEXT NOT NULL, provider_id TEXT NOT NULL, model TEXT, thinking TEXT, created_at INTEGER NOT NULL);
+    CREATE TABLE room_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, bot_id TEXT, author_name TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL);
   `);
+  // A room message made before tool calls were recorded. It keeps its text and has no calls.
+  old.prepare("INSERT INTO room_messages (kind, bot_id, author_name, text, created_at) VALUES (?, ?, ?, ?, ?)").run("user", null, "You", "hi room", 100);
   // Two bots made before colors existed. The later one should get the next color.
   old.prepare("INSERT INTO bots (id, name, persona, provider_id, created_at) VALUES (?, ?, ?, ?, ?)").run("b1", "Freya", "A keen reviewer.", "claude-cli", 100);
   old.prepare("INSERT INTO bots (id, name, persona, provider_id, created_at) VALUES (?, ?, ?, ?, ?)").run("b2", "Thorin", "Plain speaker.", "claude-cli", 200);
@@ -36,6 +39,7 @@ try {
   const runs = await import(`${DIST}storage/runs.js`);
   const skills = await import(`${DIST}storage/skills.js`);
   const bots = await import(`${DIST}storage/bots.js`);
+  const room = await import(`${DIST}storage/room.js`);
 
   const listed = agents.listAgents();
   assert.equal(listed.length, 1);
@@ -46,6 +50,7 @@ try {
   assert.equal(runs.getRun("r1").status, "done");
   assert.deepEqual(skills.enabledSkillNames("a1"), ["notes"]);
   assert.deepEqual(Object.fromEntries(bots.listBots().map((bot) => [bot.name, bot.color])), { Freya: "frost", Thorin: "orange" });
+  assert.deepEqual(room.roomMessagesAfter(0, 10).map((m) => [m.text, m.calls]), [["hi room", []]]);
 
   console.log("database rename tests passed");
 } finally {

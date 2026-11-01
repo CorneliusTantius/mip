@@ -32,6 +32,7 @@ Docs:
     node src/backend/app/room/engine.test.mjs
     node src/backend/app/tools/tool-search.test.mjs
     node src/backend/app/tools/guides.test.mjs
+    node src/backend/app/tools/room-search.test.mjs
     node src/backend/app/tools/calls.test.mjs
     node src/backend/app/skills/format.test.mjs
     node src/backend/app/skills/skills.test.mjs
@@ -68,7 +69,7 @@ API regression check (used in the 2026-10-31 refactor): record each route's stat
 ### Add an agent tool
 1. Create a module in `src/backend/app/tools/`, exporting a `ToolSpec`. Give it a `description` (one line, for search), a `guide` (one paragraph on when and how to use it), and an `inputSchema`. Return `ok(text)` or `fail(text)` from `tools/result.ts`.
 2. List it in `app/tools/index.ts`: in `BASIC_TOOLS` if every run should have it, or in `DEFERRED_TOOLS` if the model should find it with `tool_search`.
-3. Agents get it through `AGENT_TOOLS` or `AGENT_DEFERRED`. Bots get it only when you add it to `BOT_TOOLS` or `BOT_DEFERRED`. A bot's turn has no workspace or run token yet, so a bot tool also needs that setup first.
+3. Agents get it through `AGENT_TOOLS` or `AGENT_DEFERRED`. Bots get it through `BOT_TOOLS` or `BOT_DEFERRED`. A bot's turn has its own run token and no workspace, so a bot tool must not need a folder. A bot's tool guides go into its system prompt, the same as an agent's.
 4. Paths go through `inWorkspace` (`tools/workspace.ts`).
 5. Each provider gets the tools through its own adapter: Claude through `/mcp`, Pi as a custom tool.
 6. Update `agent/backend.md` and the tool section of `agent/architecture.md`.

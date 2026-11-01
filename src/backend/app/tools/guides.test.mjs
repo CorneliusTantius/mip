@@ -12,7 +12,7 @@ const root = mkdtempSync(join(tmpdir(), "mip-guides-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { AGENT_DEFERRED, AGENT_TOOLS, TOOLS, describeTools, toolGuidesPrompt } = await import(`${DIST}app/tools/index.js`);
+  const { AGENT_DEFERRED, AGENT_TOOLS, BOT_DEFERRED, BOT_TOOLS, TOOLS, describeTools, toolGuidesPrompt } = await import(`${DIST}app/tools/index.js`);
   const { toolSearchTool } = await import(`${DIST}app/tools/search.js`);
   const { defaultPersona } = await import(`${DIST}app/personas.js`);
 
@@ -33,7 +33,23 @@ try {
   // tool_search returns each match with its guide, so the guide reaches the model when the tool is found.
   const found = await toolSearchTool.run({ query: "memory notes" }, { workspace: root, deferred: AGENT_DEFERRED });
   assert.equal(found.isError, false);
-  assert.match(found.text, /guide: Searches the notes shared by all agents/);
+  assert.match(found.text, /guide: Searches the notes shared by the agent and the bots/);
+
+  // Bots are offered the memory reads and the room search directly, and nothing that touches a folder. Their guides go into the bot's system prompt.
+  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "room_search"]);
+  assert.deepEqual(BOT_DEFERRED, []);
+  const botGuides = toolGuidesPrompt(BOT_TOOLS);
+  assert.match(botGuides, /^Tool guides\. Use each tool as its guide says\./);
+  assert.match(botGuides, /- room_search: /);
+  assert.match(botGuides, /- memory_read: /);
+  assert.doesNotMatch(botGuides, /- (bash|read|write|edit): /);
+
+  // The registry marks which kinds of run may use each tool. The room search is for bots only.
+  const described = Object.fromEntries(describeTools().map((tool) => [tool.name, tool]));
+  assert.deepEqual([described.room_search.agent, described.room_search.bot], [false, true]);
+  assert.deepEqual([described.memory_search.agent, described.memory_search.bot], [true, true]);
+  assert.equal(described.room_search.load, "basic");
+  assert.equal(described.memory_search.load, "deferred", "agents find the memory reads with tool_search");
 
   // The persona keeps who the assistant is and how it answers. Tool guidance is not in it any more.
   const prompt = defaultPersona().systemPrompt;

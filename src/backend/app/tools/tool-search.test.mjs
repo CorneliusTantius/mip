@@ -11,7 +11,7 @@ const root = mkdtempSync(join(tmpdir(), "mip-search-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { BOT_TOOLS, AGENT_DEFERRED, AGENT_TOOLS, DEFERRED_TOOLS, describeTools } = await import(`${DIST}app/tools/index.js`);
+  const { BOT_DEFERRED, BOT_TOOLS, AGENT_DEFERRED, AGENT_TOOLS, DEFERRED_TOOLS, describeTools } = await import(`${DIST}app/tools/index.js`);
   const { searchTools, toolCallTool, toolSearchTool } = await import(`${DIST}app/tools/search.js`);
 
   const names = (list) => list.map((tool) => tool.name);
@@ -19,7 +19,9 @@ try {
   // An agent run is offered the basic tools and the two search tools. Memory and skill_file are deferred, found with tool_search.
   assert.deepEqual(names(AGENT_TOOLS), ["bash", "read", "edit", "write", "skill_read", "tool_search", "tool_call"]);
   assert.deepEqual(names(AGENT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file"]);
-  assert.deepEqual(BOT_TOOLS, []);
+  // A bot is offered the memory reads and the room search directly, and has no deferred tools.
+  assert.deepEqual(names(BOT_TOOLS), ["memory_search", "memory_read", "room_search"]);
+  assert.deepEqual(BOT_DEFERRED, []);
 
   // Search finds tools by the words of their names and descriptions. A query nothing matches finds nothing.
   assert.ok(names(searchTools(DEFERRED_TOOLS, "memory")).includes("memory_search"));
@@ -43,19 +45,21 @@ try {
   const basic = await toolCallTool.run({ name: "bash", input: { command: "echo hi" } }, context);
   assert.equal(basic.isError, true);
   assert.match(basic.text, /no deferred tool named bash/);
-  const forBot = await toolCallTool.run({ name: "memory_search", input: { query: "x" } }, { workspace: root, deferred: BOT_TOOLS });
+  const forBot = await toolCallTool.run({ name: "memory_search", input: { query: "x" } }, { workspace: root, deferred: BOT_DEFERRED });
   assert.equal(forBot.isError, true);
 
   // With no deferred tools in the run, tool_search says so.
   const noneHere = await toolSearchTool.run({ query: "memory" }, { workspace: root, deferred: [] });
   assert.match(noneHere.text, /No other tools/);
 
-  // The registry says how each tool is offered: basic, deferred, or the search tools. Agents can use every tool.
+  // The registry says how each tool is offered: basic, deferred, or the search tools. Agents can use every tool but the room search.
   const described = Object.fromEntries(describeTools().map((tool) => [tool.name, tool]));
   assert.equal(described.bash.load, "basic");
   assert.equal(described.memory_search.load, "deferred");
   assert.equal(described.tool_call.load, "search");
-  assert.ok(describeTools().every((tool) => tool.agent === true && tool.bot === false));
+  assert.equal(described.room_search.load, "basic");
+  assert.ok(describeTools().filter((tool) => tool.name !== "room_search").every((tool) => tool.agent === true));
+  assert.deepEqual(describeTools().filter((tool) => tool.bot).map((tool) => tool.name), ["memory_search", "memory_read", "room_search"]);
 
   console.log("tool search tests passed");
 } finally {

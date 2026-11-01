@@ -22,7 +22,7 @@ function fakeRoom({ replies, maxTurns = 8, queue = bots, fail = false }) {
       runTurn: async (bot) => {
         if (fail) throw new Error("provider is not signed in");
         const script = replies[bot.name] ?? [];
-        return script[call++ % Math.max(script.length, 1)] ?? "PASS";
+        return { text: script[call++ % Math.max(script.length, 1)] ?? "PASS", calls: [] };
       },
       say: (event) => said.push(event),
       speaking: (name) => spoke.push(name),
@@ -84,6 +84,22 @@ assert.equal(isSilent("Sounds good"), false);
   await room.run;
   assert.deepEqual(room.spoke, ["Alice", "Bob", null]);
   assert.equal(room.said.length, 1);
+}
+
+// 8. A bot's reply carries the calls it made, and a reply of PASS keeps none.
+{
+  const calls = [{ name: "room_search", input: "{}", output: "No message matches.", isError: false }];
+  const said = [];
+  await converseRoom({
+    bots: [alice],
+    queue: [alice],
+    maxTurns: 4,
+    runTurn: async (bot) => ({ text: bot.name === "Alice" && said.length === 0 ? "Found nothing." : "PASS", calls }),
+    say: (event) => said.push(event),
+    speaking: () => {},
+  });
+  assert.equal(said.length, 1);
+  assert.deepEqual(said[0].calls, calls);
 }
 
 console.log("room-engine: all checks passed");

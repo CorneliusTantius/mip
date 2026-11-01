@@ -54,7 +54,7 @@ Shared pieces. Each is used by more than one feature.
 | `AgentSkillsDialog.tsx` | `AgentSkillsDialog` | Checkboxes for the installed skills this agent may use. Saves with `PUT /api/agents/:id/skills`. |
 | `AgentHeader.tsx` | `AgentHeader` | The title, the persona and provider badges, and the header controls. |
 | `Transcript.tsx` | `Transcript` | Message bubbles. A reply that used tools has a View tool calls button at its bottom. |
-| `ToolCallsDialog.tsx` | `ToolCallsButton`, `ToolCallsDialog` | The button and the dialog listing one reply's tool calls with their inputs and results. A reply saved before details were recorded lists its names only. |
+| `ui/ToolCallsDialog.tsx` | `ToolCallsButton`, `ToolCallsDialog` | The button and the dialog listing one reply's tool calls with their inputs and results. Used by agent replies and bot replies in the room. A reply saved before details were recorded lists its names only. |
 | `Composer.tsx` | `Composer` | Model and thinking dropdowns, and the message box. Owns the draft. |
 
 ## features/bots/
@@ -64,7 +64,7 @@ Shared pieces. Each is used by more than one feature.
 | `useRoom.ts` | `useRoom` | Bots, messages, busy, speaking, and errors. Polls every 1.5 s for new messages. |
 | `MentionInput.tsx` | `MentionInput` | The input with the bot suggestion list. |
 | `mentions.ts` | `mentionAt`, `suggestions`, `completeMention` | Pure rules for `@partial` text. No React. |
-| `RoomTranscript.tsx` | `RoomTranscript` | Bubbles for people and bots, and centered lines for system notes. A bot's bubble takes a light tint of its color, and its name takes the color. |
+| `RoomTranscript.tsx` | `RoomTranscript` | Bubbles for people and bots, and centered lines for system notes. A bot's bubble takes a light tint of its color, and its name takes the color. A reply that used tools has a View tool calls button at its bottom. |
 | `MessageText.tsx` | `MessageText` | A message's text, with each mention of a bot as a pill in that bot's color. A click opens `BotProfileModal`. |
 | `BotProfileModal.tsx` | `BotProfileModal` | A bot's profile: color, provider, model, thinking level, and persona. Its Edit button opens the bot's form in `BotsDialog`. |
 | `botColors.ts` | `BOT_COLORS`, `nextBotColor` | The palette, in the order a new bot takes its colors. The server has the same list. |

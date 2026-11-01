@@ -2,11 +2,11 @@ import type { ToolSpec } from "../../adapters/contract.js";
 import { readNote, searchMemory, writeNote } from "../memory.js";
 import { fail, ok } from "./result.js";
 
-// Memory is shared: every agent sees the same notes.
+// Memory is shared: the agent and the bots see the same notes.
 export const memorySearchTool: ToolSpec = {
   name: "memory_search",
-  guide: "Searches the notes shared by all agents, by words. Check it when the user refers to something from before, before you say you do not know.",
-  description: "Search the notes shared by all agents. Returns the matching note titles with a snippet of each.",
+  guide: "Searches the notes shared by the agent and the bots, by words. Check it when the user refers to something from before, before you say you do not know.",
+  description: "Search the notes shared by the agent and the bots. Returns the matching note titles with a snippet of each.",
   inputSchema: {
     type: "object",
     properties: { query: { type: "string", description: "Words to look for" } },
