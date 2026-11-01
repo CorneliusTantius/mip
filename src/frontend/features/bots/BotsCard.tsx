@@ -1,20 +1,28 @@
 import { useState } from "preact/hooks";
-import type { Bot } from "../../api/types";
+import type { Bot, Room } from "../../api/types";
 import { Card, ExpandButton } from "../../ui/Card";
 import { BotProfileModal } from "./BotProfileModal";
 import { BotsDialog } from "./BotsDialog";
 import { MentionInput } from "./MentionInput";
+import { RoomDialog } from "./RoomDialog";
 import { RoomTranscript } from "./RoomTranscript";
 import { useRoom } from "./useRoom";
+import { useRooms } from "./useRooms";
 
-// The bots' shared room. Mention a bot with @Name to get its reply first. Bots can mention each other.
+// The bots' rooms. Each room has its own bots and messages, and a bot answers only in the rooms it is in. Mention a bot with @Name to get its reply first.
 export function BotsCard() {
-  const room = useRoom();
+  const rooms = useRooms();
+  const active = rooms.active;
+  const room = useRoom(active?.id);
   const [draft, setDraft] = useState("");
   const [managing, setManaging] = useState(false);
   // The bot whose profile is open, and the bot the bots dialog opens on when the profile asks to edit it.
   const [profile, setProfile] = useState<Bot>();
   const [editTarget, setEditTarget] = useState<Bot>();
+  // The room dialog: closed when undefined, "new" for a new room, or the room whose settings are open.
+  const [roomDialog, setRoomDialog] = useState<Room | "new">();
+
+  const members = rooms.bots.filter((bot) => active?.botIds.includes(bot.id));
 
   async function send(e: Event) {
     e.preventDefault();
@@ -26,25 +34,50 @@ export function BotsCard() {
       <div className="card-body min-h-0 flex-1 gap-3 p-4">
         <div className="flex items-center gap-2">
           <h2 className="card-title mr-auto">Bots</h2>
-          <div className="flex min-w-0 flex-wrap justify-end gap-1.5">
-            {room.bots.map((bot) => (
-              <span key={bot.id} className="badge badge-outline gap-1.5">
-                <span className={`bot-dot size-2 bot-${bot.color}`} />
-                {bot.name}
-              </span>
-            ))}
-          </div>
           <button className="btn btn-sm" onClick={() => setManaging(true)}>
             Manage bots
           </button>
           <ExpandButton />
         </div>
 
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {rooms.rooms.map((r) => (
+            <button key={r.id} className={`btn btn-xs ${r.id === active?.id ? "btn-active" : "btn-ghost"}`} onClick={() => rooms.setActiveId(r.id)}>
+              {r.name}
+            </button>
+          ))}
+          <button className="btn btn-xs btn-ghost" onClick={() => setRoomDialog("new")}>
+            + New room
+          </button>
+        </div>
+
+        {active && (
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="text-xs opacity-70">In {active.name}:</span>
+            {members.map((bot) => (
+              <span key={bot.id} className="badge badge-outline gap-1.5">
+                <span className={`bot-dot size-2 bot-${bot.color}`} />
+                {bot.name}
+              </span>
+            ))}
+            {members.length === 0 && <span className="text-xs opacity-70">no bots yet</span>}
+            <button className="btn btn-xs btn-ghost ml-auto" onClick={() => setRoomDialog(active)}>
+              Room settings
+            </button>
+          </div>
+        )}
+
         <RoomTranscript
           messages={room.messages}
-          bots={room.bots}
+          bots={rooms.bots}
           onOpenBot={setProfile}
-          emptyText={room.bots.length ? "Say something to start. Mention a bot with @Name." : "No bots yet. Create one with Manage bots."}
+          emptyText={
+            !active
+              ? "No room yet. Make one with + New room."
+              : members.length
+                ? "Say something to start. Mention a bot with @Name."
+                : "No bots in this room yet. Add some with Room settings."
+          }
         />
 
         {/* A fixed-height line, so showing or hiding the status never moves the transcript. */}
@@ -65,11 +98,11 @@ export function BotsCard() {
           <MentionInput
             value={draft}
             onInput={setDraft}
-            bots={room.bots}
-            disabled={room.busy || room.bots.length === 0}
-            placeholder={room.bots.length ? "Message the room. @Name asks a bot first." : "Create a bot first"}
+            bots={members}
+            disabled={room.busy || !active || members.length === 0}
+            placeholder={members.length ? "Message the room. @Name asks a bot first." : "Add a bot to this room first"}
           />
-          <button className="btn btn-primary join-item" disabled={room.busy || room.bots.length === 0 || !draft.trim()}>
+          <button className="btn btn-primary join-item" disabled={room.busy || !active || members.length === 0 || !draft.trim()}>
             Send
           </button>
         </form>
@@ -91,7 +124,17 @@ export function BotsCard() {
         onClose={() => {
           setManaging(false);
           setEditTarget(undefined);
-          room.loadBots();
+          rooms.reload();
+        }}
+      />
+
+      <RoomDialog
+        open={roomDialog !== undefined}
+        room={roomDialog === "new" ? undefined : roomDialog}
+        bots={rooms.bots}
+        onClose={(changed) => {
+          setRoomDialog(undefined);
+          if (changed) rooms.reload();
         }}
       />
     </Card>

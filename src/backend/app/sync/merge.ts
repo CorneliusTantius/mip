@@ -49,7 +49,17 @@ export interface AgentRecord {
   messages: MessageRecord[];
 }
 
+// A room's name and members, by bot name. Rooms are found by id, which every machine shares.
 export interface RoomRecord {
+  id: string;
+  name: string;
+  bots: string[];
+  updatedAt: number;
+}
+
+// One message in a room. Messages are never edited, so both sides' messages are kept.
+export interface RoomMessageRecord {
+  room: string;
   createdAt: number;
   kind: string;
   authorName: string;
@@ -62,13 +72,14 @@ export interface Snapshot {
   bots: Record<string, BotRecord>;
   notes: Record<string, NoteRecord>;
   agents: Record<string, AgentRecord>;
-  room: Record<string, RoomRecord>;
+  rooms: Record<string, RoomRecord>;
+  room: Record<string, RoomMessageRecord>;
 }
 
-export const PARTS = ["personas", "bots", "notes", "agents", "room"] as const;
+export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room"] as const;
 
 export function emptySnapshot(): Snapshot {
-  return { personas: {}, bots: {}, notes: {}, agents: {}, room: {} };
+  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {} };
 }
 
 export function isEmptySnapshot(snapshot: Snapshot): boolean {
@@ -81,14 +92,16 @@ export function snapshotFromSaved(saved: Partial<Snapshot> & { chats?: Snapshot[
 }
 
 // The key that identifies a record on every machine. Bots and notes are keyed by name, without case, as the database does.
-// A message is keyed by when it was sent, its role, and a hash of its text. Room messages are keyed the same way, plus the author.
+// A message is keyed by when it was sent, its role, and a hash of its text. Room messages are keyed the same way, plus the room and the author.
 export const keyOf = {
   persona: (persona: PersonaRecord) => persona.id,
   bot: (bot: BotRecord) => bot.name.toLowerCase(),
   note: (note: NoteRecord) => note.title.toLowerCase(),
   agent: (agent: AgentRecord) => agent.id,
   message: (message: MessageRecord) => `${message.createdAt}:${message.role}:${digest(message.text)}`,
-  room: (message: RoomRecord) => `${message.createdAt}:${message.kind}:${message.authorName}:${digest(message.text)}`,
+  room: (room: RoomRecord) => room.id,
+  roomMessage: (message: RoomMessageRecord) =>
+    `${message.room}:${message.createdAt}:${message.kind}:${message.authorName}:${digest(message.text)}`,
 };
 
 function digest(text: string): string {
@@ -152,6 +165,12 @@ const noteKind: Kind<NoteRecord> = {
   combine: (local, remote) => [newer(local, remote), `note "${local.title}" was edited on both sides; kept the newer edit`],
 };
 
+const roomKind: Kind<RoomRecord> = {
+  name: "room",
+  label: (room) => room.name,
+  combine: (local, remote) => [newer(local, remote), `room "${local.name}" was edited on both sides; kept the newer edit`],
+};
+
 // An agent keeps the newer settings. Its messages from both sides are kept, so nothing said in either copy is lost.
 const agentKind: Kind<AgentRecord> = {
   name: "agent",
@@ -192,13 +211,16 @@ function mergeKind<T>(kind: Kind<T>, base: Record<string, T>, local: Record<stri
 // Returns the merged state, and a note for each record the two sides changed differently.
 export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot): { merged: Snapshot; notes: string[] } {
   const notes: string[] = [];
+  const rooms = mergeKind(roomKind, base.rooms, local.rooms, remote.rooms, notes);
+  // Room messages are never edited, so both sides' messages are kept. A room that is gone takes its messages with it.
+  const messages = { ...remote.room, ...local.room };
   const merged: Snapshot = {
     personas: mergeKind(personaKind, base.personas, local.personas, remote.personas, notes),
     bots: mergeKind(botKind, base.bots, local.bots, remote.bots, notes),
     notes: mergeKind(noteKind, base.notes, local.notes, remote.notes, notes),
     agents: mergeKind(agentKind, base.agents, local.agents, remote.agents, notes),
-    // Room messages are never edited or deleted, so both sides' messages are kept.
-    room: { ...remote.room, ...local.room },
+    rooms,
+    room: Object.fromEntries(Object.entries(messages).filter(([, message]) => rooms[message.room] !== undefined)),
   };
   return { merged, notes };
 }

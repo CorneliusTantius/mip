@@ -59,17 +59,17 @@ Tokens are removed when the run ends, so a late call fails.
 - Graph for the card: `GET /api/graph` → `memoryGraph` (`memory.ts`). Link targets with no note become "missing" nodes.
 
 ## 8. Room (bots)
-1. `POST /api/room/messages` → `postToRoom` (`app/room/room.ts`). Rejects with 409 when the room is busy, 400 for empty or over 4000 characters.
-2. Saves the user message. With no bots, adds a system message and stops.
-3. `mentionedBots` (`app/room/engine.ts`) finds `@Name` for bots in the text. Queue = those bots, or all bots in order if none.
-4. `busy = true`. `converseRoom` (`app/room/engine.ts`) runs turns from the queue:
-   - each turn calls `runTurn` (`room.ts`): prompt = last 30 room messages, "You are X", other bots; system prompt = bot persona, room rules, and the guides of `BOT_TOOLS`; tools = `BOT_TOOLS` through a run token that is released when the turn ends; the reply and its tool calls are saved as the bot's message;
+1. `POST /api/room/messages` with `{room, text}` → `postToRoom` (`app/room/room.ts`). Rejects with 404 for a room that does not exist, 409 when that room is busy, 400 for empty or over 4000 characters.
+2. Saves the user message in the room. With no bots in the room, adds a system message and stops.
+3. `mentionedBots` (`app/room/engine.ts`) finds `@Name` for the room's bots in the text. Queue = those bots, or all the room's bots in order if none.
+4. The room is marked busy (`talking` in `room.ts`). `converseRoom` (`app/room/engine.ts`) runs turns from the queue:
+   - each turn calls `runTurn` (`room.ts`): prompt = last 30 messages of that room, "You are X", the room's other bots; system prompt = bot persona, the room's rules (which name the room), and the guides of `BOT_TOOLS`; tools = `BOT_TOOLS` through a run token that carries the room id and is released when the turn ends; the reply and its tool calls are saved as the bot's message;
    - reply `PASS` or empty → silent, and its mentions are not queued (`isSilent`, );
    - a reply's `@mentions` of other bots are queued (not self, not already waiting);
    - a provider error → system message "X couldn't reply: …" and stop;
    - after 8 turns (`MAX_TURNS`, `room.ts`) → system message "Paused after 8 turns…".
-5. Each reply is saved with `addRoomMessage`. `busy` is cleared in `finally`.
-Client (`features/bots/useRoom.ts`): polls `GET /api/room?after=<id>` every 1.5 s. Only new messages come back. `send` posts and then polls.
+5. Each reply is saved with `addRoomMessage` in the room. The room's busy mark is cleared in `finally`. Other rooms are not held up.
+Client (`features/bots/useRoom.ts`): polls `GET /api/room?room=<id>&after=<id>` every 1.5 s for the room on screen. Only new messages come back. Switching rooms drops the old room's messages. `send` posts to the room on screen and then polls. Rooms and bots load in `useRooms.ts`. Rooms themselves: `GET` and `POST /api/rooms`, and `PUT` and `DELETE /api/rooms/:id` (`app/room/rooms.ts`).
 
 ## 9. Mention autocomplete (client)
 - `mentionAt(text, caret)` (`features/bots/mentions.ts`) finds an `@partial` at the caret.
@@ -119,7 +119,7 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
   4. `mergeSnapshots` (`app/sync/merge.ts`), per record: unchanged on both sides keeps it; changed on one side takes that side; changed on both takes the later change time, except that an edit beats a delete, and an agent keeps both sides' messages. Room messages are the union.
   5. `applySnapshot` writes the merge to the database, `readLocal` reads it back, `writeTree` writes the files, and `commitAndPush` commits and pushes.
   6. A rejected push means `main` moved. The run fetches and merges again, up to three times. On success `base.json` becomes the merged state.
-- **What syncs:** personas, bots (with their colors), notes, agents with their messages, and the room. **Not:** provider logins (`sessions/`), repo clones, agent workspaces, the default-persona flag, and the provider session id (so a synced agent starts a new model conversation on another machine).
+- **What syncs:** personas, bots (with their colors), notes, agents with their messages, and the rooms: each room's name and bots, and every room message with its room. A deleted room takes its messages with it. **Not:** provider logins (`sessions/`), repo clones, agent workspaces, the default-persona flag, and the provider session id (so a synced agent starts a new model conversation on another machine).
 - **Limits:** the later edit is decided by each machine's clock. An agent with a running run is not deleted by a sync. A persona still used by an agent is not deleted.
 - Tests: `app/sync/github.test.mjs` (reading gh's accounts and picking one), `app/sync/merge.test.mjs` (the rules), and `app/sync/sync.test.mjs` (two machines and a local bare repo, through real git). Neither needs GitHub. The GitHub calls (`gitHubAccount`, `ensureRepo`) are checked only by hand, with a real `gh` login.
 

@@ -60,8 +60,10 @@ Shared pieces. Each is used by more than one feature.
 ## features/bots/
 | file | exports | job |
 | --- | --- | --- |
-| `BotsCard.tsx` | `BotsCard` | The room: badges, Manage bots, a status line with a fixed height, and the message form. |
-| `useRoom.ts` | `useRoom` | Bots, messages, busy, speaking, and errors. Polls every 1.5 s for new messages. |
+| `BotsCard.tsx` | `BotsCard` | The bots' rooms: a tab per room, + New room, Manage bots, the members of the room on screen with Room settings, a status line with a fixed height, and the message form. |
+| `useRooms.ts` | `useRooms` | The rooms, the bots, and which room is on screen. The room on screen stays when it still exists. |
+| `useRoom.ts` | `useRoom(roomId)` | The messages, busy, speaking, and errors of one room. Polls every 1.5 s for new messages, and drops a room's messages when the page switches to another room. |
+| `RoomDialog.tsx` | `RoomDialog` | Makes a room, or edits one: its name, its bots, and Delete room with a confirm. |
 | `MentionInput.tsx` | `MentionInput` | The input with the bot suggestion list. |
 | `mentions.ts` | `mentionAt`, `suggestions`, `completeMention` | Pure rules for `@partial` text. No React. |
 | `RoomTranscript.tsx` | `RoomTranscript` | Bubbles for people and bots, and centered lines for system notes. A bot's bubble takes a light tint of its color, and its name takes the color. A reply that used tools has a View tool calls button at its bottom. |
@@ -120,7 +122,8 @@ Shared pieces. Each is used by more than one feature.
 | sidebar open, delete confirmation | `AgentCard` |
 | rename draft | `AgentList` |
 | composer draft | `Composer` |
-| room messages, busy, speaking, bots, errors | `useRoom` |
+| room messages, busy, speaking, errors, for the room on screen | `useRoom` |
+| rooms, bots, and which room is on screen | `useRooms` |
 | memory list, query, note, editor, errors | `MemoryManager` (mounted only while the card is expanded) |
 | graph data, and the note a graph click asked for | `MemoryBody` in `MemoryCard.tsx` |
 | repos, agents, link, pulls | `RepositoriesCard` |

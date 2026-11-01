@@ -91,14 +91,27 @@ const withAgents = (...agents) => ({ ...emptySnapshot(), agents: indexBy(agents,
   assert.equal(merged.agents.c1.messages.length, 2);
 }
 
-// The room keeps both sides' messages, since none are edited or removed.
+// A room keeps both sides' messages, since none are edited or removed. A message in a room that is gone goes with the room.
 {
-  const here = { createdAt: 1, kind: "user", authorName: "me", text: "hi" };
-  const there = { createdAt: 2, kind: "bot", authorName: "Bob", text: "yo" };
-  const local = { ...emptySnapshot(), room: indexBy([here], keyOf.room) };
-  const remote = { ...emptySnapshot(), room: indexBy([there], keyOf.room) };
+  const main = { id: "main", name: "Main", bots: [], updatedAt: 1 };
+  const here = { room: "main", createdAt: 1, kind: "user", authorName: "me", text: "hi" };
+  const there = { room: "main", createdAt: 2, kind: "bot", authorName: "Bob", text: "yo" };
+  const gone = { room: "gone", createdAt: 3, kind: "user", authorName: "me", text: "lost" };
+  const local = { ...emptySnapshot(), rooms: indexBy([main], keyOf.room), room: indexBy([here, gone], keyOf.roomMessage) };
+  const remote = { ...emptySnapshot(), rooms: indexBy([main], keyOf.room), room: indexBy([there], keyOf.roomMessage) };
   const { merged } = mergeSnapshots(emptySnapshot(), local, remote);
-  assert.equal(Object.keys(merged.room).length, 2);
+  assert.equal(Object.keys(merged.room).length, 2, "the message of the room that is not there is dropped");
+  assert.deepEqual(Object.values(merged.room).map((m) => m.text).sort(), ["hi", "yo"]);
+}
+
+// Rooms merge like bots: a room edited on one side only takes that side's edit, and two edits keep the newer one.
+{
+  const base = { ...emptySnapshot(), rooms: { main: { id: "main", name: "Main", bots: ["Freya"], updatedAt: 1 } } };
+  const local = { ...emptySnapshot(), rooms: { main: { id: "main", name: "Main", bots: ["Freya", "Thorin"], updatedAt: 2 } } };
+  const remote = { ...emptySnapshot(), rooms: { main: { id: "main", name: "Lobby", bots: ["Freya"], updatedAt: 3 } } };
+  const { merged, notes } = mergeSnapshots(base, local, remote);
+  assert.deepEqual(merged.rooms.main, { id: "main", name: "Lobby", bots: ["Freya"], updatedAt: 3 }, "the newer edit wins");
+  assert.ok(notes.some((note) => /room "Main" was edited on both sides/.test(note)));
 }
 
 // Same data on both sides: nothing to report, and nothing counted as changed.

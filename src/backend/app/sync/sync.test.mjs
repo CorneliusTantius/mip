@@ -28,6 +28,8 @@ function run() {
       const notes = await import(${JSON.stringify(`${DIST}storage/notes.js`)});
       const agents = await import(${JSON.stringify(`${DIST}storage/agents.js`)});
       const bots = await import(${JSON.stringify(`${DIST}storage/bots.js`)});
+      const rooms = await import(${JSON.stringify(`${DIST}storage/rooms.js`)});
+      const room = await import(${JSON.stringify(`${DIST}storage/room.js`)});
       const remote = ${JSON.stringify(remote)};
       const result = await (async () => { ${script} })();
       console.log(JSON.stringify(result ?? null));
@@ -44,7 +46,9 @@ function run() {
     const found = agents.listAgents().map((s) => ({ id: s.id, title: s.title, messages: agents.listMessages(s.id).map((m) => m.text) }));
     const noteBody = (title) => notes.getNoteByTitle(title)?.body ?? null;
     const roomBots = bots.listBots().map((bot) => ({ name: bot.name, color: bot.color }));
-    return { agents: found, bots: roomBots, ideas: noteBody("Ideas"), temp: noteBody("Temp") };
+    const roomList = rooms.listRooms().map((r) => ({ name: r.name, bots: r.botIds.map((id) => bots.getBot(id).name) })).sort((x, y) => x.name.localeCompare(y.name));
+    const lounge = room.roomMessagesAfter("lounge-1", 0, 10).map((m) => m.text);
+    return { agents: found, bots: roomBots, rooms: roomList, lounge, ideas: noteBody("Ideas"), temp: noteBody("Temp") };
   `;
   const withRun = (run) => `const run = ${run}; ${READ.replace("return {", "return { run,")}`;
 
@@ -58,6 +62,8 @@ function run() {
     const agent = agents.insertAgent("pi", "default", "Plans");
     bots.insertBot({ id: "b-freya", name: "Freya", persona: "A keen reviewer.", providerId: "pi", model: null, thinking: null, color: "teal" });
     agents.addMessage(agent.id, { role: "user", text: "hello from A", tools: [], error: null });
+    rooms.insertRoom({ id: "lounge-1", name: "Lounge", botIds: ["b-freya"], createdAt: 1, updatedAt: 1 });
+    room.addRoomMessage({ roomId: "lounge-1", kind: "user", botId: null, authorName: "You", text: "hi lounge" });
     const run = await engine.syncWith(remote);
     return { run, agentId: agent.id };
   `);
@@ -71,6 +77,8 @@ function run() {
   assert.equal(second.temp, "delete me");
   assert.deepEqual(second.agents.map((a) => a.messages), [["hello from A"]]);
   assert.deepEqual(second.bots, [{ name: "Freya", color: "teal" }], "a bot's color reaches the other machine");
+  assert.deepEqual(second.rooms, [{ name: "Lounge", bots: ["Freya"] }, { name: "Main", bots: [] }], "rooms and their bots reach the other machine");
+  assert.deepEqual(second.lounge, ["hi lounge"], "a room's messages reach the other machine, in their room");
 
   // Machine B edits the note and adds a message, then syncs.
   machine(b, `
@@ -105,6 +113,16 @@ function run() {
   assert.equal(fifth.ok, true);
   assert.equal(fifth.pushed, 0);
   assert.equal(fifth.message, "Already in sync.");
+
+  // Machine B deletes Lounge, with its messages, and syncs. Machine A gets the delete on its next sync, and the messages go too.
+  machine(b, `rooms.deleteRoom("lounge-1"); return await engine.syncWith(remote);`);
+  const gone = machine(a, `
+    const run = await engine.syncWith(remote);
+    return { run, rooms: rooms.listRooms().map((r) => r.name).sort(), lounge: room.roomMessagesAfter("lounge-1", 0, 10).length };
+  `);
+  assert.equal(gone.run.ok, true);
+  assert.deepEqual(gone.rooms, ["Main"], "the delete reaches machine A");
+  assert.equal(gone.lounge, 0, "the room's messages go with it");
 
   // Switching to another GitHub account (another repo) keeps this machine's data. The base from the old repo is ignored, so
   // nothing the new repo lacks is read as a delete. This machine's data then goes to the new repo.

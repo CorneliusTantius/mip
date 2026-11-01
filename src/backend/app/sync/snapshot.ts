@@ -11,7 +11,8 @@ export function readLocal(): Snapshot {
       store.readAgentRows().map((agent) => ({ ...agent, messages: store.readMessageRows(agent.id) })),
       keyOf.agent,
     ),
-    room: indexBy(store.readRoomRows(), keyOf.room),
+    rooms: indexBy(store.readRoomRows(), keyOf.room),
+    room: indexBy(store.readRoomMessageRows(), keyOf.roomMessage),
   };
 }
 
@@ -22,12 +23,14 @@ export function applySnapshot(local: Snapshot, target: Snapshot): void {
   applyPart(local.bots, target.bots, store.writeBotRow, (bot) => store.removeBotRow(bot.name));
   applyPart(local.notes, target.notes, store.writeNoteRow, (note) => store.removeNoteRow(note.title));
   applyPart(local.agents, target.agents, writeAgent, (agent) => store.removeAgentRow(agent.id));
-  // Room messages are only added, as the merge keeps both sides' messages. They go in sent order, so the room reads in time.
+  // Rooms come after bots, so a room's members are found. A room's messages are dropped with it (see storage/sync.ts).
+  applyPart(local.rooms, target.rooms, store.writeRoomRow, (room) => store.removeRoomRow(room.id));
+  // Room messages are only added, as the merge keeps both sides' messages. They go in sent order, so each room reads in time.
   const added = Object.keys(target.room)
     .filter((key) => local.room[key] === undefined)
     .map((key) => target.room[key])
     .sort((x, y) => x.createdAt - y.createdAt);
-  for (const message of added) store.insertRoomRow(message);
+  for (const message of added) store.insertRoomMessageRow(message);
 }
 
 // Writes an agent's settings, then adds the messages the database does not have yet. Messages are never removed here.

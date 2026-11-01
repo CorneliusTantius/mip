@@ -121,6 +121,13 @@ export interface Bot {
   color: BotColor;
 }
 
+// A room of bots. Its messages are its own, and its members are the bots that answer in it.
+export interface Room {
+  id: string;
+  name: string;
+  botIds: string[];
+}
+
 export interface RoomMessage {
   id: number;
   kind: "user" | "bot" | "system";

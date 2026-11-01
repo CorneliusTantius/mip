@@ -3,15 +3,17 @@ import { dirname, join } from "node:path";
 import { SYNC_DIR } from "../../storage/paths.js";
 import { errorMessage } from "../errors.js";
 import { runGit } from "../git.js";
-import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type NoteRecord, type PersonaRecord, type RoomRecord, type Snapshot } from "./merge.js";
+import { MAIN_ROOM_ID } from "../../storage/rooms.js";
+import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type NoteRecord, type PersonaRecord, type RoomMessageRecord, type RoomRecord, type Snapshot } from "./merge.js";
 
 // The local copy of the dotmip repo. Sync reads its files, writes the merged state, and commits and pushes. Edits made
 // here by hand are overwritten by the next sync.
 export const REPO_DIR = join(SYNC_DIR, "dotmip");
-// One folder per part. The room is one file, a list in order, since its messages are only ever added.
+// One folder per part. The rooms are one file, a list, and the room messages are one file, a list in order, since they are only ever added.
 const FOLDERS = ["personas", "bots", "notes", "agents"] as const;
 // Folders that older versions wrote. They are removed on every sync, once the records have moved to their new folder.
 const LEGACY_FOLDERS = ["chats"] as const;
+const ROOMS_FILE = "rooms.json";
 const ROOM_FILE = "room.json";
 const README = `# dotmip
 
@@ -21,7 +23,8 @@ Data synced from mip. mip writes this repo; edits made here are overwritten by t
 - bots/: bots, one file each
 - notes/: memory notes, one file each
 - agents/: agents with their messages, one file each
-- room.json: the messages from the bots room, in order
+- rooms.json: the bots' rooms, each with its name and its bots
+- room.json: the messages of every room, in order, each with the id of its room
 
 Not stored here: provider logins, repository clones, and agent workspaces.
 `;
@@ -61,7 +64,14 @@ export function readTree(): Snapshot {
     bots: indexBy(readFolder<BotRecord>("bots"), keyOf.bot),
     notes: indexBy(readFolder<NoteRecord>("notes"), keyOf.note),
     agents: indexBy(readFolder<AgentRecord>(agentsFolder()), keyOf.agent),
-    room: indexBy(existsSync(join(REPO_DIR, ROOM_FILE)) ? readJson<RoomRecord[]>(ROOM_FILE) : [], keyOf.room),
+    rooms: indexBy(existsSync(join(REPO_DIR, ROOMS_FILE)) ? readJson<RoomRecord[]>(ROOMS_FILE) : [], keyOf.room),
+    // A message written before rooms has no room, so it belongs to Main.
+    room: indexBy(
+      existsSync(join(REPO_DIR, ROOM_FILE))
+        ? readJson<RoomMessageRecord[]>(ROOM_FILE).map((message) => ({ ...message, room: message.room ?? MAIN_ROOM_ID }))
+        : [],
+      keyOf.roomMessage,
+    ),
   };
 }
 
@@ -73,11 +83,13 @@ function agentsFolder(): string {
 // Replaces the repo's data files with the snapshot. Files the snapshot no longer has are removed.
 export function writeTree(snapshot: Snapshot): void {
   for (const folder of [...FOLDERS, ...LEGACY_FOLDERS]) rmSync(join(REPO_DIR, folder), { recursive: true, force: true });
+  rmSync(join(REPO_DIR, ROOMS_FILE), { force: true });
   rmSync(join(REPO_DIR, ROOM_FILE), { force: true });
   writeRecords("personas", snapshot.personas);
   writeRecords("bots", snapshot.bots);
   writeRecords("notes", snapshot.notes);
   writeRecords("agents", snapshot.agents);
+  writeJson(ROOMS_FILE, Object.keys(snapshot.rooms).sort().map((key) => snapshot.rooms[key]));
   writeJson(ROOM_FILE, Object.keys(snapshot.room).sort().map((key) => snapshot.room[key]));
   writeFileSync(join(REPO_DIR, "README.md"), README);
 }

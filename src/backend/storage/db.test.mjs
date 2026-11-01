@@ -40,6 +40,7 @@ try {
   const skills = await import(`${DIST}storage/skills.js`);
   const bots = await import(`${DIST}storage/bots.js`);
   const room = await import(`${DIST}storage/room.js`);
+  const rooms = await import(`${DIST}storage/rooms.js`);
 
   const listed = agents.listAgents();
   assert.equal(listed.length, 1);
@@ -50,7 +51,12 @@ try {
   assert.equal(runs.getRun("r1").status, "done");
   assert.deepEqual(skills.enabledSkillNames("a1"), ["notes"]);
   assert.deepEqual(Object.fromEntries(bots.listBots().map((bot) => [bot.name, bot.color])), { Freya: "frost", Thorin: "orange" });
-  assert.deepEqual(room.roomMessagesAfter(0, 10).map((m) => [m.text, m.calls]), [["hi room", []]]);
+  // The room that existed becomes Main, with every bot that existed, and its messages move into it. Its calls are empty.
+  const main = rooms.getRoom("main");
+  assert.equal(main.name, "Main");
+  assert.deepEqual(main.botIds.map((id) => bots.getBot(id).name).sort(), ["Freya", "Thorin"]);
+  assert.deepEqual(rooms.listRooms().map((r) => r.id), ["main"]);
+  assert.deepEqual(room.roomMessagesAfter("main", 0, 10).map((m) => [m.roomId, m.text, m.calls]), [["main", "hi room", []]]);
 
   console.log("database rename tests passed");
 } finally {

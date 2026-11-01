@@ -30,6 +30,7 @@ Docs:
     npm run typecheck
     npm run build
     node src/backend/app/room/engine.test.mjs
+    node src/backend/app/room/rooms.test.mjs
     node src/backend/app/tools/tool-search.test.mjs
     node src/backend/app/tools/guides.test.mjs
     node src/backend/app/tools/room-search.test.mjs
@@ -106,13 +107,13 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - The status row under the bots transcript must keep `h-5 flex-none`, or the transcript jumps.
 - Card entrance timing is random per mount. Don't add position-based animation delays. Set `--enter-delay` on the element instead.
 - The memory graph's sizing and note count only count nodes that have a note.
-- The room is one conversation at a time. A second post while busy gets 409.
+- Each room is one conversation at a time. A second post to a busy room gets 409. Other rooms are not held up.
 - `git` runs with `GIT_TERMINAL_PROMPT=0`. A clone that needs a password fails instead of waiting.
 - A write to a synced table must set its change time (see `data-model.md`). A write that skips it is lost in a GitHub sync merge.
 - mip never stores the GitHub token. Each sync gets it from `gh auth token` and passes it to git through `authEnv`, never in argv or a config file. Don't log it or write it anywhere.
 - Bot colors live in three places that must match: `storage/bot-colors.ts`, `features/bots/botColors.ts`, and a `.bot-<name>` class per color in `styles.css`. `app/bots.test.mjs` checks the lists against each other and against the stylesheet.
 - Sync refuses a public `dotmip` repo, and it refuses an empty database when the last sync had data.
-- The synced repo's folder is `agents/`. A repo or saved `base.json` from before the rename keeps its agents under `chats`, and sync still reads it. A machine on an older version that syncs after the change sees its chats missing and deletes them, so upgrade every machine before syncing. Bot records carry a color too, which an older version drops when it writes a bot.
+- The synced repo's folder is `agents/`. A repo or saved `base.json` from before the rename keeps its agents under `chats`, and sync still reads it. A machine on an older version that syncs after the change sees its chats missing and deletes them, so upgrade every machine before syncing. Bot records carry a color too, which an older version drops when it writes a bot. Rooms are a part of their own (`rooms.json`), and room messages carry their room id. An older version knows neither, so it puts every message it syncs into `main`, and its writes drop the rooms. Upgrade every machine before syncing.
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
 - Tool guidance lives in each tool's `guide`, never in a persona. The built-in persona keeps identity and style only. An unedited copy of the old built-in persona is updated at startup; an edited one is left alone.
 - A skill can be created from a form or imported from a folder. Both paths check the same header rules. Create never replaces an installed skill, and import asks for review first.

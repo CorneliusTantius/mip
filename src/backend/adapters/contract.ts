@@ -19,6 +19,8 @@ export interface ToolContext {
   workspace: string;
   // The agent the run belongs to. Skill tools use it to check which skills the agent has enabled.
   agentId?: string;
+  // The room a bot's turn is in. The room tools read its messages.
+  roomId?: string;
   // The deferred tools this run may run through tool_call. Only tool_search and tool_call read them.
   deferred?: ToolSpec[];
   signal?: AbortSignal;

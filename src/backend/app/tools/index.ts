@@ -41,11 +41,12 @@ export const AGENT_DEFERRED: ToolSpec[] = DEFERRED_TOOLS;
 export const BOT_TOOLS: ToolSpec[] = [memorySearch, memoryRead, roomSearch];
 export const BOT_DEFERRED: ToolSpec[] = [];
 
-// What one run may do: the folder its tools work in, the agent it belongs to, the tools it is offered, and the deferred tools it may run.
-// A bot's run has no folder and no agent, since none of its tools use them.
+// What one run may do: the folder its tools work in, the agent it belongs to, the room it is in, the tools it is offered, and the
+// deferred tools it may run. A bot's run has no folder and no agent, since none of its tools use them. It has the room it speaks in.
 export interface RunContext {
   workspace?: string;
   agentId?: string;
+  roomId?: string;
   tools: ToolSpec[];
   deferred?: ToolSpec[];
 }

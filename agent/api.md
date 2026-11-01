@@ -47,10 +47,14 @@ Name rule: starts with a letter, 2–24 letters, digits, `-` or `_`; unique, cas
 ## Room — `routes/room.ts`
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/room?after=N | 200 | `{messages: RoomMessage[], busy, speaking}` | |
-| POST | /api/room/messages | 202 | the saved `RoomMessage` (body `{text}`) | 400 empty or over 4000 characters; 409 room busy |
+| GET | /api/rooms | 200 | `{rooms: Room[]}` | |
+| POST | /api/rooms | 201 | the new `Room` (body `{name, botIds?}`) | 400 empty or over 40 characters, or a bot that does not exist; 409 name taken |
+| PUT | /api/rooms/:id | 200 | the `Room` (body `{name?, botIds?}`; a field left out keeps its value) | 400 as above; 404 no such room; 409 name taken |
+| DELETE | /api/rooms/:id | 200 | `{ok: true}`. The room's messages go with it | 404 no such room; 409 the last room |
+| GET | /api/room?room=ID&after=N | 200 | `{messages: RoomMessage[], busy, speaking}` for that room | 404 no such room |
+| POST | /api/room/messages | 202 | the saved `RoomMessage` (body `{room, text}`) | 400 empty or over 4000 characters; 404 no such room; 409 that room is busy |
 
-`RoomMessage`: `{id, kind: "user"|"bot"|"system", botId, authorName, text, calls, createdAt}`. `calls` is a bot reply's tool calls, each `{name, input, output, isError}`, and is empty for other messages. Without `after`, the latest 100 are returned. With `after`, up to 200 newer ones.
+`Room`: `{id, name, botIds, createdAt, updatedAt}`. `RoomMessage`: `{id, roomId, kind: "user"|"bot"|"system", botId, authorName, text, calls, createdAt}`. `calls` is a bot reply's tool calls, each `{name, input, output, isError}`, and is empty for other messages. Without `after`, the latest 100 are returned. With `after`, up to 200 newer ones.
 
 ## Repositories — `routes/repos.ts`
 | method | path | status | body | errors |

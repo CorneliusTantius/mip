@@ -51,7 +51,7 @@ Deleting an agent removes `workspaces/<agentId>` (`app/tools/workspace.ts`). Pro
 | state | where | notes |
 | --- | --- | --- |
 | run tokens and their contexts | `app/tools/index.ts` | one token per run, released when the run ends |
-| room `busy` and `speaking` | `app/room/room.ts` | one room conversation at a time |
+| each room's `busy` and `speaking` | `app/room/room.ts` | one conversation at a time per room |
 | Claude auth status (5 s) and model catalog (10 min) | `adapters/claude-cli.ts` | caches |
 | sign-in attempts | adapters (`sign-in-agent.ts`) | progress lines and the pending prompt |
 | GitHub sync running flag | `app/sync/engine.ts` | the last run is kept in `sync/state.json` |

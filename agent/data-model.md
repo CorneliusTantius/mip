@@ -16,7 +16,9 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `note_links` | from_id, to_title (NOCASE) | (from_id, to_title) | `storage/notes.ts` | `saveNote` |
 | `note_tags` | note_id, tag | (note_id, tag) | `storage/notes.ts` | `saveNote` |
 | `bots` | id, name (UNIQUE, NOCASE), persona, provider_id, model (nullable), thinking (nullable), color (one of `storage/bot-colors.ts`), created_at, updated_at | id | `storage/bots.ts` | `app/bots.ts` |
-| `room_messages` | id (autoincrement), kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, created_at | id | `storage/room.ts` | `app/room/room.ts` |
+| `rooms` | id, name (UNIQUE, NOCASE), created_at, updated_at | id | `storage/rooms.ts` | `app/room/rooms.ts` |
+| `room_bots` | room_id, bot_id (the room's members) | (room_id, bot_id) | `storage/rooms.ts` (+ `bots.ts` delete) | `app/room/rooms.ts` |
+| `room_messages` | id (autoincrement), room_id, kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, calls (JSON), created_at | id; index (room_id, id) | `storage/room.ts` | `app/room/room.ts` |
 | `repos` | id, name (UNIQUE), url, status (`cloning`/`ready`/`error`), error (nullable), created_at | id | `storage/repos.ts` | `app/repos.ts`, `db.ts` (recovery) |
 | `skill_enablements` | agent_id, skill (the skill's name) | (agent_id, skill) | `storage/skills.ts` (+ `agents.ts` delete) | `app/skills/registry.ts` |
 
@@ -26,6 +28,8 @@ Owner = the storage module that reads and writes the table. Only that module wri
 - Note titles are unique ignoring case. `saveNote` keeps the existing id when the title exists, so links to it stay valid.
 - A note's links and tags are rebuilt on every save (`storage/notes.ts`).
 - Bot names are unique ignoring case. Bot messages in `room_messages` keep `author_name`, so they stay readable after the bot is deleted.
+- A bot can be in several rooms (`room_bots`). Deleting a bot takes it out of every room (`storage/bots.ts` `deleteBot`, and the sync's bot removal). A room's messages are kept apart by `room_id`, and a bot answers only in the rooms it is in.
+- Room names are unique ignoring case, and the last room cannot be deleted. The room `main` is where the messages from before rooms went. It is made, with every bot that exists, when no rooms exist (`db.ts`). Old room messages have no room id until that migration sets it to `main`.
 - A bot's color is one of the Nord accents in `storage/bot-colors.ts`. Bots made before colors got one each in the order they were made, and that change moved their `updated_at` so the colors reach GitHub on the next sync.
 - Exactly one persona has `is_default = 1` (`setDefaultPersona`, `storage/personas.ts`). The built-in `default` persona cannot be deleted.
 - Repo names are unique. The name is also the folder name in `repos/` and in each workspace.
@@ -42,6 +46,6 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `MIP_HOME/sync/` | `app/sync/*` | `base.json` (`{repo, snapshot}`: the state at the last sync with that repo), `state.json` (chosen account, last run), `dotmip/` (local clone of the GitHub repo). No token is stored |
 
 ## Identifiers
-- Agents, personas, bots, notes, repos, runs: UUID strings (`randomUUID`), except the built-in persona `default`.
+- Agents, personas, bots, notes, repos, runs, rooms: UUID strings (`randomUUID`), except the built-in persona `default` and the room `main`. The room `main` has the same id on every machine, so its messages from before rooms line up when the repo syncs.
 - Messages and room messages: autoincrement integers. The room polls by these.
 - Run events: `seq` is per run, starting at 1 (`app/runs.ts` `record`).

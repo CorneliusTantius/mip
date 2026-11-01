@@ -100,6 +100,17 @@ db.exec(`
     text TEXT NOT NULL,
     created_at INTEGER NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS rooms (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS room_bots (
+    room_id TEXT NOT NULL,
+    bot_id TEXT NOT NULL,
+    PRIMARY KEY (room_id, bot_id)
+  );
   CREATE TABLE IF NOT EXISTS repos (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -159,6 +170,18 @@ if (!hasColumn("messages", "calls")) {
 if (!hasColumn("room_messages", "calls")) {
   db.exec("ALTER TABLE room_messages ADD COLUMN calls TEXT NOT NULL DEFAULT '[]'");
 }
+// Rooms. Before rooms existed there was one room, which becomes "Main" (id "main") with every bot that exists. Its messages move
+// into it. The id is fixed, so every machine's copy of Main is the same room when the repo syncs.
+if (!hasColumn("room_messages", "room_id")) {
+  db.exec("ALTER TABLE room_messages ADD COLUMN room_id TEXT");
+}
+db.exec("CREATE INDEX IF NOT EXISTS room_messages_room ON room_messages (room_id, id)");
+if ((db.prepare("SELECT COUNT(*) AS n FROM rooms").get() as Row).n === 0) {
+  const now = Date.now();
+  db.prepare("INSERT INTO rooms (id, name, created_at, updated_at) VALUES ('main', 'Main', ?, ?)").run(now, now);
+  db.exec("INSERT INTO room_bots (room_id, bot_id) SELECT 'main', id FROM bots");
+}
+db.exec("UPDATE room_messages SET room_id = 'main' WHERE room_id IS NULL");
 
 // Startup recovery. A run or clone cut off by a server restart can't finish, so it is marked as failed.
 db.prepare("UPDATE runs SET status = 'error' WHERE status = 'running'").run();

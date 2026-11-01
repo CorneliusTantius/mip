@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { db, type Row } from "./db.js";
 import { deleteNote, getNoteByTitle, linksFrom, saveNote, tagsOf } from "./notes.js";
 import { deletePersona } from "./personas.js";
+import { deleteRoom, roomCount } from "./rooms.js";
 import { countAgentsWithPersona, deleteAgent } from "./agents.js";
 
 // The rows GitHub sync reads and writes. Each write keeps the change time it is given, so a record that came from GitHub keeps
@@ -51,11 +52,21 @@ export interface MessageRow {
   error: string | null;
 }
 
+// A room's name and members, by bot name. A room is found by its id, which every machine shares.
 export interface RoomRow {
-  createdAt: number;
+  id: string;
+  name: string;
+  bots: string[];
+  updatedAt: number;
+}
+
+// One message in a room. Messages are only ever added.
+export interface RoomMessageRow {
+  room: string;
   kind: string;
   authorName: string;
   text: string;
+  createdAt: number;
 }
 
 export function readPersonaRows(): PersonaRow[] {
@@ -125,6 +136,7 @@ export function writeBotRow(bot: BotRow): void {
 }
 
 export function removeBotRow(name: string): boolean {
+  db.prepare("DELETE FROM room_bots WHERE bot_id IN (SELECT id FROM bots WHERE name = ? COLLATE NOCASE)").run(name);
   db.prepare("DELETE FROM bots WHERE name = ? COLLATE NOCASE").run(name);
   return true;
 }
@@ -204,7 +216,51 @@ export function insertMessageRow(agentId: string, message: MessageRow): void {
 }
 
 export function readRoomRows(): RoomRow[] {
-  return (db.prepare("SELECT kind, author_name, text, created_at FROM room_messages ORDER BY id").all() as Row[]).map((row) => ({
+  const members = new Map<string, string[]>();
+  for (const row of db.prepare("SELECT room_bots.room_id, bots.name FROM room_bots JOIN bots ON bots.id = room_bots.bot_id").all() as Row[]) {
+    members.set(row.room_id, [...(members.get(row.room_id) ?? []), row.name]);
+  }
+  return (db.prepare("SELECT id, name, updated_at FROM rooms").all() as Row[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    bots: (members.get(row.id) ?? []).sort(),
+    updatedAt: row.updated_at,
+  }));
+}
+
+// Writes a room's name and members, and adds the room when the database does not have it. Members are matched by bot name.
+// A name another room has gets a number, so a room from another machine never fails the sync.
+export function writeRoomRow(room: RoomRow): void {
+  const name = uniqueRoomName(room.name, room.id);
+  if (db.prepare("SELECT id FROM rooms WHERE id = ?").get(room.id)) {
+    db.prepare("UPDATE rooms SET name = ?, updated_at = ? WHERE id = ?").run(name, room.updatedAt, room.id);
+  } else {
+    db.prepare("INSERT INTO rooms (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)").run(room.id, name, room.updatedAt, room.updatedAt);
+  }
+  db.prepare("DELETE FROM room_bots WHERE room_id = ?").run(room.id);
+  for (const botName of room.bots) {
+    db.prepare("INSERT OR IGNORE INTO room_bots (room_id, bot_id) SELECT ?, id FROM bots WHERE name = ? COLLATE NOCASE").run(room.id, botName);
+  }
+}
+
+function uniqueRoomName(name: string, id: string): string {
+  let candidate = name;
+  for (let n = 2; db.prepare("SELECT id FROM rooms WHERE name = ? COLLATE NOCASE AND id != ?").get(candidate, id); n++) {
+    candidate = `${name} (${n})`;
+  }
+  return candidate;
+}
+
+// Removes a room with its messages. The last room is kept, so a removal of it is refused and the record stays.
+export function removeRoomRow(id: string): boolean {
+  if (roomCount() <= 1) return false;
+  deleteRoom(id);
+  return true;
+}
+
+export function readRoomMessageRows(): RoomMessageRow[] {
+  return (db.prepare("SELECT room_id, kind, author_name, text, created_at FROM room_messages ORDER BY id").all() as Row[]).map((row) => ({
+    room: row.room_id,
     kind: row.kind,
     authorName: row.author_name,
     text: row.text,
@@ -213,12 +269,8 @@ export function readRoomRows(): RoomRow[] {
 }
 
 // A room message is only ever added. A bot's message is linked to the local bot with the same name, if there is one.
-export function insertRoomRow(message: RoomRow): void {
-  db.prepare("INSERT INTO room_messages (kind, bot_id, author_name, text, created_at) VALUES (?, (SELECT id FROM bots WHERE name = ? COLLATE NOCASE), ?, ?, ?)").run(
-    message.kind,
-    message.authorName,
-    message.authorName,
-    message.text,
-    message.createdAt,
-  );
+export function insertRoomMessageRow(message: RoomMessageRow): void {
+  db.prepare(
+    "INSERT INTO room_messages (room_id, kind, bot_id, author_name, text, created_at) VALUES (?, ?, (SELECT id FROM bots WHERE name = ? COLLATE NOCASE), ?, ?, ?)",
+  ).run(message.room, message.kind, message.authorName, message.authorName, message.text, message.createdAt);
 }

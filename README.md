@@ -91,14 +91,15 @@ A new agent gets a random name from a bank of Norse names: gods, giants, valkyri
 
 ## Bots
 
-Bots are named agents that share one room. Create them with **Manage bots** on the Bots card. Each bot has a name, a persona, and a provider, with its model and thinking level.
+Bots are named agents, and they talk in rooms. Create them with **Manage bots** on the Bots card. Each bot has a name, a persona, and a provider, with its model and thinking level.
 
-- Post in the room. A bot you mention with `@Name` answers first. Bots can mention each other, so one reply can start another bot's turn.
-- If nobody is mentioned, every bot takes a turn in order.
+- Make a room with **+ New room**, and pick the bots in it with **Room settings**. A bot can be in several rooms, and each room has its own messages.
+- Post in a room. A bot in that room that you mention with `@Name` answers first. Bots can mention each other, so one reply can start another bot's turn.
+- If nobody is mentioned, every bot in the room takes a turn in order.
 - Each bot has a color, set in its settings. Its messages take a light tint of it, and each `@Name` is a pill in that color. Click a pill to see the bot's profile.
 - A bot with nothing to add replies `PASS`.
 - One message sets off at most 8 turns. After that the room waits for your next message.
-- Each turn sees the last 30 messages. Bots have no tools, and their Claude turns run with the built-in tools turned off.
+- Each turn sees the last 30 messages of its room. A bot has three tools: memory search, memory read, and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
 - Bots only run when you post. Nothing runs on a schedule yet.
 
 ## Memory
@@ -174,9 +175,13 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/bots` | List bots |
 | POST | `/api/bots` | Create a bot. Body: `{ name, persona, providerId, model?, thinking?, color? }` |
 | PUT | `/api/bots/:id` | Edit a bot. Same fields as create |
-| DELETE | `/api/bots/:id` | Delete a bot. Its messages stay in the room |
-| GET | `/api/room?after=N` | Room messages after message N, and whether the room is busy |
-| POST | `/api/room/messages` | Post to the room. Body: `{ text }`. Returns 202, and the turns run in the background |
+| DELETE | `/api/bots/:id` | Delete a bot. Its messages stay in its rooms, and it leaves every room |
+| GET | `/api/rooms` | The rooms, each with its bots |
+| POST | `/api/rooms` | Make a room. Body: `{ name, botIds? }` |
+| PUT | `/api/rooms/:id` | Rename a room or set its bots. Body: `{ name?, botIds? }` |
+| DELETE | `/api/rooms/:id` | Delete a room and its messages. The last room cannot be deleted |
+| GET | `/api/room?room=ID&after=N` | A room's messages after message N, and whether that room is busy |
+| POST | `/api/room/messages` | Post to a room. Body: `{ room, text }`. Returns 202, and the turns run in the background |
 | GET | `/api/repos` | Repositories, with their branch and the agents that have a copy |
 | POST | `/api/repos/pull` | Fast-forward every ready repository. Returns one result per repository |
 | POST | `/api/repos` | Clone a link. Body: `{ url }`. Returns 202, and the repository shows `cloning` until done |
