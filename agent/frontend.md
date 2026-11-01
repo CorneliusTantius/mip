@@ -129,7 +129,11 @@ Shared pieces. Each is used by more than one feature.
 ## features/email/
 | file | exports | job |
 | --- | --- | --- |
-| `EmailCard.tsx` | `EmailCard` | A shell showing "Not connected". No mail account is connected yet. |
+| `EmailCard.tsx` | `EmailCard` | The email card. Lists the accounts as pills, their newest 25 messages as rows, with Refresh, Add account, and Remove account. A message opens in a dialog. Its text steps up when expanded. |
+| `useMail.ts` | `useMailAccounts`, `useMailbox` | The accounts (load, add, remove), and one account's mailbox, re-read every `pollSeconds` while it is shown. |
+| `AddMailAccountDialog.tsx` | `AddMailAccountDialog` | The add form: provider, address, app password, and for "Other" the server, port, and encryption. Signs in before it saves, and a refusal shows its reason. |
+| `MailMessageDialog.tsx` | `MailMessageDialog` | One message in full: subject, sender, recipients, date, and text. |
+| `mailFormat.ts` | `formatMailDate`, `displaySender` | Pure. A time for today's messages, a day for older ones, and a sender's name. Tested by `mailFormat.test.mjs`. |
 
 ## features/slack/ and features/whatsapp/
 - `SlackCard.tsx`: `SlackCard`, a shell showing "Not connected". No connection yet.

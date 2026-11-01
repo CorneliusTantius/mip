@@ -20,6 +20,7 @@
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/mailparser": "^3.9.0",
     "@types/node": "^22.0.0",
     "daisyui": "^5.7.50",
     "preact": "^11.1.0",
@@ -31,6 +32,8 @@
     "@earendil-works/pi-ai": "1.4.0",
     "@earendil-works/pi-coding-agent": "^1.4.0",
     "@earendil-works/pi-mcp": "1.4.0",
+    "imapflow": "^2.10.0",
+    "mailparser": "^3.14.1",
     "typebox": "^1.4.3"
   }
 }

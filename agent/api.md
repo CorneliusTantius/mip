@@ -130,6 +130,18 @@ The servers listed in `data/mcp.json`. Each one shows its state and tools. Envir
 | POST | /api/mcp/:name/sign-in | 200 | the same shape. Starts the sign-in again, so `signInUrl` is a new link | 400 the server does not sign in with OAuth; 404 no such server; 415 not JSON |
 | GET | /api/mcp/oauth/callback | 200 HTML | a page, not JSON. The authorization server redirects the browser here with `code` and `state`. The sign-in finishes, and the server connects. The page says so | 400 page when the server refused, or no sign-in is waiting for that state |
 
+## Mail accounts — `routes/mail.ts`
+The IMAP accounts in `data/mail.json`. Passwords are never returned. Reading connects to the account's server, and a read never marks a message as read.
+
+| method | path | status | body | errors |
+| --- | --- | --- | --- | --- |
+| GET | /api/mail/accounts | 200 | `{accounts: {id, label, host, port, secure, user, mailbox, watch: {mode, pollSeconds}, maxBytes}[], presets: {id, label, host, port, secure, help}[], problems: {account, error}[]}` | |
+| POST | /api/mail/accounts | 201 | the new account, without its password. Body `{preset: "gmail" \| "icloud" \| "fastmail" \| "outlook" \| "other", address, password, host?, port?, secure?}`. Signs in first, and a refused sign-in saves nothing | 400 a missing or bad field, or the server refused the sign-in (the reason is in the message); 409 the address is already added on that server; 415 not JSON |
+| DELETE | /api/mail/accounts/:id | 200 | the same shape as the GET, after the account is removed | 404 no such account |
+| POST | /api/mail/accounts/:id/test | 200 | `{messages, unseen}` | 404 no such account; 415 not JSON; 502 the server could not be reached or refused the sign-in |
+| GET | /api/mail/accounts/:id/messages | 200 | `{mailbox, messages: {uid, from, subject, date, seen}[]}`, the newest 25, newest first | 404 no such account; 502 the server could not be read |
+| GET | /api/mail/accounts/:id/messages/:uid | 200 | `{uid, from, subject, date, seen, to, text, truncated}`. The body is fetched with BODY.PEEK, so the message stays unread | 400 the uid is not a positive whole number; 404 no such message; 502 the server could not be read |
+
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |
 | --- | --- | --- | --- | --- |

@@ -185,3 +185,11 @@ Skills card: `features/skills/SkillsCard.tsx` (the installed skills, with Create
 - **Sync.** Credentials and model catalogs are merged by change time, so the newer copy wins. `settings.json` and `models.json` have no change time, so GitHub's copy wins when both sides changed one. A sync that changes either file resets Pi's runtime, which reads `models.json` when it is made.
 - **Permissions.** `mip.db` is set to mode 600, since it holds the credentials.
 - Tests: `app/pi/pi-store.test.mjs` (the stores, the write order, the import), `adapters/pi-signin.test.mjs`, and the two-machine cases in `app/sync/sync.test.mjs`.
+
+## 21. Mail over IMAP
+- **Accounts.** `POST /api/mail/accounts` (`addMailAccount`, `app/mail/mail.ts`) takes a provider, an address, and an app password. The server comes from the provider's preset, or from the form for "Other". The password's spaces are removed, the address is checked, and an address already added on the same server is refused. The account signs in with `checkAccount` before it is saved, so a refused sign-in saves nothing. Its id comes from its address (`idFor`).
+- **Reading.** `GET .../messages` connects, locks the inbox read-only, and fetches the newest 25 headers by sequence number, newest first. `GET .../messages/:uid` fetches one message with `BODY.PEEK`, parses it with mailparser, and cuts the text to `maxBytes`. Each read signs in and out, so nothing stays connected.
+- **Failures.** A server that refuses the sign-in, or cannot be reached, gives a 400 when adding and a 502 when reading. The reason is the server's own, and the password never appears in it.
+- **Card.** The Email card lists the accounts as pills and the messages as rows. It re-reads the list every `pollSeconds` (default 60) while the card is open. Opening a message shows it in a dialog.
+- **Sync.** `data/mail.json` is not part of the sync, so each machine keeps its own accounts.
+- Tests: `app/mail/accounts.test.mjs`, `messages.test.mjs`, and `mail.test.mjs`, which runs against the fake IMAP server. Real mail servers are not tested here; a real account is the check.

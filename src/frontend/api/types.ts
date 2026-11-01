@@ -268,3 +268,55 @@ export interface SkillImport {
   // The SKILL.md this import would replace, when a skill with the same name is installed.
   replaces: string | null;
 }
+
+// A provider the add form offers. "other" takes the server from the form, and help says what the provider wants as the password.
+export interface MailPreset {
+  id: string;
+  label: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  help: string;
+}
+
+// A mail account as the API returns it. The password is never included.
+export interface MailAccount {
+  id: string;
+  label: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  mailbox: string;
+  watch: { mode: "auto" | "idle" | "interval"; pollSeconds: number };
+  maxBytes: number;
+}
+
+// The mail accounts, the providers the add form offers, and any account that could not be read from mail.json.
+export interface MailAccountsReply {
+  accounts: MailAccount[];
+  presets: MailPreset[];
+  problems: { account: string; error: string }[];
+}
+
+// One message in a mailbox list. The sender is "Name <address>", or the address alone.
+export interface MailHeader {
+  uid: number;
+  from: string;
+  subject: string;
+  date: string | null;
+  seen: boolean;
+}
+
+// One message opened in full. The text is cut to the account's limit, and truncated says so.
+export interface MailMessage extends MailHeader {
+  to: string;
+  text: string;
+  truncated: boolean;
+}
+
+// The newest messages of an account's mailbox, newest first.
+export interface MailboxReply {
+  mailbox: string;
+  messages: MailHeader[];
+}

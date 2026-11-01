@@ -10,7 +10,7 @@ Each entry gives the file, its job, its main exports, and who calls it. Line num
 - `mcp-oauth.ts`: `handleOAuthCallback`, the page an MCP sign-in returns to. It finishes the sign-in with the `code` and `state`, and shows the result. Tested by `mcp-oauth.test.mjs`.
 - `static.ts`: serves `dist/frontend`, and keeps every path inside it.
 - `routes/index.ts`: concatenates the domain route lists. A new domain is added here.
-- `routes/<domain>.ts`: one `Route[]` per domain: `agents`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`, `mcp-servers`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
+- `routes/<domain>.ts`: one `Route[]` per domain: `agents`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`, `mcp-servers`, `mail`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
 
 ## app/: use cases
 Flat files, one per domain:
@@ -47,6 +47,13 @@ Flat files, one per domain:
 - `workspace.ts`: `workspacePath`, `workspaceFor`, `removeWorkspace`, `inWorkspace`.
 - `result.ts`: `ok` and `fail`.
 - `guides.test.mjs`: checks that every tool has a guide and that the guides reach the prompt.
+
+## app/mail/: mail over IMAP
+- `accounts.ts`: the accounts file, `data/mail.json`, in the shape OpenClaw's IMAP plugin uses: an `accounts` map from an id to one account, with its server, login, mailbox, watch settings, and `maxBytes`. `parseMailAccounts` (pure) reports an account that does not load and keeps the others. `saveMailAccount` and `removeMailAccount` edit the file as JSON, keep what the app does not load, and write it with mode 600. `MAIL_PRESETS` lists the providers the add form offers. Tested by `accounts.test.mjs`.
+- `imap.ts`: `checkAccount`, `recentHeaders`, and `fetchMessage`, on `imapflow`. Each call signs in, does its work, and signs out, so nothing stays connected. Reads use a read-only mailbox lock, and a body is fetched with `BODY.PEEK`. IDLE is off (`disableAutoIdle`), and the card re-reads on the account's `pollSeconds`.
+- `messages.ts`: the pure mapping from an `imapflow` message to a header and a message (`headerOf`, `messageOf`, `clipBody`, `htmlToText`). Tested by `messages.test.mjs`.
+- `mail.ts`: the facade the routes call. `addMailAccount` signs in before it saves, and `reasonOf` passes the server's own reason on, never the password. Tested by `mail.test.mjs` against `fake-imap.test-support.mjs`, a small IMAP server that records body fetches and sets `\Seen` only for a fetch that is not a peek.
+- Not built yet: IDLE, a watcher that reports new mail, sending, and agent tools. Sender checks (OpenClaw's DMARC rules) matter once mail reaches an agent, not for the card.
 
 ## app/mcp/: external MCP servers
 - `config.ts`: `parseMcpConfig` (pure) and `readMcpConfig`. Reads `data/mcp.json`: a stdio server has a `command`, `args`, and `env`, and a Streamable HTTP server has a `url` and `headers`. A bad entry is reported by name, and the others still load. An http entry may carry `oauth`, its sign-in state with the tokens. `editMcpFile` changes the file as JSON and keeps every entry the app does not load. Tested by `mcp.test.mjs`.

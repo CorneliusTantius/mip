@@ -119,6 +119,12 @@ Memory is one set of notes shared by every agent. Notes live in SQLite with a fu
 - The **Memory card** on the main page draws the notes as a graph. Drag to pan, scroll to zoom, double-click to reset, hover a dot to see its links, and click a dot to open its note.
 - Expand the **Memory card** with its expand button to get the memory screen, where you can search, read, create, edit, and delete notes. Links and backlinks are clickable. A click on a dot in the graph expands the card on that note.
 
+## Mail accounts
+
+mip reads your mail over IMAP, the standard protocol every provider offers. Add an account from the Email card with **Add account**: choose the provider, give the address and an app password, and press **Sign in and add**. mip signs in first, so a wrong address or password is refused and nothing is saved. Gmail needs 2-Step Verification before it makes an app password, and that app password is the one to use, not your Google password. For another provider, choose **Other** and give its IMAP server, port, and whether it is encrypted.
+
+The card lists the newest 25 messages of each account's inbox, with unread ones marked, and a message opens in full. Reading does not mark a message as read. The list is read again every 60 seconds while the card is open. The app passwords are kept in `data/mail.json` on this machine, readable only by you, and sync never carries them. **Remove account** takes an account out. Nothing is sent, and agents cannot read mail yet.
+
 ## MCP servers
 
 mip can connect to MCP servers and give agents their tools. List them in `~/.mip/data/mcp.json`, in the same shape Claude Code uses:
@@ -228,6 +234,12 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | DELETE | `/api/mcp/:name` | Remove a server from `mcp.json` |
 | POST | `/api/mcp/:name/sign-in` | Start an OAuth server's sign-in again, with a new link |
 | GET | `/api/mcp/oauth/callback` | Where the OAuth sign-in returns to. Finishes the sign-in |
+| GET | `/api/mail/accounts` | The mail accounts (no passwords), the providers the add form offers, and any account that could not be read |
+| POST | `/api/mail/accounts` | Sign in to a new account, then save it. A refused sign-in saves nothing |
+| DELETE | `/api/mail/accounts/:id` | Remove a mail account |
+| POST | `/api/mail/accounts/:id/test` | Sign in again and count the account's mailbox |
+| GET | `/api/mail/accounts/:id/messages` | The newest 25 messages of the inbox, newest first |
+| GET | `/api/mail/accounts/:id/messages/:uid` | One message in full, with its text cut to the account's limit |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 
 ## Storage
@@ -238,6 +250,7 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
 ~/.mip/
   data/mip.db           SQLite: personas, agents, messages, runs, memory, repositories
   data/mcp.json         MCP servers to connect to, tokens included. Sync carries them to the dotmip repo
+  data/mail.json        Mail accounts and their app passwords. Stays on this machine
   repos/<name>/         Master clones from the Repositories card
   sessions/claude/      Claude CLI config, login, and transcripts
   sessions/pi/          Pi session files
