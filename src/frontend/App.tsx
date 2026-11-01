@@ -1,6 +1,9 @@
 import { useState } from "preact/hooks";
 import { BotsCard } from "./features/bots/BotsCard";
 import { AgentCard } from "./features/agent/AgentCard";
+import { EmailCard } from "./features/email/EmailCard";
+import { SlackCard } from "./features/slack/SlackCard";
+import { WhatsAppCard } from "./features/whatsapp/WhatsAppCard";
 import { MemoryCard } from "./features/memory/MemoryCard";
 import { RepositoriesCard } from "./features/repos/RepositoriesCard";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
@@ -40,6 +43,13 @@ export function App() {
         </div>
         <div className="col-span-12 h-[min(40rem,80vh)] xl:col-span-4 xl:h-[min(44rem,80vh)]">
           <BotsCard />
+        </div>
+
+        {/* The messaging cards sit under the bots, three across from tablets up. */}
+        <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-3">
+          <EmailCard />
+          <SlackCard />
+          <WhatsAppCard />
         </div>
 
         <div className={MEDIUM}>

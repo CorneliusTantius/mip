@@ -382,7 +382,7 @@
 | src/backend/storage/sync.ts | 275 | function | removeRoomRow |
 | src/backend/storage/sync.ts | 281 | function | readRoomMessageRows |
 | src/backend/storage/sync.ts | 292 | function | insertRoomMessageRow |
-| src/frontend/App.tsx | 22 | function | App |
+| src/frontend/App.tsx | 25 | function | App |
 | src/frontend/api/client.ts | 4 | class | ApiError |
 | src/frontend/api/client.ts | 27 | const | api |
 | src/frontend/api/client.ts | 36 | function | errorText |
@@ -454,6 +454,10 @@
 | src/frontend/features/bots/mentions.ts | 46 | function | completeMention |
 | src/frontend/features/bots/useRoom.ts | 18 | function | useRoom |
 | src/frontend/features/bots/useRooms.ts | 7 | function | useRooms |
+| src/frontend/features/email/EmailCard.tsx | 6 | function | EmailCard |
+| src/frontend/features/email/gmailStatus.ts | 5 | const | GMAIL_SERVER |
+| src/frontend/features/email/gmailStatus.ts | 9 | function | gmailStatus |
+| src/frontend/features/email/useGmailServer.ts | 12 | function | useGmailServer |
 | src/frontend/features/mcp/AddMcpDialog.tsx | 12 | function | AddMcpDialog |
 | src/frontend/features/mcp/McpCard.tsx | 14 | function | McpCard |
 | src/frontend/features/mcp/mcpForm.ts | 5 | function | parseHeaders |
@@ -488,8 +492,10 @@
 | src/frontend/features/skills/ImportSkillDialog.tsx | 8 | function | ImportSkillDialog |
 | src/frontend/features/skills/SkillsCard.tsx | 12 | function | SkillsCard |
 | src/frontend/features/skills/useSkills.ts | 6 | function | useSkills |
+| src/frontend/features/slack/SlackCard.tsx | 4 | function | SlackCard |
 | src/frontend/features/tools/ToolsCard.tsx | 14 | function | ToolsCard |
 | src/frontend/features/upcoming/PlaceholderCard.tsx | 6 | function | PlaceholderCard |
+| src/frontend/features/whatsapp/WhatsAppCard.tsx | 4 | function | WhatsAppCard |
 | src/frontend/ui/Card.tsx | 6 | type | Glow |
 | src/frontend/ui/Card.tsx | 44 | function | Card |
 | src/frontend/ui/Card.tsx | 115 | function | useCardExpansion |
@@ -505,6 +511,8 @@
 | src/frontend/ui/OptionDropdown.tsx | 13 | function | OptionDropdown |
 | src/frontend/ui/RunScopePills.tsx | 4 | type | RunScope |
 | src/frontend/ui/RunScopePills.tsx | 13 | function | RunScopePills |
+| src/frontend/ui/SourceCard.tsx | 5 | type | SourceTone |
+| src/frontend/ui/SourceCard.tsx | 16 | function | SourceCard |
 | src/frontend/ui/Starfield.tsx | 17 | function | Starfield |
 | src/frontend/ui/ToolCallDetails.tsx | 5 | function | ToolCallDetails |
 | src/frontend/ui/ToolCallsDialog.tsx | 8 | function | ToolCallsButton |

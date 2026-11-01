@@ -37,9 +37,10 @@ Shared pieces. Each is used by more than one feature.
   1. The navbar: the title and the gear, which opens `SettingsDialog`.
   2. `AgentCard`, two-thirds of the width on desktops.
   3. `BotsCard`, one-third of the width on desktops.
-  4. `MemoryCard`.
-  5. `RepositoriesCard`.
-  6. The bottom row, two columns on tablets and five on desktops: `PlaceholderCard` Tasks, `PlaceholderCard` Activity, `ToolsCard`, `SkillsCard`, and `McpCard`.
+  4. The messaging row, three across from tablets up: `EmailCard`, `SlackCard`, and `WhatsAppCard`.
+  5. `MemoryCard`.
+  6. `RepositoriesCard`.
+  7. The bottom row, two columns on tablets and five on desktops: `PlaceholderCard` Tasks, `PlaceholderCard` Activity, `ToolsCard`, `SkillsCard`, and `McpCard`.
 - Breakpoints are the Tailwind defaults: md at 768px, xl at 1280px.
 - Gaps: `gap-4` (16px), and `xl:gap-5` (20px) on desktops.
 
@@ -124,6 +125,21 @@ Shared pieces. Each is used by more than one feature.
 | `SyncTab.tsx` | `SyncTab` | The GitHub account (a dropdown when gh has several), Sync now, and the last run with its notes. |
 | `useSync.ts` | `useSync` | The sync status. Polls every 1.5 s while a sync runs. |
 | `UpdateTab.tsx` | `UpdateTab` | Pull latest, and Restart. After a restart it waits for the server and reloads the page. |
+
+## features/email/
+| file | exports | job |
+| --- | --- | --- |
+| `EmailCard.tsx` | `EmailCard` | The Gmail connection, from the MCP servers. The inbox view is not built yet. |
+| `useGmailServer.ts` | `useGmailServer` | Reads `/api/mcp` and keeps the server named `gmail`. Re-reads every 1.5 s while it starts or waits for sign-in. |
+| `gmailStatus.ts` | `GMAIL_SERVER`, `gmailStatus` | Pure. Maps the loaded state of the Gmail server to a badge and a line of detail. |
+| `gmailStatus.test.mjs` | - | Checks each state. |
+
+## features/slack/ and features/whatsapp/
+- `SlackCard.tsx`: `SlackCard`, a shell showing "Not connected". No connection yet.
+- `WhatsAppCard.tsx`: `WhatsAppCard`, a shell showing "Not connected". No connection yet.
+
+## ui/SourceCard.tsx
+- `SourceCard`: a `Card` with a title, a status badge in one of five tones (`SourceTone`), a line of detail, and the content below. The messaging cards use it.
 
 ## features/upcoming/
 - `PlaceholderCard.tsx`: `PlaceholderCard`, for Tasks and Activity. No data yet. Its Open button shows a dialog with the placeholder note.
