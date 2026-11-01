@@ -16,9 +16,12 @@ export const REPOS_DIR = join(MIP_HOME, "repos");
 export const SYNC_DIR = join(MIP_HOME, "sync");
 // Installed skills. Each one is a folder with a SKILL.md. Only the app reads this folder, never another tool's skills.
 export const SKILLS_DIR = join(MIP_HOME, "skills");
+// Pi's own config folder. It is set as Pi's agent folder, so Pi's settings and custom models live here, and its credentials and model
+// catalogs live in the database.
+export const PI_AGENT_DIR = join(DATA_DIR, "pi");
 
 export function ensureMipDirs(): void {
-  for (const dir of [DATA_DIR, REPOS_DIR, join(SESSIONS_DIR, "claude"), join(SESSIONS_DIR, "pi")]) {
+  for (const dir of [DATA_DIR, REPOS_DIR, PI_AGENT_DIR, join(SESSIONS_DIR, "claude"), join(SESSIONS_DIR, "pi")]) {
     mkdirSync(dir, { recursive: true });
   }
 }

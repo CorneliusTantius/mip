@@ -1,3 +1,4 @@
+import { chmodSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { BOT_COLORS } from "./bot-colors.js";
@@ -7,6 +8,8 @@ import { DATA_DIR, ensureMipDirs } from "./paths.js";
 // App data lives in this file. Provider files (Claude, Pi) stay in their own folders.
 ensureMipDirs();
 export const db = new DatabaseSync(join(DATA_DIR, "mip.db"));
+// The file holds provider credentials, so only this user can read it.
+chmodSync(join(DATA_DIR, "mip.db"), 0o600);
 
 // Rows come back as plain objects. Each storage module maps them to its own types.
 export type Row = Record<string, any>;
@@ -118,6 +121,22 @@ db.exec(`
     status TEXT NOT NULL,
     error TEXT,
     created_at INTEGER NOT NULL
+  );
+  -- Pi's credentials and model catalogs, one row per provider. Each row has its change time, which sync uses to pick the newer one.
+  CREATE TABLE IF NOT EXISTS pi_credentials (
+    provider_id TEXT PRIMARY KEY,
+    credential TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS pi_models (
+    provider_id TEXT PRIMARY KEY,
+    entry TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  -- Small settings kept by the app, such as whether the one-time Pi import has run.
+  CREATE TABLE IF NOT EXISTS pi_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
   );
 `);
 

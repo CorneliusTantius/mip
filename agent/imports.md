@@ -26,7 +26,9 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/memory.ts | src/backend/storage/notes.ts, src/backend/app/errors.ts | src/backend/app/runs.ts, src/backend/app/tools/memory.ts, src/backend/http/routes/memory.ts |
 | src/backend/app/names.ts | - | src/backend/app/agents.ts |
 | src/backend/app/personas.ts | src/backend/storage/personas.ts, src/backend/storage/agents.ts, src/backend/app/errors.ts | src/backend/app/agents.ts, src/backend/app/runs.ts, src/backend/http/routes/personas.ts |
-| src/backend/app/providers.ts | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts, src/backend/adapters/contract.ts, src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/installation.ts | src/backend/app/agents.ts, src/backend/app/bots.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/http/routes/providers.ts |
+| src/backend/app/pi/pi-store.test.mjs | - | - |
+| src/backend/app/pi/store.ts | src/backend/storage/pi.ts | src/backend/app/providers.ts, src/backend/http/server.ts |
+| src/backend/app/providers.ts | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts, src/backend/adapters/contract.ts, src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/installation.ts, src/backend/app/pi/store.ts | src/backend/app/agents.ts, src/backend/app/bots.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/app/sync/engine.ts, src/backend/http/routes/providers.ts |
 | src/backend/app/repos.ts | src/backend/storage/paths.ts, src/backend/storage/repos.ts, src/backend/storage/agents.ts, src/backend/app/errors.ts, src/backend/app/git.ts, src/backend/app/tools/workspace.ts | src/backend/app/runs.ts, src/backend/http/routes/repos.ts |
 | src/backend/app/room/engine.test.mjs | - | - |
 | src/backend/app/room/engine.ts | - | src/backend/app/room/room.ts |
@@ -40,13 +42,13 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/skills/imports.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/skills/format.ts, src/backend/app/skills/registry.ts | src/backend/http/routes/skills.ts |
 | src/backend/app/skills/registry.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/skills/format.ts | src/backend/app/runs.ts, src/backend/app/skills/create.ts, src/backend/app/skills/imports.ts, src/backend/app/tools/skills.ts, src/backend/http/routes/skills.ts |
 | src/backend/app/skills/skills.test.mjs | - | - |
-| src/backend/app/sync/engine.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts, src/backend/app/mcp/manager.ts, src/backend/app/sync/github.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts | src/backend/http/routes/sync.ts |
+| src/backend/app/sync/engine.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/sync/github.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts | src/backend/http/routes/sync.ts |
 | src/backend/app/sync/github.test.mjs | - | - |
 | src/backend/app/sync/github.ts | src/backend/app/errors.ts | src/backend/app/sync/engine.ts |
 | src/backend/app/sync/merge.test.mjs | - | - |
 | src/backend/app/sync/merge.ts | src/backend/app/mcp/config.ts | src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts |
-| src/backend/app/sync/repo.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/git.ts, src/backend/storage/rooms.ts, src/backend/app/sync/merge.ts | src/backend/app/sync/engine.ts |
-| src/backend/app/sync/snapshot.ts | src/backend/storage/sync.ts, src/backend/app/mcp/config.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts | src/backend/app/sync/engine.ts |
+| src/backend/app/sync/repo.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/git.ts, src/backend/storage/rooms.ts, src/backend/storage/pi.ts, src/backend/app/sync/merge.ts | src/backend/app/sync/engine.ts |
+| src/backend/app/sync/snapshot.ts | src/backend/storage/pi.ts, src/backend/storage/sync.ts, src/backend/app/mcp/config.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts | src/backend/app/sync/engine.ts |
 | src/backend/app/sync/sync.test.mjs | - | - |
 | src/backend/app/system.ts | src/backend/storage/paths.ts, src/backend/app/git.ts | src/backend/http/routes/system.ts |
 | src/backend/app/tools/bash.ts | src/backend/adapters/contract.ts | src/backend/app/tools/index.ts |
@@ -80,16 +82,17 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/http/routes/sync.ts | src/backend/app/sync/engine.ts, src/backend/http/respond.ts, src/backend/http/router.ts | src/backend/http/routes/index.ts |
 | src/backend/http/routes/system.ts | src/backend/app/system.ts, src/backend/http/respond.ts, src/backend/http/router.ts | src/backend/http/routes/index.ts |
 | src/backend/http/routes/tools.ts | src/backend/app/tools/index.ts, src/backend/http/respond.ts, src/backend/http/router.ts | src/backend/http/routes/index.ts |
-| src/backend/http/server.ts | src/backend/app/config.ts, src/backend/app/errors.ts, src/backend/app/mcp/manager.ts, src/backend/http/mcp.ts, src/backend/http/respond.ts, src/backend/http/router.ts, src/backend/http/routes/index.ts, src/backend/http/static.ts | - |
+| src/backend/http/server.ts | src/backend/app/config.ts, src/backend/app/errors.ts, src/backend/app/mcp/manager.ts, src/backend/app/pi/store.ts, src/backend/http/mcp.ts, src/backend/http/respond.ts, src/backend/http/router.ts, src/backend/http/routes/index.ts, src/backend/http/static.ts | - |
 | src/backend/http/static.ts | - | src/backend/http/server.ts |
 | src/backend/storage/agents.ts | src/backend/storage/db.ts | src/backend/app/agents.ts, src/backend/app/personas.ts, src/backend/app/repos.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/app/tools/calls.ts, src/backend/storage/room.ts, src/backend/storage/sync.ts |
 | src/backend/storage/bot-colors.ts | - | src/backend/app/bots.ts, src/backend/storage/bots.ts, src/backend/storage/db.ts |
 | src/backend/storage/bots.ts | src/backend/storage/db.ts, src/backend/storage/bot-colors.ts | src/backend/app/bots.ts, src/backend/app/room/room.ts, src/backend/app/room/rooms.ts |
 | src/backend/storage/db.test.mjs | - | - |
-| src/backend/storage/db.ts | src/backend/storage/bot-colors.ts, src/backend/storage/paths.ts | src/backend/storage/agents.ts, src/backend/storage/bots.ts, src/backend/storage/notes.ts, src/backend/storage/personas.ts, src/backend/storage/repos.ts, src/backend/storage/room.ts, src/backend/storage/rooms.ts, src/backend/storage/runs.ts, src/backend/storage/sync.ts |
+| src/backend/storage/db.ts | src/backend/storage/bot-colors.ts, src/backend/storage/paths.ts | src/backend/storage/agents.ts, src/backend/storage/bots.ts, src/backend/storage/notes.ts, src/backend/storage/personas.ts, src/backend/storage/pi.ts, src/backend/storage/repos.ts, src/backend/storage/room.ts, src/backend/storage/rooms.ts, src/backend/storage/runs.ts, src/backend/storage/sync.ts |
 | src/backend/storage/notes.ts | src/backend/storage/db.ts | src/backend/app/memory.ts, src/backend/storage/sync.ts |
-| src/backend/storage/paths.ts | - | src/backend/app/installation.ts, src/backend/app/mcp/config.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/skills/imports.ts, src/backend/app/skills/registry.ts, src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/system.ts, src/backend/app/tools/workspace.ts, src/backend/storage/db.ts |
+| src/backend/storage/paths.ts | - | src/backend/app/installation.ts, src/backend/app/mcp/config.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/skills/imports.ts, src/backend/app/skills/registry.ts, src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/system.ts, src/backend/app/tools/workspace.ts, src/backend/storage/db.ts, src/backend/storage/pi.ts |
 | src/backend/storage/personas.ts | src/backend/storage/db.ts | src/backend/app/personas.ts, src/backend/storage/sync.ts |
+| src/backend/storage/pi.ts | src/backend/storage/db.ts, src/backend/storage/paths.ts | src/backend/app/pi/store.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts |
 | src/backend/storage/repos.ts | src/backend/storage/db.ts | src/backend/app/repos.ts |
 | src/backend/storage/room.ts | src/backend/storage/agents.ts, src/backend/storage/db.ts | src/backend/app/room/room.ts, src/backend/app/tools/room.ts |
 | src/backend/storage/rooms.ts | src/backend/storage/db.ts | src/backend/app/room/room.ts, src/backend/app/room/rooms.ts, src/backend/app/sync/repo.ts, src/backend/storage/sync.ts |

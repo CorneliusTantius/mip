@@ -50,6 +50,9 @@ Flat files, one per domain:
 - `manager.ts`: `startMcpServers` connects every configured server in parallel, with 30 s for the start and the tool list. `closeMcpServers`, `mcpTools` (the tools of the connected servers), `mcpStatus`, and `mcpToolName` (`mcp_<server>_<tool>`, cut to 64 characters). A tool whose name another tool already has is skipped and reported. A connection that drops marks its server as error.
 - Sync: `app/sync/snapshot.ts` reads these servers as the `mcp` part, and rewrites mcp.json when a sync changes them, after the new text is checked to load. `merge.ts` keeps GitHub's copy when both sides changed one server.
 
+## app/pi/: Pi's credentials and catalogs
+- `store.ts`: `DbCredentialStore` (read, list, the serialized `modify`, delete) and `DbModelsStore`, both on `storage/pi.ts`. `importLegacyPiAuth` copies `~/.pi/agent/auth.json` once. Tested by `pi-store.test.mjs`.
+
 ## app/skills/: installed skills
 - `format.ts`: pure rules. `parseSkill` (the `SKILL.md` header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
 - `registry.ts`: what is installed. `listSkills`, `loadSkill`, `readSkillFile`, `searchSkills`, `withSkillCommand` (a leading `/name` in a message gets that skill's instructions), `removeSkill`.

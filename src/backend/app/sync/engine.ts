@@ -4,6 +4,7 @@ import { SYNC_DIR } from "../../storage/paths.js";
 import { AppError, errorMessage } from "../errors.js";
 import { countChanges, emptySnapshot, isEmptySnapshot, mergeSnapshots, sameRecord, snapshotFromSaved, type Snapshot } from "./merge.js";
 import { startMcpServers } from "../mcp/manager.js";
+import { reloadPiConfig } from "../providers.js";
 import { authEnv, ensureRepo, gitHubAccount, listAccounts, pickAccount, REPO_NAME, repoUrl, type Account } from "./github.js";
 import { commitAndPush, fetchRepo, readTree, writeTree } from "./repo.js";
 import { applySnapshot, readLocal } from "./snapshot.js";
@@ -117,6 +118,8 @@ export async function syncWith(remote: { url: string; env: NodeJS.ProcessEnv; re
     const final = readLocal();
     // Servers that changed in mcp.json are connected again in the background, so the sync does not wait for them.
     if (!sameRecord(local.mcp, final.mcp)) void startMcpServers();
+    // Pi reads its custom models file when its runtime is made, so a changed file takes effect from the next Pi call.
+    if (!sameRecord(local.piFiles, final.piFiles)) reloadPiConfig();
     writeTree(final);
     const result = await commitAndPush(remote.env, `Sync from mip ${new Date().toISOString()}`);
     if (result === "rejected") continue;

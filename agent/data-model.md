@@ -41,6 +41,9 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `MIP_HOME/workspaces/<agentId>/` | `app/tools/workspace.ts` `workspaceFor` | agent files and `<name>/` repo copies |
 | `MIP_HOME/sessions/claude/` | `adapters/claude-cli.ts` (`CLAUDE_CONFIG_DIR`) | CLI login, transcripts |
 | `MIP_HOME/sessions/pi/` | `adapters/pi.ts` | Pi sessions |
+| `pi_credentials`, `pi_models` | `storage/pi.ts` | Pi's credential per provider (`credential` JSON, with `updated_at`), and its model catalog per provider. Both sync |
+| `pi_state` | `storage/pi.ts` | small app settings, such as the one-time Pi auth import |
+| `MIP_HOME/data/pi/` | `storage/paths.ts` (`PI_AGENT_DIR`) | Pi's agent folder: `settings.json` and `models.json`, which sync |
 | `MIP_HOME/data/mcp.json` | `app/mcp/config.ts` (read at startup and on reload) | the MCP servers: a `mcpServers` map of stdio commands or Streamable HTTP links. Its tokens sync to the private dotmip repo, under `mcp/` |
 | `MIP_HOME/data/device-id` | `app/installation.ts` | this installation's UUID, for Pi's ChatGPT sign-in. Not synced, so each machine has its own |
 | `MIP_HOME/skills/<name>/` | `app/skills/imports.ts` (confirm) | an installed skill: `SKILL.md`, text files, and `.mip-source.json` (source path and hash). `skills/.staging/` holds imports not yet confirmed |

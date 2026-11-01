@@ -36,7 +36,8 @@ Dependency direction is one way: `http → app → adapters | storage`, and `sto
 
 | path | contents | written by |
 | --- | --- | --- |
-| `data/mip.db` | all app data (SQLite, `node:sqlite`) | `storage/*` |
+| `data/mip.db` | all app data (SQLite, `node:sqlite`), including Pi's credentials and model catalogs. Mode 600 | `storage/*` |
+| `data/pi/` | Pi's agent folder (`PI_CODING_AGENT_DIR`): `settings.json` and `models.json`, synced | `app/pi/store.ts`, `adapters/pi.ts` |
 | `data/mcp.json` | the MCP servers mip connects to, with their tokens. Synced to the private dotmip repo | `app/mcp/config.ts`, `app/sync/snapshot.ts` |
 | `sessions/claude/` | Claude CLI config (`CLAUDE_CONFIG_DIR`): login, CLI transcripts | `adapters/claude-cli.ts` |
 | `sessions/pi/` | Pi session files | `adapters/pi.ts` |

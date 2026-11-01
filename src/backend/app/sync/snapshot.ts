@@ -1,7 +1,8 @@
+import * as pi from "../../storage/pi.js";
 import * as store from "../../storage/sync.js";
 import { mcpConfigText, parseMcpConfig, readMcpConfig, writeMcpConfigText } from "../mcp/config.js";
 import { AppError } from "../errors.js";
-import { indexBy, keyOf, sameRecord, type AgentRecord, type McpServerRecord, type Snapshot } from "./merge.js";
+import { indexBy, keyOf, sameRecord, type AgentRecord, type McpServerRecord, type PiFileRecord, type Snapshot } from "./merge.js";
 
 // Reads this machine's data as a snapshot, in the shape the dotmip repo stores: the database, and the MCP servers in mcp.json.
 export function readLocal(): Snapshot {
@@ -16,7 +17,18 @@ export function readLocal(): Snapshot {
     rooms: indexBy(store.readRoomRows(), keyOf.room),
     room: indexBy(store.readRoomMessageRows(), keyOf.roomMessage),
     mcp: indexBy(readMcpServers(), keyOf.mcp),
+    piCredentials: indexBy(pi.readPiCredentialRows(), keyOf.piCredential),
+    piModels: indexBy(pi.readPiModelRows(), keyOf.piModel),
+    piFiles: indexBy(readPiFiles(), keyOf.piFile),
   };
+}
+
+// The Pi config files that exist in Pi's agent folder, with their text.
+function readPiFiles(): PiFileRecord[] {
+  return pi.PI_CONFIG_FILES.flatMap((name) => {
+    const text = pi.readPiConfigFile(name);
+    return text === undefined ? [] : [{ name, text }];
+  });
 }
 
 // The servers in mcp.json. A file with a problem stops the sync: a server left out by mistake would be deleted on GitHub.
@@ -33,6 +45,9 @@ function readMcpServers(): McpServerRecord[] {
 // (see storage/sync.ts) leaves the record in place, so the snapshot read after this still has it.
 export function applySnapshot(local: Snapshot, target: Snapshot): void {
   applyMcp(local.mcp, target.mcp);
+  applyPart(local.piCredentials, target.piCredentials, pi.writePiCredentialRow, (credential) => pi.removePiCredentialRow(credential.providerId));
+  applyPart(local.piModels, target.piModels, pi.writePiModelRow, (model) => pi.removePiModelRow(model.providerId));
+  applyPart(local.piFiles, target.piFiles, (file) => pi.writePiConfigFile(file.name as pi.PiConfigFile, file.text), (file) => pi.removePiConfigFile(file.name as pi.PiConfigFile));
   applyPart(local.personas, target.personas, store.writePersonaRow, (persona) => store.removePersonaRow(persona.id));
   applyPart(local.bots, target.bots, store.writeBotRow, (bot) => store.removeBotRow(bot.name));
   applyPart(local.notes, target.notes, store.writeNoteRow, (note) => store.removeNoteRow(note.title));

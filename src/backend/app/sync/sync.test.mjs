@@ -228,6 +228,46 @@ function run() {
   assert.match(broken.message, /mcp\.json has a problem/);
   assert.match(lsTree(bare), /^mcp\/docs\.json$/m, "a file with a problem deletes nothing on GitHub");
 
+  // Machine B's config file was left broken by the check above. Writing the server GitHub still has makes B match it again.
+  machine(b, `${PATHS}
+    fs.writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { docs: ${HTTP} } }));
+    return null;
+  `);
+  // Pi's credentials, model catalogs and settings sync too, secrets included. Machine A has a key, a catalog and a settings file. Machine B
+  // gets all three, and a key removed on A is removed on B.
+  const PI = `const pi = await import(${JSON.stringify(`${DIST}storage/pi.js`)});`;
+  const SETTINGS = JSON.stringify('{"codemode":{"mode":"on"}}\n');
+  machine(a, `${PI}
+    pi.writePiCredentialRow({ providerId: "openrouter", credential: { type: "api_key", key: "sk-or-test" }, updatedAt: 100 });
+    pi.writePiModelRow({ providerId: "openrouter", entry: { models: [], checkedAt: 7 }, updatedAt: 100 });
+    pi.writePiConfigFile("settings.json", ${SETTINGS});
+    return await engine.syncWith(remote);
+  `);
+  const piB = machine(b, `${PI}
+    const run = await engine.syncWith(remote);
+    return {
+      run,
+      credential: pi.readPiCredentialRow("openrouter")?.credential ?? null,
+      model: pi.readPiModelRow("openrouter")?.entry ?? null,
+      settings: pi.readPiConfigFile("settings.json") ?? null,
+    };
+  `);
+  assert.equal(piB.run.ok, true);
+  assert.deepEqual(piB.credential, { type: "api_key", key: "sk-or-test" });
+  assert.deepEqual(piB.model, { models: [], checkedAt: 7 });
+  assert.equal(piB.settings, '{"codemode":{"mode":"on"}}\n');
+  assert.match(execFileSync("git", ["--git-dir", bare, "show", "main:pi-credentials/openrouter.json"], { encoding: "utf8" }), /sk-or-test/);
+  machine(a, `${PI}
+    pi.removePiCredentialRow("openrouter");
+    return await engine.syncWith(remote);
+  `);
+  const piB2 = machine(b, `${PI}
+    const run = await engine.syncWith(remote);
+    return { run, credential: pi.readPiCredentialRow("openrouter") ?? null };
+  `);
+  assert.equal(piB2.credential, null, "a credential removed on one machine is removed on the other");
+  assert.doesNotMatch(lsTree(bare), /pi-credentials\/openrouter\.json/);
+
   console.log("sync tests passed");
 }
 

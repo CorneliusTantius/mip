@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { HOST, PORT } from "../app/config.js";
 import { errorMessage, AppError } from "../app/errors.js";
 import { startMcpServers } from "../app/mcp/manager.js";
+import { importLegacyPiAuth } from "../app/pi/store.js";
 import { handleMcp } from "./mcp.js";
 import { notFound, readJson, sendJson } from "./respond.js";
 import { matchRoute } from "./router.js";
@@ -22,6 +23,14 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   const match = matchRoute(routes, req.method ?? "", url.pathname);
   const reply = match ? await match.route.handle({ req, url, params: match.params }) : notFound();
   sendJson(res, reply.status, reply.body);
+}
+
+// Pi's credentials from the Pi CLI's auth file are copied in once, before any request can use Pi.
+try {
+  const imported = importLegacyPiAuth();
+  if (imported > 0) console.log(`imported ${imported} Pi credential(s) from the Pi CLI's auth file`);
+} catch (err) {
+  console.error("could not import the Pi CLI's auth file:", err);
 }
 
 createServer((req, res) => {

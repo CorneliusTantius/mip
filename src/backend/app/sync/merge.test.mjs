@@ -146,4 +146,28 @@ const withMcp = (...servers) => ({ ...emptySnapshot(), mcp: indexBy(servers, key
   assert.deepEqual(snapshotFromSaved({ notes: {} }).mcp, {});
 }
 
+// Pi credentials: the newer copy wins, and a credential removed on one side is removed on the other. Pi config files: GitHub's copy
+// wins when both sides changed one.
+const cred = (providerId, key, updatedAt) => ({ providerId, credential: { type: "api_key", key }, updatedAt });
+const withCreds = (...creds) => ({ ...emptySnapshot(), piCredentials: indexBy(creds, keyOf.piCredential) });
+const withFiles = (...files) => ({ ...emptySnapshot(), piFiles: indexBy(files, keyOf.piFile) });
+{
+  const base = withCreds(cred("openrouter", "k1", 1));
+  const local = withCreds(cred("openrouter", "k2", 5));
+  const remote = withCreds(cred("openrouter", "k3", 3));
+  const { merged, notes } = mergeSnapshots(base, local, remote);
+  assert.equal(merged.piCredentials.openrouter.credential.key, "k2", "the newer credential wins");
+  assert.match(notes.join("\n"), /Pi credential "openrouter" was changed on both sides; kept the newer one/);
+  const gone = mergeSnapshots(withCreds(cred("anthropic", "x", 1)), emptySnapshot(), withCreds(cred("anthropic", "x", 1)));
+  assert.deepEqual(gone.merged.piCredentials, {}, "a credential removed here is removed on GitHub too");
+}
+{
+  const base = withFiles({ name: "settings.json", text: "a" });
+  const local = withFiles({ name: "settings.json", text: "local" });
+  const remote = withFiles({ name: "settings.json", text: "remote" });
+  const { merged, notes } = mergeSnapshots(base, local, remote);
+  assert.equal(merged.piFiles["settings.json"].text, "remote");
+  assert.match(notes.join("\n"), /Pi file "settings.json" was changed on both sides; kept the copy on GitHub/);
+}
+
 console.log("merge tests passed");

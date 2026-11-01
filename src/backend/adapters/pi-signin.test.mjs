@@ -3,12 +3,19 @@
 import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { InMemoryCredentialStore, InMemoryModelsStore } from "@earendil-works/pi-ai";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../dist/backend/", import.meta.url))).href;
 const { PiProvider } = await import(`${DIST}adapters/pi.js`);
 
 const DEVICE_ID = "3f1c6f0e-8b1a-4c2d-9e7f-5a6b7c8d9e0f";
-const provider = new PiProvider({ sessionDir: tmpdir(), installationId: () => DEVICE_ID });
+const provider = new PiProvider({
+  sessionDir: tmpdir(),
+  installationId: () => DEVICE_ID,
+  agentDir: tmpdir(),
+  credentials: new InMemoryCredentialStore(),
+  modelsStore: new InMemoryModelsStore(),
+});
 
 // A fake runtime. Its login records the arguments it was given, and returns at once.
 const logins = [];

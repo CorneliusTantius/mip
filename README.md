@@ -45,16 +45,16 @@ Both run git and npm on this machine, so the server accepts them only as JSON re
 | `MIP_PORT` | `3000` | Dashboard port, on 127.0.0.1 only |
 | `MIP_HOME` | `~/.mip` | Where mip keeps its data (see Storage) |
 
-The Claude CLI runs without `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so it uses your subscription login. Don't add `--bare` to the CLI call: it ignores subscription login. Pi keeps its credentials in `~/.pi/agent/auth.json`.
+The Claude CLI runs without `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so it uses your subscription login. Don't add `--bare` to the CLI call: it ignores subscription login. Pi keeps its credentials and settings in mip's data folder, `~/.mip/data`: credentials in the database, and `settings.json` and `models.json` in `data/pi/`. On the first start, mip copies the credentials from `~/.pi/agent/auth.json` once, and leaves that file as it is.
 
 ## Sync to GitHub
 
-Settings → **Sync** keeps your agents, notes, personas, bots, and MCP servers in a private repo named `dotmip` on your GitHub account. MCP servers come with their tokens, so keep that repo private. Repository clones, agent files, and provider logins stay on this machine.
+Settings → **Sync** keeps your agents, notes, personas, bots, MCP servers, and Pi's credentials, model catalogs, and settings in a private repo named `dotmip` on your GitHub account. MCP servers and Pi credentials come with their tokens and keys, so keep that repo private. Repository clones, agent files, and provider logins stay on this machine.
 
 1. Sign in to the GitHub CLI once on this machine: `gh auth login`. Sync uses one of the accounts it is signed in to. If there is more than one, pick the account in Settings → Sync. mip never stores a token.
 2. Click **Sync now** in Settings → Sync. It creates `dotmip` if it does not exist, pulls changes, merges them with this machine, and pushes the result.
 
-When both machines edited the same note, persona, bot, or agent setting, the newer edit wins. The sync log says so. For an MCP server edited on both sides, GitHub's copy is kept. Messages from both sides are kept, and an edit beats a delete. An agent that is running is not deleted by a sync. The clocks on both machines must be right.
+When both machines edited the same note, persona, bot, agent setting, or Pi credential, the newer edit wins. The sync log says so. For an MCP server or a Pi settings file edited on both sides, GitHub's copy is kept. Messages from both sides are kept, and an edit beats a delete. An agent that is running is not deleted by a sync. The clocks on both machines must be right.
 
 An agent synced from another machine shows its history, but the model starts a new conversation there, because provider session files are not synced.
 

@@ -1,4 +1,4 @@
-import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
+import { type CredentialStore, getSupportedThinkingLevels, type ModelsStore } from "@earendil-works/pi-ai";
 import {
   type AgentSessionEvent,
   createAgentSession,
@@ -119,6 +119,11 @@ export interface PiProviderOptions {
   sessionDir: string;
   // This installation's device ID. OpenAI's ChatGPT sign-in needs it, and it is read when a sign-in starts.
   installationId: () => string;
+  // Pi's agent folder: its settings, and its custom models file.
+  agentDir: string;
+  // Where Pi keeps credentials, and where it keeps the model catalogs. The app supplies both, so they live in its data.
+  credentials: CredentialStore;
+  modelsStore: ModelsStore;
 }
 
 export class PiProvider implements AgentProvider {
@@ -129,12 +134,18 @@ export class PiProvider implements AgentProvider {
 
   private readonly sessionDir: string;
   private readonly installationId: () => string;
+  private readonly credentials: CredentialStore;
+  private readonly modelsStore: ModelsStore;
   private runtimePromise?: Promise<Runtime>;
   private signIns = new Map<string, { session: SignInSession; controller: AbortController }>();
 
   constructor(options: PiProviderOptions) {
     this.sessionDir = options.sessionDir;
     this.installationId = options.installationId;
+    this.credentials = options.credentials;
+    this.modelsStore = options.modelsStore;
+    // Pi reads its agent folder from this variable, so its settings and custom models are kept with the app's data.
+    process.env.PI_CODING_AGENT_DIR = options.agentDir;
   }
 
   // Every model of the providers that are signed in. The first one is the default, the same one run falls back to.
@@ -284,8 +295,13 @@ export class PiProvider implements AgentProvider {
     }
   }
 
+  // Drops the runtime, so the next call reads Pi's custom models file again. Used after a sync changes that file.
+  reloadConfig(): void {
+    this.runtimePromise = undefined;
+  }
+
   private runtime(): Promise<Runtime> {
-    this.runtimePromise ??= ModelRuntime.create({ allowModelNetwork: false });
+    this.runtimePromise ??= ModelRuntime.create({ allowModelNetwork: false, credentials: this.credentials, modelsStore: this.modelsStore });
     return this.runtimePromise;
   }
 

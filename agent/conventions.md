@@ -130,6 +130,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools.
 - Each kind of run has its own tool lists. A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
 - MCP servers: `data/mcp.json` holds tokens, and sync carries them to the private dotmip repo. The status API never returns environment values or headers. An MCP tool is deferred for agents and bots alike.
+- Pi's config lives in mip's data: credentials and model catalogs in the database, settings and custom models in `data/pi/`. Pi never reads `~/.pi`, except the one-time import of its auth file.
 - A rename of a word must skip the names of libraries. daisyUI's chat bubbles use the classes `chat`, `chat-start`, `chat-end`, `chat-header`, `chat-bubble`, and `chat-bubble-*`. The chat-to-agent rename once broke them, so the bubbles rendered as plain text. Check the class names of the library after a rename.
 - Expanded cards step their text up one size. Put that in `RunScopePills` and the card's own classes, not in one-off styles.
 

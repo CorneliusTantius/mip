@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { Credential, ModelsStoreEntry } from "@earendil-works/pi-ai";
 import type { McpServerEntry } from "../mcp/config.js";
 
 // The data GitHub sync keeps, in the form the dotmip repo stores it. Records hold no local ids, so two machines can share them.
@@ -70,6 +71,26 @@ export interface RoomMessageRecord {
 // One MCP server from mcp.json, with its tokens and environment values. It has no change time (the file does not keep one).
 export type McpServerRecord = McpServerEntry;
 
+// Pi's credential for one provider, with the time it changed. The newer copy wins when both sides changed it.
+export interface PiCredentialRecord {
+  providerId: string;
+  credential: Credential;
+  updatedAt: number;
+}
+
+// Pi's model catalog for one provider, with the time it was stored.
+export interface PiModelRecord {
+  providerId: string;
+  entry: ModelsStoreEntry;
+  updatedAt: number;
+}
+
+// One Pi config file, by name, with its text. A file has no change time, so GitHub's copy wins when both sides changed it.
+export interface PiFileRecord {
+  name: string;
+  text: string;
+}
+
 // The whole synced state. Each part maps a record's key to the record. The keys are in keyOf below.
 export interface Snapshot {
   personas: Record<string, PersonaRecord>;
@@ -79,12 +100,15 @@ export interface Snapshot {
   rooms: Record<string, RoomRecord>;
   room: Record<string, RoomMessageRecord>;
   mcp: Record<string, McpServerRecord>;
+  piCredentials: Record<string, PiCredentialRecord>;
+  piModels: Record<string, PiModelRecord>;
+  piFiles: Record<string, PiFileRecord>;
 }
 
-export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room", "mcp"] as const;
+export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room", "mcp", "piCredentials", "piModels", "piFiles"] as const;
 
 export function emptySnapshot(): Snapshot {
-  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {}, mcp: {} };
+  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {}, mcp: {}, piCredentials: {}, piModels: {}, piFiles: {} };
 }
 
 export function isEmptySnapshot(snapshot: Snapshot): boolean {
@@ -108,6 +132,9 @@ export const keyOf = {
   roomMessage: (message: RoomMessageRecord) =>
     `${message.room}:${message.createdAt}:${message.kind}:${message.authorName}:${digest(message.text)}`,
   mcp: (server: McpServerRecord) => server.name,
+  piCredential: (credential: PiCredentialRecord) => credential.providerId,
+  piModel: (model: PiModelRecord) => model.providerId,
+  piFile: (file: PiFileRecord) => file.name,
 };
 
 function digest(text: string): string {
@@ -145,6 +172,26 @@ export function unionMessages(a: MessageRecord[], b: MessageRecord[]): MessageRe
 function newer<T extends { updatedAt: number }>(local: T, remote: T): T {
   return local.updatedAt > remote.updatedAt ? local : remote;
 }
+
+// Pi's credentials and model catalogs have change times, so the newer copy wins, as for a bot or a note.
+const piCredentialKind: Kind<PiCredentialRecord> = {
+  name: "Pi credential",
+  label: (credential) => credential.providerId,
+  combine: (local, remote) => [newer(local, remote), `Pi credential "${local.providerId}" was changed on both sides; kept the newer one`],
+};
+
+const piModelKind: Kind<PiModelRecord> = {
+  name: "Pi model catalog",
+  label: (model) => model.providerId,
+  combine: (local, remote) => [newer(local, remote), `Pi model catalog "${local.providerId}" was changed on both sides; kept the newer one`],
+};
+
+// A Pi config file has no change time, so when both sides changed it, GitHub's copy is kept.
+const piFileKind: Kind<PiFileRecord> = {
+  name: "Pi file",
+  label: (file) => file.name,
+  combine: (local, remote) => [remote, `Pi file "${local.name}" was changed on both sides; kept the copy on GitHub`],
+};
 
 // An MCP server has no change time, so when both sides changed it, GitHub's copy is kept. The sync log says so, and a server edited on
 // one side only is merged as usual.
@@ -236,6 +283,9 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     rooms,
     room: Object.fromEntries(Object.entries(messages).filter(([, message]) => rooms[message.room] !== undefined)),
     mcp: mergeKind(mcpKind, base.mcp, local.mcp, remote.mcp, notes),
+    piCredentials: mergeKind(piCredentialKind, base.piCredentials, local.piCredentials, remote.piCredentials, notes),
+    piModels: mergeKind(piModelKind, base.piModels, local.piModels, remote.piModels, notes),
+    piFiles: mergeKind(piFileKind, base.piFiles, local.piFiles, remote.piFiles, notes),
   };
   return { merged, notes };
 }
