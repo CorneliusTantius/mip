@@ -39,6 +39,8 @@ export interface McpToolInfo {
   // The name the server gives it.
   remoteName: string;
   description: string;
+  // Whether the app offers the tool to agents and bots. The server's allowedTools list decides, so a tool left out is listed but not offered.
+  enabled: boolean;
 }
 
 export interface McpServerStatus {
@@ -88,9 +90,11 @@ export async function closeMcpServers(): Promise<void> {
   await Promise.all(old.map((connection) => connection.client?.close().catch(() => undefined)));
 }
 
-// The tools of the servers that are connected, ready to run. Each one is a ToolSpec with its own name.
+// The offered tools of the servers that are connected, ready to run. Each one is a ToolSpec with its own name.
 export function mcpTools(): ToolSpec[] {
-  return state.connections.flatMap((connection) => (connection.status === "connected" ? connection.tools.map((tool) => tool.spec) : []));
+  return state.connections.flatMap((connection) =>
+    connection.status === "connected" ? connection.tools.filter((tool) => tool.info.enabled).map((tool) => tool.spec) : [],
+  );
 }
 
 // What the status API shows: each server's state and tools, and any problems. Tokens and environment values are never included.
@@ -183,7 +187,8 @@ export async function completeSignIn(callbackState: string, code: string, iss?: 
 }
 
 // The OAuth provider of an http server with OAuth. Its sign-in state is saved in mcp.json, so tokens survive a restart and reach the
-// other machine through sync. The link the server gives back is kept on the connection, for the card to show.
+// other machine through sync. The link the server gives back is kept on the connection, for the card to show. The client the config gives
+// is used as it is. Without one, the server is asked to register mip.
 function oauthOf(connection: Connection, config: Extract<McpServerConfig, { transport: "http" }>): McpOAuthProvider {
   if (connection.oauth) return connection.oauth;
   let saved: McpOAuthState | undefined = config.oauth;
@@ -191,6 +196,8 @@ function oauthOf(connection: Connection, config: Extract<McpServerConfig, { tran
     serverUrl: config.url,
     redirectUrl: OAUTH_REDIRECT_URL,
     clientMetadata: { client_name: "mip" },
+    clientId: config.clientId,
+    clientSecret: config.clientSecret,
     store: {
       load: () => saved,
       save: (next) => {
@@ -220,20 +227,27 @@ function failureText(err: unknown): string {
   return cause && !message.includes(cause) ? `${message}: ${cause}` : message;
 }
 
-// The tools of one server. A tool whose name another server's tool already has is skipped and reported, so no name is ambiguous.
+// The tools of one server. A tool the server's allowedTools list leaves out is listed as not enabled, and no run is offered it. A tool that
+// is enabled, and whose name an enabled tool of another server already has, is skipped and reported, so no name is ambiguous.
 function toolsOf(connection: Connection, client: McpClient, listed: Tool[]): Connection["tools"] {
+  const allowed = connection.config.allowedTools;
   const taken = new Set(
-    state.connections.filter((other) => other !== connection && !other.removed).flatMap((other) => other.tools.map((tool) => tool.spec.name)),
+    state.connections
+      .filter((other) => other !== connection && !other.removed)
+      .flatMap((other) => other.tools.filter((tool) => tool.info.enabled).map((tool) => tool.spec.name)),
   );
   const tools: Connection["tools"] = [];
   for (const tool of listed) {
     const name = mcpToolName(connection.config.name, tool.name);
-    if (taken.has(name)) {
-      state.problems.push({ server: connection.config.name, error: `tool "${tool.name}" would be named ${name}, which another tool already uses. It is skipped.` });
-      continue;
+    const enabled = allowed === undefined || allowed.includes(tool.name);
+    if (enabled) {
+      if (taken.has(name)) {
+        state.problems.push({ server: connection.config.name, error: `tool "${tool.name}" would be named ${name}, which another tool already uses. It is skipped.` });
+        continue;
+      }
+      taken.add(name);
     }
-    taken.add(name);
-    tools.push({ info: { name, remoteName: tool.name, description: describe(tool) }, spec: toolSpec(connection.config.name, client, tool, name) });
+    tools.push({ info: { name, remoteName: tool.name, description: describe(tool), enabled }, spec: toolSpec(connection.config.name, client, tool, name) });
   }
   return tools;
 }

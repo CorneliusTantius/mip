@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { GMAIL_SERVER, gmailStatus } from "./gmailStatus.ts";
 
-const tool = (name) => ({ name: `mcp_gmail_${name}`, remoteName: name, description: "" });
+const tool = (name, enabled) => ({ name: `mcp_gmail_${name}`, remoteName: name, description: "", enabled });
 const server = (overrides) => ({ name: GMAIL_SERVER, transport: "http", status: "connected", error: null, oauth: true, signInUrl: null, tools: [], ...overrides });
 
 // 1. Until the list has loaded, the card says so and does not claim anything.
@@ -32,8 +32,8 @@ assert.deepEqual(gmailStatus({ loaded: true, server: server({ status: "error", e
 });
 assert.equal(gmailStatus({ loaded: true, server: server({ status: "error", error: null }) }).detail, "The Gmail server did not start.");
 
-// 6. A connected server shows how many tools it lists.
-const connected = gmailStatus({ loaded: true, server: server({ tools: [tool("read"), tool("draft"), tool("forward")] }) });
-assert.deepEqual(connected, { status: "Connected", tone: "success", detail: "3 tools listed by the server." });
+// 6. A connected server counts the tools agents are offered, not every tool it lists.
+const connected = gmailStatus({ loaded: true, server: server({ tools: [tool("read", true), tool("draft", false), tool("forward", true)] }) });
+assert.deepEqual(connected, { status: "Connected", tone: "success", detail: "2 of 3 tools offered to agents." });
 
 console.log("gmail status tests passed");

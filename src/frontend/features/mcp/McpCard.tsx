@@ -1,12 +1,13 @@
 import { useState } from "preact/hooks";
 import { errorText } from "../../api/client";
-import type { McpServer } from "../../api/types";
+import type { McpServer, McpTool } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { AddMcpDialog } from "./AddMcpDialog";
 import { summaryLine } from "./mcpSummary";
 import { goToSignIn, isWebLink, openSignInTab } from "./signInWindow";
+import { allowedAfter } from "./toolAllowList";
 import { useMcpServers } from "./useMcpServers";
 
 // The MCP servers in mcp.json. Each one shows whether it is connected and the tools it offers, and an error when it is not. A server
@@ -21,7 +22,7 @@ export function McpCard() {
 
 function McpBody() {
   const { expanded } = useCardExpansion();
-  const { status, busy, error, reload, signIn, add, remove } = useMcpServers();
+  const { status, busy, error, reload, signIn, add, remove, setAllowedTools } = useMcpServers();
   const servers = status?.servers ?? [];
   const [adding, setAdding] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<string>();
@@ -85,6 +86,7 @@ function McpBody() {
               busy={busy}
               onSignIn={() => void startSignIn(server.name)}
               onRemove={() => setPendingRemove(server.name)}
+              onToggleTool={(tool, offered) => void setAllowedTools(server.name, allowedAfter(server.tools, tool.remoteName, offered))}
             />
           ))}
         </ul>
@@ -116,11 +118,24 @@ function McpBody() {
 }
 
 // One server: its name, how it connects, its state, and the reason it failed. A server that signs in with OAuth shows its sign-in link
-// while it waits. Expanded, it also lists its tools.
-function ServerRow({ server, busy, onSignIn, onRemove }: { server: McpServer; busy: boolean; onSignIn: () => void; onRemove: () => void }) {
+// while it waits. Its offered tools are listed, and expanded, it lists every tool with a box to offer or withhold each one.
+function ServerRow({
+  server,
+  busy,
+  onSignIn,
+  onRemove,
+  onToggleTool,
+}: {
+  server: McpServer;
+  busy: boolean;
+  onSignIn: () => void;
+  onRemove: () => void;
+  onToggleTool: (tool: McpTool, offered: boolean) => void;
+}) {
   const { expanded } = useCardExpansion();
   const size = expanded ? "badge-sm" : "badge-xs";
   const link = isWebLink(server.signInUrl) ? server.signInUrl : null;
+  const offered = server.tools.filter((tool) => tool.enabled);
   return (
     <li className="flex min-w-0 flex-col gap-1 rounded-box border border-base-300 p-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -132,7 +147,7 @@ function ServerRow({ server, busy, onSignIn, onRemove }: { server: McpServer; bu
         {server.status === "error" && <span className={`badge badge-error badge-soft ${size}`}>failed</span>}
         {server.status === "connected" && (
           <span className="text-xs opacity-60">
-            {server.tools.length} {server.tools.length === 1 ? "tool" : "tools"}
+            {offered.length} of {server.tools.length} offered
           </span>
         )}
       </div>
@@ -141,9 +156,7 @@ function ServerRow({ server, busy, onSignIn, onRemove }: { server: McpServer; bu
 
       {server.status === "sign-in" && <div className="text-xs opacity-70">Sign in on the server's page. This row updates once you have.</div>}
 
-      {!expanded && server.tools.length > 0 && (
-        <p className="truncate text-xs opacity-60">{server.tools.map((tool) => tool.name).join(", ")}</p>
-      )}
+      {!expanded && offered.length > 0 && <p className="truncate text-xs opacity-60">{offered.map((tool) => tool.name).join(", ")}</p>}
 
       {expanded && server.tools.length > 0 && (
         <table className="table table-sm">
@@ -152,6 +165,7 @@ function ServerRow({ server, busy, onSignIn, onRemove }: { server: McpServer; bu
               <th>Tool</th>
               <th>Name on the server</th>
               <th>Description</th>
+              <th>Offered</th>
             </tr>
           </thead>
           <tbody>
@@ -160,6 +174,16 @@ function ServerRow({ server, busy, onSignIn, onRemove }: { server: McpServer; bu
                 <td className="break-all font-medium">{tool.name}</td>
                 <td className="break-all">{tool.remoteName}</td>
                 <td>{tool.description}</td>
+                <td>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm"
+                    aria-label={`Offer ${tool.name}`}
+                    checked={tool.enabled}
+                    disabled={busy}
+                    onChange={(e) => onToggleTool(tool, e.currentTarget.checked)}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

@@ -18,7 +18,9 @@ export function gmailStatus(view: { loaded: boolean; server?: McpServer; error?:
       return { status: "Needs sign-in", tone: "info", detail: "Sign in to Gmail from the MCP card." };
     case "error":
       return { status: "Failed", tone: "error", detail: server.error ?? "The Gmail server did not start." };
-    case "connected":
-      return { status: "Connected", tone: "success", detail: `${server.tools.length} tools listed by the server.` };
+    case "connected": {
+      const offered = server.tools.filter((tool) => tool.enabled).length;
+      return { status: "Connected", tone: "success", detail: `${offered} of ${server.tools.length} tools offered to agents.` };
+    }
   }
 }

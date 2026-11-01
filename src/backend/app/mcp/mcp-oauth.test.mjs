@@ -26,6 +26,8 @@ const json = (res, status, body) => {
 // A fake OAuth server. Its page takes the code "good-code" and gives the access token "tok-1". /mcp wants that token, and answers 401 with
 // the address of its metadata otherwise, as an OAuth server does.
 let authPort = 0;
+// How many times a client asked the server to register it. A server with its own client never asks.
+let registrations = 0;
 const base = () => `http://127.0.0.1:${authPort}`;
 const authServer = createServer(async (req, res) => {
   const url = new URL(req.url, base());
@@ -45,7 +47,10 @@ const authServer = createServer(async (req, res) => {
       token_endpoint_auth_methods_supported: ["none"],
     });
   }
-  if (url.pathname === "/register") return json(res, 201, { ...JSON.parse(body), client_id: "client-1" });
+  if (url.pathname === "/register") {
+    registrations += 1;
+    return json(res, 201, { ...JSON.parse(body), client_id: "client-1" });
+  }
   if (url.pathname === "/token") {
     const form = new URLSearchParams(body);
     const granted = form.get("grant_type") === "authorization_code" && form.get("code") === "good-code" && form.get("code_verifier");
@@ -122,6 +127,7 @@ try {
   assert.equal(readConfig().mcpServers.docs.oauth.oauthState, state, "the state is kept in mcp.json");
   assert.equal(typeof readConfig().mcpServers.docs.oauth.codeVerifier, "string");
   assert.equal((statSync(paths.MCP_CONFIG_FILE).mode & 0o777).toString(8), "600", "mcp.json is readable only by this user");
+  assert.deepEqual(readConfig().mcpServers.docs.allowedTools, [], "a server added in the card offers no tools until they are allowed");
 
   // 2. A callback with a state nobody is waiting for is refused, and says so on the page.
   const stale = await fetch(`${callbackUrl}?code=good-code&state=not-a-state`);
@@ -139,14 +145,21 @@ try {
   assert.equal(done.status, 200);
   assert.match(await done.text(), /docs is signed in/);
   await waitFor(() => statusOf("docs").status === "connected", 15000);
+  // The tool is listed, but no run is offered it until it is allowed.
+  assert.equal(statusOf("docs").tools.find((tool) => tool.remoteName === "echo").enabled, false);
+  assert.equal(manager.mcpTools().some((tool) => tool.name === "mcp_docs_echo"), false);
+  await assert.rejects(servers.setAllowedTools("docs", { allowedTools: "echo" }), (err) => err.status === 400);
+  await servers.setAllowedTools("docs", { allowedTools: ["echo"] });
+  assert.deepEqual(readConfig().mcpServers.docs.allowedTools, ["echo"]);
   const echo = manager.mcpTools().find((tool) => tool.name === "mcp_docs_echo");
-  assert.ok(echo, "the server's tool is offered as mcp_docs_echo");
+  assert.ok(echo, "the allowed tool is offered as mcp_docs_echo");
   assert.deepEqual(await echo.run({ text: "hello" }, { workspace: root }), { text: "hello", isError: false });
 
   // 5. The tokens are kept in mcp.json, so the server does not need another sign-in.
   assert.equal(readConfig().mcpServers.docs.oauth.tokens.access_token, "tok-1");
   await manager.startMcpServers();
   assert.equal(statusOf("docs").status, "connected", "a reload connects with the saved tokens");
+  assert.ok(manager.mcpTools().some((tool) => tool.name === "mcp_docs_echo"), "the allowed tool stays allowed after a reload");
 
   // 6. A bad entry is refused with the reason, and nothing is written.
   const before = readFileSync(paths.MCP_CONFIG_FILE, "utf8");
@@ -177,6 +190,20 @@ try {
   await servers.addMcpServer({ name: "plain", transport: "http", url: `${base()}/plain`, headers: {} });
   await assert.rejects(manager.signInServer("plain"), (err) => err.status === 400 && /does not sign in with OAuth/.test(err.message));
   await assert.rejects(manager.signInServer("nobody"), (err) => err.status === 404);
+  await assert.rejects(servers.setAllowedTools("docs", {}), (err) => err.status === 400);
+  await assert.rejects(servers.setAllowedTools("nobody", { allowedTools: null }), (err) => err.status === 404);
+
+  // 9. A server with its own OAuth client signs in with that client, and mip does not ask the server to register one. A client secret
+  // needs a client ID.
+  const registered = registrations;
+  const preset = await servers.addMcpServer({ name: "preset", transport: "oauth", url: `${base()}/mcp`, clientId: "preset-client", clientSecret: "shh" });
+  const presetLink = new URL(preset.servers.find((server) => server.name === "preset").signInUrl);
+  assert.equal(presetLink.searchParams.get("client_id"), "preset-client", "the link uses the server's own client");
+  assert.equal(registrations, registered, "no registration is asked for");
+  assert.equal(readConfig().mcpServers.preset.clientId, "preset-client");
+  assert.equal(readConfig().mcpServers.preset.clientSecret, "shh", "the secret is kept in mcp.json");
+  await assert.rejects(servers.addMcpServer({ name: "lonely", transport: "oauth", url: `${base()}/mcp`, clientSecret: "shh" }), (err) => err.status === 400 && /client ID/.test(err.message));
+  await servers.removeMcpServer("preset");
 
   console.log("MCP OAuth tests passed");
 } finally {

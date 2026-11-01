@@ -133,7 +133,7 @@ mip can connect to MCP servers and give agents their tools. List them in `~/.mip
 
 You can also add a server from the MCP card with **Add server**. OAuth sign-in is the default: give the server's address and press **Add and sign in**. The server's own sign-in page opens in a new tab, and you sign in there. If the browser blocks the tab, the dialog offers the page as a button. A server's row also has a **Sign in** button. Choose **Manual entry** for a server without OAuth: a web address with headers, or a local command with its arguments and environment. A command runs on this machine. **Remove** takes a server out of the file.
 
-After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots get them too. The file can hold tokens. Sync carries the servers, tokens included, to your private dotmip repo.
+After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots get them too, but only the tools a server allows. A server added from the card offers none until you tick its tools there, and `allowedTools` in the file does the same. An OAuth server that does not register mip itself takes a client ID and secret, which the add form asks for. The file can hold tokens. Sync carries the servers, tokens included, to your private dotmip repo.
 
 ## Skills
 
@@ -225,6 +225,7 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | POST | `/api/mcp/reload` | Reconnect to the servers in `mcp.json` |
 | POST | `/api/mcp` | Add a server: OAuth, a web address with headers, or a local command |
 | DELETE | `/api/mcp/:name` | Remove a server from `mcp.json` |
+| PATCH | `/api/mcp/:name` | Choose which of a server's tools are offered: `{allowedTools: [...]}`, or `null` for every tool |
 | POST | `/api/mcp/:name/sign-in` | Start an OAuth server's sign-in again, with a new link |
 | GET | `/api/mcp/oauth/callback` | Where the OAuth sign-in returns to. Finishes the sign-in |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |

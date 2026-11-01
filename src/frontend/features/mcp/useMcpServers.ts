@@ -55,6 +55,9 @@ export function useMcpServers() {
   const signIn = (name: string) => change(() => api.post<McpStatus>(`/api/mcp/${encodeURIComponent(name)}/sign-in`, {}));
   const add = (server: NewMcpServer) => apply(() => api.post<McpStatus>("/api/mcp", server));
   const remove = (name: string) => apply(() => api.del<McpStatus>(`/api/mcp/${encodeURIComponent(name)}`));
+  // Sets which of a server's tools are offered. Null offers every tool. A failure shows on the card.
+  const setAllowedTools = (name: string, allowed: string[] | null) =>
+    change(() => api.patch<McpStatus>(`/api/mcp/${encodeURIComponent(name)}`, { allowedTools: allowed }));
 
   useEffect(() => {
     void load();
@@ -63,5 +66,5 @@ export function useMcpServers() {
   const waiting = status?.servers.some((server) => server.status === "connecting" || server.status === "sign-in") ?? false;
   usePolling(() => void load(), WAITING_POLL_MS, waiting);
 
-  return { status, busy, error, reload, signIn, add, remove };
+  return { status, busy, error, reload, signIn, add, remove, setAllowedTools };
 }

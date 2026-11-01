@@ -6,10 +6,21 @@ import { AppError, errorMessage } from "../errors.js";
 // The MCP servers mip connects to, read from MIP_HOME/data/mcp.json. The file has the shape Claude Code and Pi use: a "mcpServers"
 // map from a server name to a stdio command or a Streamable HTTP link. A bad entry is reported and skipped, and the others still load.
 // An http server with an "oauth" field signs in with OAuth: the field holds the sign-in state, with the tokens once it has them.
+// "allowedTools" lists the tools of a server that the app offers. Without it, every tool is offered. "clientId" and "clientSecret" are the
+// OAuth client of a server that does not register one by itself.
 
 export type McpServerConfig =
-  | { name: string; transport: "stdio"; command: string; args: string[]; env: Record<string, string> }
-  | { name: string; transport: "http"; url: string; headers: Record<string, string>; oauth?: McpOAuthState };
+  | { name: string; transport: "stdio"; command: string; args: string[]; env: Record<string, string>; allowedTools?: string[] }
+  | {
+      name: string;
+      transport: "http";
+      url: string;
+      headers: Record<string, string>;
+      oauth?: McpOAuthState;
+      clientId?: string;
+      clientSecret?: string;
+      allowedTools?: string[];
+    };
 
 export interface McpConfigProblem {
   server: string;
@@ -28,6 +39,11 @@ export interface McpServerEntry {
   headers?: Record<string, string>;
   // The OAuth sign-in state of an http server that signs in with OAuth, tokens included.
   oauth?: McpOAuthState;
+  // The tools the app offers, by their names on the server. Absent means every tool.
+  allowedTools?: string[];
+  // The OAuth client of an OAuth server, for a server that does not register one by itself.
+  clientId?: string;
+  clientSecret?: string;
 }
 
 // A server name: a letter or digit, then letters, digits, dashes or underscores, up to 32 characters. It becomes part of each tool's name.
@@ -67,9 +83,15 @@ export function mcpConfigText(servers: McpServerEntry[]): string {
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
     .map((server) => [
       server.name,
-      server.transport === "stdio"
-        ? { type: "stdio", command: server.command, args: server.args ?? [], env: server.env ?? {} }
-        : { type: "http", url: server.url, headers: server.headers ?? {}, ...(server.oauth ? { oauth: server.oauth } : {}) },
+      {
+        ...(server.transport === "stdio"
+          ? { type: "stdio", command: server.command, args: server.args ?? [], env: server.env ?? {} }
+          : { type: "http", url: server.url, headers: server.headers ?? {}, ...(server.oauth ? { oauth: server.oauth } : {}) }),
+        // A field that is undefined is left out of the file, since JSON.stringify drops undefined values.
+        allowedTools: server.allowedTools,
+        clientId: server.clientId,
+        clientSecret: server.clientSecret,
+      },
     ]);
   return `${JSON.stringify({ mcpServers: Object.fromEntries(entries) }, null, 2)}\n`;
 }
@@ -108,7 +130,7 @@ function parseServer(name: string, entry: unknown): McpServerConfig {
 
   if (type === "stdio") {
     if (typeof entry.command !== "string" || !entry.command.trim()) throw new Error('a stdio server needs a "command"');
-    return { name, transport: "stdio", command: entry.command, args: stringList(entry.args, "args"), env: stringMap(entry.env, "env") };
+    return { name, transport: "stdio", command: entry.command, args: stringList(entry.args, "args"), env: stringMap(entry.env, "env"), ...allowedFields(entry) };
   }
   if (type === "http") {
     if (typeof entry.url !== "string") throw new Error('an http server needs a "url"');
@@ -120,8 +142,13 @@ function parseServer(name: string, entry: unknown): McpServerConfig {
     }
     if (link.protocol !== "http:" && link.protocol !== "https:") throw new Error('"url" must start with http:// or https://');
     const headers = stringMap(entry.headers, "headers");
-    if (entry.oauth === undefined) return { name, transport: "http", url: entry.url, headers };
-    return { name, transport: "http", url: entry.url, headers, oauth: oauthState(entry.oauth, entry.url) };
+    if (entry.oauth === undefined) {
+      if (entry.clientId !== undefined || entry.clientSecret !== undefined) {
+        throw new Error('"clientId" and "clientSecret" are only for a server that signs in with OAuth');
+      }
+      return { name, transport: "http", url: entry.url, headers, ...allowedFields(entry) };
+    }
+    return { name, transport: "http", url: entry.url, headers, oauth: oauthState(entry.oauth, entry.url), ...clientFields(entry), ...allowedFields(entry) };
   }
   throw new Error(`type "${String(type)}" is not supported; use "stdio" or "http"`);
 }
@@ -130,6 +157,24 @@ function parseServer(name: string, entry: unknown): McpServerConfig {
 function oauthState(value: unknown, url: string): McpOAuthState {
   if (!isRecord(value)) throw new Error('"oauth" must be an object');
   return { ...value, serverUrl: url } as McpOAuthState;
+}
+
+// The tools the app offers, when the entry lists them. An entry without the list offers every tool.
+function allowedFields(entry: Record<string, unknown>): { allowedTools?: string[] } {
+  return entry.allowedTools === undefined ? {} : { allowedTools: stringList(entry.allowedTools, "allowedTools") };
+}
+
+// The OAuth client an entry gives. A field the entry leaves out is left out of the result too.
+function clientFields(entry: Record<string, unknown>): { clientId?: string; clientSecret?: string } {
+  return {
+    ...(entry.clientId === undefined ? {} : { clientId: text(entry.clientId, "clientId") }),
+    ...(entry.clientSecret === undefined ? {} : { clientSecret: text(entry.clientSecret, "clientSecret") }),
+  };
+}
+
+function text(value: unknown, field: string): string {
+  if (typeof value !== "string" || !value.trim()) throw new Error(`"${field}" must be text`);
+  return value;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

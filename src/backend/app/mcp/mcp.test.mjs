@@ -3,7 +3,7 @@
 // Run after a build: node src/backend/app/mcp/mcp.test.mjs
 // It sets MIP_HOME to a temporary folder before the modules load, so no real config or server is touched.
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -58,12 +58,17 @@ try {
         sse: { type: "sse", url: "http://example.test/sse" },
         weird: { url: "ftp://example.test/x" },
         list: { command: "node", args: "not-a-list" },
+        allowed: { command: "node", allowedTools: ["echo"] },
+        gated: { command: "node", allowedTools: "echo" },
+        stray: { url: "https://example.test/mcp", clientId: "client-1" },
       },
     }),
   );
-  assert.deepEqual(parsed.servers.map((server) => [server.name, server.transport]), [["fake", "stdio"], ["remote", "http"], ["bare", "http"]]);
+  assert.deepEqual(parsed.servers.map((server) => [server.name, server.transport]), [["fake", "stdio"], ["remote", "http"], ["bare", "http"], ["allowed", "stdio"]]);
   assert.deepEqual(parsed.servers[0].env, { A: "1" });
-  assert.deepEqual(parsed.problems.map((problem) => problem.server), ["bad name!", "nocommand", "sse", "weird", "list"]);
+  assert.deepEqual(parsed.servers[3].allowedTools, ["echo"], "an allowlist is read as a list of names");
+  assert.deepEqual(parsed.problems.map((problem) => problem.server), ["bad name!", "nocommand", "sse", "weird", "list", "gated", "stray"]);
+  assert.match(parsed.problems.find((problem) => problem.server === "stray").error, /only for a server that signs in with OAuth/);
   assert.match(parsed.problems.find((problem) => problem.server === "sse").error, /not supported/);
   assert.deepEqual(config.parseMcpConfig("{not json").problems.map((problem) => problem.server), ["mcp.json"]);
   assert.match(config.parseMcpConfig("[]").problems[0].error, /mcpServers/);
@@ -137,6 +142,28 @@ try {
   assert.equal(manager.mcpTools().length, 2);
   await manager.closeMcpServers();
   assert.deepEqual(manager.mcpTools(), []);
+
+  // 9. An allowlist: a server's tools that the list leaves out are listed as not enabled, and no run is offered them.
+  writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { fake: { command: process.execPath, args: [serverPath], allowedTools: ["echo"] } } }));
+  await manager.startMcpServers();
+  assert.deepEqual(manager.mcpStatus().servers[0].tools.map((tool) => [tool.name, tool.enabled]), [["mcp_fake_echo", true], ["mcp_fake_fail", false]]);
+  assert.deepEqual(manager.mcpTools().map((tool) => tool.name), ["mcp_fake_echo"]);
+  assert.ok(tools.agentDeferredTools().some((tool) => tool.name === "mcp_fake_echo"));
+  assert.ok(!tools.agentDeferredTools().some((tool) => tool.name === "mcp_fake_fail"), "a tool the list leaves out is not offered to agents");
+  assert.ok(!tools.botDeferredTools().some((tool) => tool.name === "mcp_fake_fail"), "nor to bots");
+
+  // Two changes sent at once run one after the other, so the file and the page keep the later one.
+  const servers = await import(`${DIST}app/mcp/servers.js`);
+  const [first, second] = await Promise.all([
+    servers.setAllowedTools("fake", { allowedTools: ["fail"] }),
+    servers.setAllowedTools("fake", { allowedTools: ["echo", "fail"] }),
+  ]);
+  const offered = (status) => status.servers[0].tools.filter((tool) => tool.enabled).map((tool) => tool.remoteName);
+  assert.deepEqual(offered(first), ["fail"], "each reply shows its own change");
+  assert.deepEqual(offered(second), ["echo", "fail"], "the later reply shows the later change");
+  assert.deepEqual(JSON.parse(readFileSync(paths.MCP_CONFIG_FILE, "utf8")).mcpServers.fake.allowedTools, ["echo", "fail"], "the later change is the one kept");
+  assert.deepEqual(manager.mcpStatus().servers[0].tools.filter((tool) => tool.enabled).map((tool) => tool.remoteName), ["echo", "fail"]);
+  await manager.closeMcpServers();
 
   console.log("mcp tests passed");
 } finally {
