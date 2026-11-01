@@ -33,6 +33,8 @@ export function BotProfileModal({ bot, onClose, onEdit }: { bot?: Bot; onClose: 
             <dd>{model?.name ?? bot.model ?? "Default model"}</dd>
             <dt className="opacity-60">Thinking</dt>
             <dd>{bot.thinking ?? "Default thinking"}</dd>
+            <dt className="opacity-60">Skills</dt>
+            <dd>{bot.skills.length > 0 ? bot.skills.join(", ") : "None"}</dd>
           </dl>
           <h3 className="mt-4 text-xs uppercase tracking-wide opacity-60">Persona</h3>
           <p className="mt-1 whitespace-pre-wrap text-sm">{bot.persona}</p>

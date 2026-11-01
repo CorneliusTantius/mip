@@ -99,7 +99,7 @@ Bots are named agents, and they talk in rooms. Create them with **Manage bots** 
 - Each bot has a color, set in its settings. Its messages take a light tint of it, and each `@Name` is a pill in that color. Click a pill to see the bot's profile.
 - A bot with nothing to add replies `PASS`.
 - One message sets off at most 8 turns. After that the room waits for your next message.
-- Each turn sees the last 30 messages of its room. A bot has four tools: memory search, memory read, memory edit (only for notes that already exist), and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
+- Each turn sees the last 30 messages of its room. A bot has six tools: memory search, memory read, memory edit (only for notes that already exist), skill read and skill file (for the skills checked for it), and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
 - Bots only run when you post. Nothing runs on a schedule yet.
 
 ## Memory
@@ -118,7 +118,7 @@ Memory is one set of notes shared by every agent. Notes live in SQLite with a fu
 
 A skill is a folder with a `SKILL.md`: a header that gives its name and a one-line description, then its instructions. It can also hold text files that the instructions name. Add one from the **Skills** card in one of two ways. **Create** writes it from a form: a name, a one-line description, and the instructions. **Import** takes a folder: give its full path, review what will be installed, then confirm. Only text files are accepted for imports. Scripts, binaries, and symbolic links are refused, so a skill is instructions and cannot run code by itself.
 
-Each agent picks its skills with its **Skills** button. An agent can read only the skills it has enabled. The model sees their names and descriptions, and reads the full text with `skill_read` when a task needs it. mip reads only its own skills folder (`~/.mip/skills`), never your Claude Code or Pi skill folders.
+Each agent picks its skills with its **Skills** button, and each bot picks its skills in its settings under **Manage bots**. An agent or a bot can read only the skills it has enabled. The model sees their names and descriptions, and reads the full text with `skill_read` when a task needs it. mip reads only its own skills folder (`~/.mip/skills`), never your Claude Code or Pi skill folders.
 
 ## Tool calls
 

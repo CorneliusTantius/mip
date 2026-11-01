@@ -67,8 +67,9 @@ export function updateBot(bot: Bot): void {
   );
 }
 
-// A bot leaves every room when it is deleted. Its messages stay in the rooms, with its name.
+// A bot leaves every room and loses its skills when it is deleted. Its messages stay in the rooms, with its name.
 export function deleteBot(id: string): void {
   db.prepare("DELETE FROM room_bots WHERE bot_id = ?").run(id);
+  db.prepare("DELETE FROM bot_skill_enablements WHERE bot_id = ?").run(id);
   db.prepare("DELETE FROM bots WHERE id = ?").run(id);
 }

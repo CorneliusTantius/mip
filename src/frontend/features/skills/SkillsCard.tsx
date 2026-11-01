@@ -126,7 +126,7 @@ function SkillsBody() {
       <ConfirmDialog
         open={!!removing}
         title="Remove this skill?"
-        message={`"${removing?.name}" is deleted from mip. Agents stop using it.`}
+        message={`"${removing?.name}" is deleted from mip. Agents and bots stop using it.`}
         error={removeError}
         onConfirm={remove}
         onCancel={() => setRemoving(undefined)}
@@ -168,7 +168,7 @@ function AgentSkills() {
   );
 }
 
-// Each bot with its skills. Bots have no skill access yet, so every row says none.
+// Each bot with the skills it has enabled. Bots pick their skills in Manage bots.
 function BotSkills() {
   const { expanded } = useCardExpansion();
   const [bots, setBots] = useState<Bot[]>();
@@ -194,12 +194,12 @@ function BotSkills() {
           {bots.map((bot) => (
             <tr key={bot.id}>
               <td className="truncate">{bot.name}</td>
-              <td className="opacity-50">none</td>
+              <td>{bot.skills.length > 0 ? bot.skills.join(", ") : <span className="opacity-50">none</span>}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className={`${expanded ? "text-sm" : "text-xs"} opacity-60`}>Bots can't use skills yet. Their room turns have no skill access.</p>
+      <p className={`${expanded ? "text-sm" : "text-xs"} opacity-60`}>A bot can read only the skills checked for it in Manage bots.</p>
     </div>
   );
 }

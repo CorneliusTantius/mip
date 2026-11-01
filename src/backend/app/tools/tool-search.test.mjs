@@ -19,8 +19,8 @@ try {
   // An agent run is offered the basic tools and the two search tools. Memory and skill_file are deferred, found with tool_search.
   assert.deepEqual(names(AGENT_TOOLS), ["bash", "read", "edit", "write", "skill_read", "tool_search", "tool_call"]);
   assert.deepEqual(names(AGENT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file"]);
-  // A bot is offered the memory tools and the room search directly, and has no deferred tools.
-  assert.deepEqual(names(BOT_TOOLS), ["memory_search", "memory_read", "memory_edit", "room_search"]);
+  // A bot is offered the memory tools, its skill tools, and the room search directly, and has no deferred tools.
+  assert.deepEqual(names(BOT_TOOLS), ["memory_search", "memory_read", "memory_edit", "skill_read", "skill_file", "room_search"]);
   assert.deepEqual(BOT_DEFERRED, []);
 
   // Search finds tools by the words of their names and descriptions. A query nothing matches finds nothing.
@@ -59,7 +59,14 @@ try {
   assert.equal(described.tool_call.load, "search");
   assert.equal(described.room_search.load, "basic");
   assert.ok(describeTools().filter((tool) => tool.name !== "room_search").every((tool) => tool.agent === true));
-  assert.deepEqual(describeTools().filter((tool) => tool.bot).map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "room_search"]);
+  assert.deepEqual(describeTools().filter((tool) => tool.bot).map((tool) => tool.name), [
+    "skill_read",
+    "memory_search",
+    "memory_read",
+    "memory_edit",
+    "skill_file",
+    "room_search",
+  ]);
 
   console.log("tool search tests passed");
 } finally {

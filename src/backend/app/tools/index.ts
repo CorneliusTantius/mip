@@ -19,14 +19,17 @@ const guarded = (tool: ToolSpec): ToolSpec => ({
   },
 });
 
+// The skill tools are wrapped once. Agents get skill_read basic and skill_file deferred. Bots are offered both directly.
+const skillRead = guarded(skillReadTool);
+const skillFile = guarded(skillFileTool);
 // Basic tools are offered to every run, so the model always has them.
-export const BASIC_TOOLS: ToolSpec[] = [bashTool, readTool, editTool, writeTool, skillReadTool].map(guarded);
+export const BASIC_TOOLS: ToolSpec[] = [bashTool, readTool, editTool, writeTool].map(guarded).concat(skillRead);
 // The memory tools are wrapped once. Agents defer them, and bots are offered them directly.
 const memorySearch = guarded(memorySearchTool);
 const memoryRead = guarded(memoryReadTool);
 const memoryEdit = guarded(memoryEditTool);
 // Deferred tools are not offered. The model finds one with tool_search, and runs it with tool_call.
-export const DEFERRED_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, guarded(skillFileTool)];
+export const DEFERRED_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, skillFile];
 // The two tools that find and run deferred tools.
 const SEARCH_TOOLS: ToolSpec[] = [toolSearchTool, toolCallTool].map(guarded);
 // Only bots are offered the room search.
@@ -38,8 +41,8 @@ export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_T
 // Agents (the agents) are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
 export const AGENT_TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...SEARCH_TOOLS];
 export const AGENT_DEFERRED: ToolSpec[] = DEFERRED_TOOLS;
-// Bots are offered the memory tools and the room search directly, and no deferred tools. A bot's turn has few tools, so none need finding.
-export const BOT_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, roomSearch];
+// Bots are offered the memory tools, their skill tools, and the room search directly, and no deferred tools. A bot's turn has few tools, so none need finding.
+export const BOT_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, skillRead, skillFile, roomSearch];
 export const BOT_DEFERRED: ToolSpec[] = [];
 
 // What one run may do: the folder its tools work in, the agent it belongs to, the room it is in, the tools it is offered, and the
@@ -47,6 +50,7 @@ export const BOT_DEFERRED: ToolSpec[] = [];
 export interface RunContext {
   workspace?: string;
   agentId?: string;
+  botId?: string;
   roomId?: string;
   tools: ToolSpec[];
   deferred?: ToolSpec[];

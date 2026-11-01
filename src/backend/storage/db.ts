@@ -124,6 +124,11 @@ db.exec(`
     skill TEXT NOT NULL,
     PRIMARY KEY (agent_id, skill)
   );
+  CREATE TABLE IF NOT EXISTS bot_skill_enablements (
+    bot_id TEXT NOT NULL,
+    skill TEXT NOT NULL,
+    PRIMARY KEY (bot_id, skill)
+  );
 `);
 
 // Migrations for databases made before some columns existed. Each one adds the column only when it is missing.

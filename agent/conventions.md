@@ -117,7 +117,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - The `SyncStatus` type in `api/types.ts` must match `app/sync/engine.ts`.
 - Tool guidance lives in each tool's `guide`, never in a persona. The built-in persona keeps identity and style only. An unedited copy of the old built-in persona is updated at startup; an edited one is left alone.
 - A skill can be created from a form or imported from a folder. Both paths check the same header rules. Create never replaces an installed skill, and import asks for review first.
-- Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders. A skill is read only through `skill_read` and `skill_file`, and only in an agent that enabled it.
+- Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders. A skill is read only through `skill_read` and `skill_file`, and only by an agent or bot that enabled it.
 - Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools.
 - Each kind of run has its own tool lists. A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
 - A rename of a word must skip the names of libraries. daisyUI's chat bubbles use the classes `chat`, `chat-start`, `chat-end`, `chat-header`, `chat-bubble`, and `chat-bubble-*`. The chat-to-agent rename once broke them, so the bubbles rendered as plain text. Check the class names of the library after a rename.

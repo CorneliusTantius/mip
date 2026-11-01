@@ -71,7 +71,7 @@ Shared pieces. Each is used by more than one feature.
 | `BotProfileModal.tsx` | `BotProfileModal` | A bot's profile: color, provider, model, thinking level, and persona. Its Edit button opens the bot's form in `BotsDialog`. |
 | `botColors.ts` | `BOT_COLORS`, `nextBotColor` | The palette, in the order a new bot takes its colors. The server has the same list. |
 | `BotsDialog.tsx` | `BotsDialog` | Manage bots: list, New, Edit, and Delete with confirmation. |
-| `BotEditor.tsx` | `BotEditor` | The bot form, with a color picker of eight swatches. A new bot starts on the first color no other bot uses. Clears model and thinking when the provider or model changes. |
+| `BotEditor.tsx` | `BotEditor` | The bot form, with a color picker of eight swatches and checkboxes for the installed skills the bot may use. A new bot starts on the first color no other bot uses. Clears model and thinking when the provider or model changes. |
 
 ## features/memory/
 | file | exports | job |
@@ -91,7 +91,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/skills/
 | file | exports | job |
 | --- | --- | --- |
-| `SkillsCard.tsx` | `SkillsCard` | The installed skills with the All / Agent / Bot pill. All lists skills, with the selected skill's text when expanded. Agent lists each agent (an agent conversation) and its skills. Bot lists each bot and its skills, which is none. Create, Import, and Remove. |
+| `SkillsCard.tsx` | `SkillsCard` | The installed skills with the All / Agent / Bot pill. All lists skills, with the selected skill's text when expanded. Agent lists each agent (an agent conversation) and its skills. Bot lists each bot and the skills it has enabled. Create, Import, and Remove. |
 | `CreateSkillDialog.tsx` | `CreateSkillDialog` | Creates a skill from a form: name, description, instructions. |
 | `ImportSkillDialog.tsx` | `ImportSkillDialog` | Two steps: review a folder's files and `SKILL.md`, then install. |
 | `useSkills.ts` | `useSkills` | Loads the installed skills and any folders that could not be read. |

@@ -6,6 +6,7 @@ import { getRoom, type Room } from "../../storage/rooms.js";
 import { HOST, PORT } from "../config.js";
 import { AppError } from "../errors.js";
 import { findProvider } from "../providers.js";
+import { botSkillsPrompt } from "../skills/registry.js";
 import { ToolCallLog } from "../tools/calls.js";
 import { BOT_DEFERRED, BOT_TOOLS, registerRun, releaseRun, toolGuidesPrompt } from "../tools/index.js";
 import { converseRoom, mentionedBots } from "./engine.js";
@@ -99,9 +100,9 @@ async function runTurn(room: Room, bot: Bot, members: Bot[]): Promise<{ text: st
     "Mention a bot with @Name when you need it to answer. Reply with PASS if you have nothing to add.",
     `Other bots in the room: ${others.join(", ") || "none"}.`,
   ].join("\n");
-  const systemPrompt = [bot.persona, roomRules(room.name), toolGuidesPrompt(BOT_TOOLS)].filter(Boolean).join("\n\n");
+  const systemPrompt = [bot.persona, roomRules(room.name), botSkillsPrompt(bot.id), toolGuidesPrompt(BOT_TOOLS)].filter(Boolean).join("\n\n");
 
-  const token = registerRun({ tools: BOT_TOOLS, deferred: BOT_DEFERRED, roomId: room.id });
+  const token = registerRun({ tools: BOT_TOOLS, deferred: BOT_DEFERRED, botId: bot.id, roomId: room.id });
   const calls = new ToolCallLog();
   let text = "";
   try {
@@ -110,6 +111,8 @@ async function runTurn(room: Room, bot: Bot, members: Bot[]): Promise<{ text: st
       systemPrompt,
       tools: BOT_TOOLS,
       deferredTools: BOT_DEFERRED,
+      botId: bot.id,
+      roomId: room.id,
       toolServer: { url: `http://${HOST}:${PORT}/mcp`, token },
       model: bot.model ?? undefined,
       thinking: (bot.thinking as ThinkingLevel | null) ?? undefined,

@@ -91,7 +91,7 @@ function toAppEvent(event: AgentSessionEvent): AgentEvent | undefined {
 }
 
 // Wraps an app tool for Pi. Pi shows the call and the result; the app's function does the work.
-function toPiTool(tool: ToolSpec, context: { workspace: string; agentId?: string; deferred?: ToolSpec[] }): ToolDefinition {
+function toPiTool(tool: ToolSpec, context: { workspace: string; agentId?: string; botId?: string; roomId?: string; deferred?: ToolSpec[] }): ToolDefinition {
   return {
     name: tool.name,
     label: tool.name,
@@ -234,7 +234,13 @@ export class PiProvider implements AgentProvider {
         // Pi's own copies of these tools are off. The app's copies are on.
         noTools: "builtin",
         customTools: (options.tools ?? []).map((tool) =>
-          toPiTool(tool, { workspace: options.workspace ?? process.cwd(), agentId: options.agentId, deferred: options.deferredTools }),
+          toPiTool(tool, {
+            workspace: options.workspace ?? process.cwd(),
+            agentId: options.agentId,
+            botId: options.botId,
+            roomId: options.roomId,
+            deferred: options.deferredTools,
+          }),
         ),
       });
 

@@ -35,8 +35,8 @@ Matching: path segments are decoded before matching; a trailing slash is tolerat
 ## Bots — `routes/bots.ts`
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/bots | 200 | `{bots: Bot[]}` | |
-| POST | /api/bots | 201 | `Bot` (body `{name, persona, providerId, model?, thinking?, color?}`) | 400 name rule / persona / provider / model / thinking / color; 409 name taken |
+| GET | /api/bots | 200 | `{bots: Bot[]}`, each with its `skills` (the names it has enabled) | |
+| POST | /api/bots | 201 | `Bot` with its `skills` (body `{name, persona, providerId, model?, thinking?, color?, skills?}`) | 400 name rule / persona / provider / model / thinking / color; 409 name taken |
 | PUT | /api/bots/:botId | 200 | `Bot` | same; 404 |
 | DELETE | /api/bots/:botId | 200 | `{ok:true}` | 404 |
 

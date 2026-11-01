@@ -27,7 +27,7 @@ Flat files, one per domain:
 - `repos.ts`: repository clones, pull all, copies into agents, and `repoNote`.
 
 ## app/room/: the bots room
-- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus` (per room), and `runTurn`. A bot turn registers its own run token for `BOT_TOOLS`, with the room's id and no workspace, since none of its tools read a folder. Its system prompt is the persona, the room's rules (which name the room), and the tool guides.
+- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus` (per room), and `runTurn`. A bot turn registers its own run token for `BOT_TOOLS`, with the room's id and no workspace, since none of its tools read a folder. Its system prompt is the persona, the room's rules (which name the room), the bot's enabled skills, and the tool guides. Its run token also carries the bot id, for the skill tools.
 - `rooms.ts`: `allRooms`, `createRoom`, `editRoom`, `removeRoom`. A name is unique ignoring case and at most 40 characters. The last room cannot be removed. Tested by `rooms.test.mjs`.
 - `engine.ts`: pure turn-taking: `mentionedBots`, `isSilent`, `converseRoom`. Tested by `engine.test.mjs`.
 

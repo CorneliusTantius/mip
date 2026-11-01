@@ -1,12 +1,12 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { SKILLS_DIR } from "../../storage/paths.js";
-import { enabledSkillNames, removeSkillEnablements, saveAgentSkills } from "../../storage/skills.js";
+import { botSkillNames, enabledSkillNames, removeSkillEnablements, saveAgentSkills, saveBotSkills } from "../../storage/skills.js";
 import { AppError, errorMessage } from "../errors.js";
 import { isSafeRelativePath, isTextFile, isValidName, MAX_READ_BYTES, MAX_SKILL_MD_BYTES, parseSkill } from "./format.js";
 
-// The skill registry: the folders under MIP_HOME/skills, one per skill. Only this module reads them. An agent can use only the
-// skills it has enabled, and a skill is read only through the tools in app/tools/skills.ts.
+// The skill registry: the folders under MIP_HOME/skills, one per skill. Only this module reads them. An agent or a bot can use only
+// the skills it has enabled, and a skill is read only through the tools in app/tools/skills.ts.
 const SKILL_FILE = "SKILL.md";
 
 export interface SkillSummary {
@@ -70,8 +70,18 @@ export function readSkillFile(name: string, path: string): string {
 
 // The skills an agent has enabled, as they are installed now. A skill that was removed is left out.
 export function enabledSkills(agentId: string): SkillSummary[] {
-  const names = new Set(enabledSkillNames(agentId));
-  return listSkills().skills.filter((skill) => names.has(skill.name));
+  return installedNamed(enabledSkillNames(agentId));
+}
+
+// The skills a bot has enabled, as they are installed now. A skill that was removed is left out.
+export function botSkills(botId: string): SkillSummary[] {
+  return installedNamed(botSkillNames(botId));
+}
+
+// The installed skills with these names, in name order.
+function installedNamed(names: string[]): SkillSummary[] {
+  const wanted = new Set(names);
+  return listSkills().skills.filter((skill) => wanted.has(skill.name));
 }
 
 // The skill an agent may read. Refused unless the agent has enabled it.
@@ -80,24 +90,50 @@ export function enabledSkill(agentId: string, name: string): SkillDetail {
   return loadSkill(name);
 }
 
+// The skill a bot may read. Refused unless the bot has enabled it.
+export function enabledBotSkill(botId: string, name: string): SkillDetail {
+  if (!botSkillNames(botId).includes(name)) throw new Error(`skill "${name}" is not enabled for this bot`);
+  return loadSkill(name);
+}
+
 // The part of the system prompt that lists an agent's skills. Empty when the agent has none enabled.
 export function skillsPrompt(agentId: string): string {
-  const skills = enabledSkills(agentId);
+  return skillListPrompt(enabledSkills(agentId), "agent");
+}
+
+// The part of a bot's system prompt that lists its skills. Empty when the bot has none enabled.
+export function botSkillsPrompt(botId: string): string {
+  return skillListPrompt(botSkills(botId), "bot");
+}
+
+function skillListPrompt(skills: SkillSummary[], who: "agent" | "bot"): string {
   if (skills.length === 0) return "";
   return [
-    "Skills enabled for this agent. Each one holds instructions for a kind of task.",
+    `Skills enabled for this ${who}. Each one holds instructions for a kind of task.`,
     "When a task matches a skill, call skill_read with its name first, and follow it. Call skill_file to read a file the skill names.",
     ...skills.map((skill) => `- ${skill.name}: ${skill.description}`),
   ].join("\n");
 }
 
-// Replaces an agent's enabled skills. Every name must be an installed skill.
-export function setAgentSkills(agentId: string, names: string[]): string[] {
+// Checks that every name is an installed skill, and returns the names sorted, without repeats.
+export function checkSkillNames(names: string[]): string[] {
   const installed = new Set(listSkills().skills.map((skill) => skill.name));
   const unknown = names.filter((name) => !installed.has(name));
   if (unknown.length > 0) throw new AppError(400, `no such skill: ${unknown.join(", ")}`);
-  const unique = [...new Set(names)].sort();
+  return [...new Set(names)].sort();
+}
+
+// Replaces an agent's enabled skills. Every name must be an installed skill.
+export function setAgentSkills(agentId: string, names: string[]): string[] {
+  const unique = checkSkillNames(names);
   saveAgentSkills(agentId, unique);
+  return unique;
+}
+
+// Replaces a bot's enabled skills. Every name must be an installed skill.
+export function setBotSkills(botId: string, names: string[]): string[] {
+  const unique = checkSkillNames(names);
+  saveBotSkills(botId, unique);
   return unique;
 }
 

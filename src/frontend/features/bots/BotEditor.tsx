@@ -1,7 +1,7 @@
 import { useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
 import { DEFAULT_PROVIDER_ID } from "../../api/constants";
-import type { Bot, BotColor, ProviderInfo } from "../../api/types";
+import type { Bot, BotColor, ProviderInfo, SkillSummary } from "../../api/types";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { OptionDropdown } from "../../ui/OptionDropdown";
 import { BOT_COLORS, nextBotColor } from "./botColors";
@@ -13,34 +13,53 @@ interface Draft {
   model: string;
   thinking: string;
   color: BotColor;
+  // The names of the installed skills this bot may use.
+  skills: string[];
 }
 
-// The form for one bot. A bot with no `bot` is a new one, and it starts on the first color no other bot uses. Changing the
+// The form for one bot. A bot with no `bot` is a new one, and it starts on the first color no other bot uses, with no skills. Changing the
 // provider clears the model and thinking level, and changing the model clears the thinking level, because the next choice may
-// not offer them.
+// not offer them. Skills are the installed ones, and the bot may use only the ones checked here.
 export function BotEditor({
   bot,
   providers,
+  installed,
   usedColors,
   onSaved,
   onCancel,
 }: {
   bot?: Bot;
   providers: ProviderInfo[];
+  installed: SkillSummary[];
   usedColors: BotColor[];
   onSaved: () => void;
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState<Draft>(
     bot
-      ? { name: bot.name, persona: bot.persona, providerId: bot.providerId, model: bot.model ?? "", thinking: bot.thinking ?? "", color: bot.color }
-      : { name: "", persona: "", providerId: DEFAULT_PROVIDER_ID, model: "", thinking: "", color: nextBotColor(usedColors) },
+      ? {
+          name: bot.name,
+          persona: bot.persona,
+          providerId: bot.providerId,
+          model: bot.model ?? "",
+          thinking: bot.thinking ?? "",
+          color: bot.color,
+          skills: bot.skills,
+        }
+      : { name: "", persona: "", providerId: DEFAULT_PROVIDER_ID, model: "", thinking: "", color: nextBotColor(usedColors), skills: [] },
   );
   const [error, setError] = useState<string>();
 
   const provider = providers.find((p) => p.id === draft.providerId);
   const model = provider?.models.find((m) => m.id === draft.model);
   const levels = model?.thinkingLevels ?? [];
+
+  function toggleSkill(name: string) {
+    setDraft((current) => ({
+      ...current,
+      skills: current.skills.includes(name) ? current.skills.filter((item) => item !== name) : [...current.skills, name],
+    }));
+  }
 
   async function save(e: Event) {
     e.preventDefault();
@@ -112,6 +131,32 @@ export function BotEditor({
           value={draft.persona}
           onInput={(e) => setDraft({ ...draft, persona: e.currentTarget.value })}
         />
+      </fieldset>
+
+      <fieldset className="fieldset">
+        <legend className="fieldset-legend">Skills</legend>
+        {installed.length === 0 ? (
+          <p className="text-sm opacity-70">No skills are installed yet. Create or import one on the Skills card.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {installed.map((skill) => (
+              <li key={skill.name}>
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm mt-1"
+                    checked={draft.skills.includes(skill.name)}
+                    onChange={() => toggleSkill(skill.name)}
+                  />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="font-medium">{skill.name}</span>
+                    <span className="text-xs opacity-70">{skill.description}</span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
       </fieldset>
 
       <ErrorAlert message={error} />

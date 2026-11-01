@@ -119,6 +119,8 @@ export interface Bot {
   model: string | null;
   thinking: string | null;
   color: BotColor;
+  // The names of the installed skills this bot may use.
+  skills: string[];
 }
 
 // A room of bots. Its messages are its own, and its members are the bots that answer in it.
