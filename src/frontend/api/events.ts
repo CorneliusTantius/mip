@@ -5,6 +5,8 @@
 export const AGENTS_CHANGED = "agents-changed";
 // Sent after a persona is saved, made default, or deleted. The agent list's persona dropdown listens.
 export const PERSONAS_CHANGED = "personas-changed";
+// Sent when a provider is signed in or out, or a sign-in ends. The agent list reloads the providers, so its models follow.
+export const PROVIDERS_CHANGED = "providers-changed";
 
 export function announce(name: string): void {
   window.dispatchEvent(new Event(name));

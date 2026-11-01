@@ -11,7 +11,7 @@ Preact 11 + daisyUI 5 + Tailwind 4 (`styles.css` imports Tailwind and the Nord t
 ## api/
 - `client.ts`: the only place that calls `fetch`. `ApiError` (has `status`), `api` (`get`, `post`, `put`, `patch`, `del`), and `errorText`.
 - `types.ts`: response shapes that mirror `src/backend`. Agents, messages and their tool calls, runs and run events, personas, bots, room messages, repos, memory notes, providers, skills and skill imports, the tool registry (`ToolInfo`), and the sync status.
-- `events.ts`: window events for cross-card changes: `AGENTS_CHANGED` and `PERSONAS_CHANGED`, with `announce` and `subscribe`.
+- `events.ts`: window events for cross-card changes: `AGENTS_CHANGED`, `PERSONAS_CHANGED`, and `PROVIDERS_CHANGED`, with `announce` and `subscribe`.
 - `constants.ts`: `DEFAULT_PERSONA_ID` (must equal the server's) and `DEFAULT_PROVIDER_ID`.
 
 ## ui/
@@ -47,7 +47,7 @@ Shared pieces. Each is used by more than one feature.
 | file | exports | job |
 | --- | --- | --- |
 | `AgentCard.tsx` | `AgentCard` | Composes the pieces. Opens the newest agent on load. Its header has a Skills button (opens `AgentSkillsDialog`). Phones close the agent list. |
-| `useAgents.ts` | `useAgents` | Providers, personas, agents, the open agent, and new-agent choices. Announces `AGENTS_CHANGED`, and listens for `PERSONAS_CHANGED`. |
+| `useAgents.ts` | `useAgents` | Providers, personas, agents, the open agent, and new-agent choices. Announces `AGENTS_CHANGED`, and listens for `PERSONAS_CHANGED` and `PROVIDERS_CHANGED`. |
 | `useTranscript.ts` | `useTranscript` | Messages, busy, and the run being followed. `applyEvent` builds a reply live: text, tool names, each call with its input, and its result matched by id. Polls run events every 600 ms while a run goes. |
 | `AgentList.tsx` | `AgentList` | The sidebar: provider and persona selects, New agent, the list with inline rename and delete. |
 | `PersonasDialog.tsx` | `PersonasDialog` | Manage personas: pick, edit, set default, and delete with confirmation. |
@@ -142,7 +142,7 @@ Shared pieces. Each is used by more than one feature.
 - Repos while cloning: 1.5 s.
 - Sync while running: 1.5 s.
 - Memory search: 200 ms debounce.
-- Window events: `agents-changed` (agent list changed) and `personas-changed` (persona changed). See `api/events.ts`.
+- Window events: `agents-changed` (agent list changed), `personas-changed` (persona changed), and `providers-changed` (a sign-in changed). See `api/events.ts`.
 
 ## Styling and theme
 - `styles.css`: the Nord theme tokens in `@plugin "daisyui/theme"`. Dark only.

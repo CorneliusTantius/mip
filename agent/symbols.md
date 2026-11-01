@@ -347,8 +347,9 @@
 | src/frontend/api/constants.ts | 6 | const | DEFAULT_PROVIDER_ID |
 | src/frontend/api/events.ts | 5 | const | AGENTS_CHANGED |
 | src/frontend/api/events.ts | 7 | const | PERSONAS_CHANGED |
-| src/frontend/api/events.ts | 9 | function | announce |
-| src/frontend/api/events.ts | 14 | function | subscribe |
+| src/frontend/api/events.ts | 9 | const | PROVIDERS_CHANGED |
+| src/frontend/api/events.ts | 11 | function | announce |
+| src/frontend/api/events.ts | 16 | function | subscribe |
 | src/frontend/api/types.ts | 3 | interface | ModelOption |
 | src/frontend/api/types.ts | 10 | interface | SignInPrompt |
 | src/frontend/api/types.ts | 17 | interface | SignInProgress |
@@ -413,8 +414,8 @@
 | src/frontend/features/memory/graph-layout.ts | 27 | function | layoutGraph |
 | src/frontend/features/repos/RepoRow.tsx | 22 | function | RepoRow |
 | src/frontend/features/repos/RepositoriesCard.tsx | 16 | function | RepositoriesCard |
-| src/frontend/features/settings/ProviderTab.tsx | 13 | function | ProviderTab |
-| src/frontend/features/settings/SettingsDialog.tsx | 8 | function | SettingsDialog |
+| src/frontend/features/settings/ProviderTab.tsx | 14 | function | ProviderTab |
+| src/frontend/features/settings/SettingsDialog.tsx | 9 | function | SettingsDialog |
 | src/frontend/features/settings/SignInPanel.tsx | 10 | function | runSignInAction |
 | src/frontend/features/settings/SignInPanel.tsx | 15 | function | confirmSignOut |
 | src/frontend/features/settings/SignInPanel.tsx | 20 | function | SignInPanel |

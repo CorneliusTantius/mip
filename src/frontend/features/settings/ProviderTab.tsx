@@ -1,5 +1,6 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { api } from "../../api/client";
+import { announce, PROVIDERS_CHANGED } from "../../api/events";
 import type { ProviderInfo } from "../../api/types";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { usePolling } from "../../ui/hooks";
@@ -15,7 +16,15 @@ export function ProviderTab({ open }: { open: boolean }) {
   const [providerId, setProviderId] = useState("");
   const [targetId, setTargetId] = useState("");
 
-  const refresh = () => api.get<{ providers: ProviderInfo[] }>("/api/providers").then((data) => setProviders(data.providers));
+  // Each target's sign-in state, as one string. When it changes, the rest of the app is told, so the agent's models follow.
+  const signInState = useRef<string | undefined>(undefined);
+  const refresh = () =>
+    api.get<{ providers: ProviderInfo[] }>("/api/providers").then((data) => {
+      const state = data.providers.map((p) => p.targets.map((t) => `${t.id}:${t.auth.loggedIn}:${t.progress.running}`).join(",")).join("|");
+      if (signInState.current !== undefined && signInState.current !== state) announce(PROVIDERS_CHANGED);
+      signInState.current = state;
+      setProviders(data.providers);
+    });
 
   useEffect(() => {
     if (open) refresh();

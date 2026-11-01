@@ -105,6 +105,7 @@ Client (`features/bots/useRoom.ts`): polls `GET /api/room?room=<id>&after=<id>` 
 ## 14. Dashboard events and layout
 - Agent list changes → `announce(AGENTS_CHANGED)` → repositories card reloads (`api/events.ts`).
 - Persona saved or deleted → `announce(PERSONAS_CHANGED)` → agent list reloads its persona dropdown.
+- Provider signed in or out, or a sign-in ends (`ProviderTab` sees the state change, and closing Settings also announces) → `announce(PROVIDERS_CHANGED)` → agent list reloads the providers, so the session models follow.
 - Memory saved or deleted → `MemoryManager` `onChanged` → `MemoryBody` reloads its graph (`features/memory/MemoryCard.tsx`).
 - Memory dot clicked → `MemoryBody` sets `startNote` and calls `open()` from `useCardExpansion` → the card expands into `MemoryManager`, which opens that note.
 

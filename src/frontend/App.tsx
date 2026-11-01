@@ -26,7 +26,7 @@ export function App() {
 
       <main className={`${WIDTH} grid min-h-0 flex-1 grid-cols-12 content-start gap-4 xl:gap-5 overflow-y-auto ${SIDES} pb-4 pt-0 xl:pb-3`}>
         {/* The header scrolls with the page, so it sits inside the scrolling area. */}
-        <div className="navbar col-span-12 min-h-10 py-0">
+        <div className="navbar col-span-12 -mb-2 min-h-10 py-0 xl:-mb-3">
           <span className="flex-1 text-lg font-semibold">mip</span>
           <button className="btn btn-ghost btn-sm btn-circle" aria-label="Settings" onClick={() => setSettingsOpen(true)}>
             <Icon name="gear" />

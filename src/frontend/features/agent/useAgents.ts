@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { api } from "../../api/client";
 import { DEFAULT_PERSONA_ID, DEFAULT_PROVIDER_ID } from "../../api/constants";
-import { announce, AGENTS_CHANGED, PERSONAS_CHANGED } from "../../api/events";
+import { announce, AGENTS_CHANGED, PERSONAS_CHANGED, PROVIDERS_CHANGED } from "../../api/events";
 import type { ModelOption, Persona, ProviderInfo, Agent } from "../../api/types";
 import { useAnnouncement } from "../../ui/hooks";
 
@@ -36,14 +36,19 @@ export function useAgents() {
     setNewPersonaId(data.personas.find((p) => p.isDefault)?.id ?? DEFAULT_PERSONA_ID);
   }
 
+  // The providers, and each one's models. Settings signs providers in and out, so this is loaded again when that changes.
+  const loadProviders = () => api.get<{ providers: ProviderInfo[] }>("/api/providers").then((data) => setProviders(data.providers));
+
   useEffect(() => {
-    api.get<{ providers: ProviderInfo[] }>("/api/providers").then((data) => setProviders(data.providers));
+    loadProviders();
     refresh();
     loadPersonas();
   }, []);
 
   // Settings saves personas, so this list follows.
   useAnnouncement(PERSONAS_CHANGED, loadPersonas);
+  // A sign-in changes which models the agent can use, so the providers are loaded again.
+  useAnnouncement(PROVIDERS_CHANGED, loadProviders);
 
   // Creates an agent with the chosen provider and persona. Returns its id so the caller can open it.
   async function create(): Promise<string> {
