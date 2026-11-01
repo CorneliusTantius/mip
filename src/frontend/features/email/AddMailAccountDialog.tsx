@@ -103,6 +103,12 @@ export function AddMailAccountDialog({
           <div className="text-xs opacity-60">Spaces are removed. The password is stored on this machine only, and is never synced.</div>
         </label>
 
+        {preset?.passwordUrl && (
+          <a className="btn btn-outline btn-sm self-start" href={preset.passwordUrl} target="_blank" rel="noopener noreferrer">
+            Get an app password
+          </a>
+        )}
+
         {custom && (
           <>
             <label className="flex flex-col gap-1 text-sm">

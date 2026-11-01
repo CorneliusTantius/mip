@@ -36,7 +36,8 @@ export interface MailAccountProblem {
   error: string;
 }
 
-// A provider the add form offers. "other" takes the server from the form. Each help line says what the provider wants as the password.
+// A provider the add form offers. "other" takes the server from the form. Each help line says what the provider wants as the password, and
+// passwordUrl is the page where the provider makes an app password, or null when there is no such page to link.
 export interface MailPreset {
   id: string;
   label: string;
@@ -44,6 +45,7 @@ export interface MailPreset {
   port: number;
   secure: boolean;
   help: string;
+  passwordUrl: string | null;
 }
 
 export const MAIL_PRESETS: MailPreset[] = [
@@ -54,6 +56,7 @@ export const MAIL_PRESETS: MailPreset[] = [
     port: DEFAULT_PORT,
     secure: true,
     help: "Gmail needs 2-Step Verification before it makes an app password. Use that password here, not your Google password.",
+    passwordUrl: "https://myaccount.google.com/apppasswords",
   },
   {
     id: "icloud",
@@ -62,6 +65,7 @@ export const MAIL_PRESETS: MailPreset[] = [
     port: DEFAULT_PORT,
     secure: true,
     help: "Use an app-specific password from your Apple Account.",
+    passwordUrl: "https://account.apple.com/",
   },
   {
     id: "fastmail",
@@ -70,6 +74,7 @@ export const MAIL_PRESETS: MailPreset[] = [
     port: DEFAULT_PORT,
     secure: true,
     help: "Use an app password from Fastmail's settings.",
+    passwordUrl: "https://app.fastmail.com/settings/",
   },
   {
     id: "outlook",
@@ -78,6 +83,7 @@ export const MAIL_PRESETS: MailPreset[] = [
     port: DEFAULT_PORT,
     secure: true,
     help: "Use an app password if your account asks for one.",
+    passwordUrl: "https://account.microsoft.com/security",
   },
   {
     id: "other",
@@ -86,6 +92,7 @@ export const MAIL_PRESETS: MailPreset[] = [
     port: DEFAULT_PORT,
     secure: true,
     help: "Enter the IMAP server, port, and encryption that your mail provider gives you.",
+    passwordUrl: null,
   },
 ];
 

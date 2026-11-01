@@ -269,7 +269,8 @@ export interface SkillImport {
   replaces: string | null;
 }
 
-// A provider the add form offers. "other" takes the server from the form, and help says what the provider wants as the password.
+// A provider the add form offers. "other" takes the server from the form, and help says what the provider wants as the password. passwordUrl
+// is the page where the provider makes an app password, or null when there is none to link.
 export interface MailPreset {
   id: string;
   label: string;
@@ -277,6 +278,7 @@ export interface MailPreset {
   port: number;
   secure: boolean;
   help: string;
+  passwordUrl: string | null;
 }
 
 // A mail account as the API returns it. The password is never included.

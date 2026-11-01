@@ -4,6 +4,7 @@ import type { MailAccount } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { MESSAGING_CARD_HEIGHT } from "../../ui/SourceCard";
 import { AddMailAccountDialog } from "./AddMailAccountDialog";
 import { MailMessageDialog } from "./MailMessageDialog";
 import { displaySender, formatMailDate } from "./mailFormat";
@@ -11,10 +12,10 @@ import { useMailAccounts, useMailbox } from "./useMail";
 
 // The email card: the mail accounts mip reads over IMAP. Each account lists the newest messages of its inbox, and a message opens in full.
 // Reading never marks a message as read. The list is read again on the account's poll interval while the card is open.
-// The card is 22.25 rem (356 px), twice the height of the other messaging cards' empty state. Its list fills the space below the header.
+// The card has the height every messaging card shares. Its list fills the space below the header.
 export function EmailCard() {
   return (
-    <Card glow="frost" className="h-[22.25rem]">
+    <Card glow="frost" className={MESSAGING_CARD_HEIGHT}>
       <EmailBody />
     </Card>
   );

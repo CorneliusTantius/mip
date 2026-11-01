@@ -135,7 +135,7 @@ The IMAP accounts in `data/mail.json`. Passwords are never returned. Reading con
 
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/mail/accounts | 200 | `{accounts: {id, label, host, port, secure, user, mailbox, watch: {mode, pollSeconds}, maxBytes}[], presets: {id, label, host, port, secure, help}[], problems: {account, error}[]}` | |
+| GET | /api/mail/accounts | 200 | `{accounts: {id, label, host, port, secure, user, mailbox, watch: {mode, pollSeconds}, maxBytes}[], presets: {id, label, host, port, secure, help, passwordUrl}[], problems: {account, error}[]}` | |
 | POST | /api/mail/accounts | 201 | the new account, without its password. Body `{preset: "gmail" \| "icloud" \| "fastmail" \| "outlook" \| "other", address, password, host?, port?, secure?}`. Signs in first, and a refused sign-in saves nothing | 400 a missing or bad field, or the server refused the sign-in (the reason is in the message); 409 the address is already added on that server; 415 not JSON |
 | DELETE | /api/mail/accounts/:id | 200 | the same shape as the GET, after the account is removed | 404 no such account |
 | POST | /api/mail/accounts/:id/test | 200 | `{messages, unseen}` | 404 no such account; 415 not JSON; 502 the server could not be reached or refused the sign-in |

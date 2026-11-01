@@ -11,6 +11,9 @@ const BADGE: Record<SourceTone, string> = {
   info: "badge-info",
 };
 
+// Every messaging card (email, Slack, WhatsApp) has this height: 22.25 rem, or 356 px. Its body fills the space below the header.
+export const MESSAGING_CARD_HEIGHT = "h-[22.25rem]";
+
 // A dashboard card for one place mip reads messages or mail from: its title, a status badge, a line of detail, and a note on what comes
 // next. It expands like the other cards.
 export function SourceCard({
@@ -29,7 +32,7 @@ export function SourceCard({
   note: string;
 }) {
   return (
-    <Card glow={glow}>
+    <Card glow={glow} className={MESSAGING_CARD_HEIGHT}>
       <SourceBody title={title} tone={tone} status={status} detail={detail} note={note} />
     </Card>
   );
@@ -41,7 +44,7 @@ function SourceBody({ title, tone, status, detail, note }: { title: string; tone
   return (
     <CardBody
       title={title}
-      className={expanded ? "min-h-0 flex-1" : "gap-3"}
+      className="min-h-0 flex-1 gap-3"
       actions={
         <>
           <span className={`badge badge-soft ${BADGE[tone]}`}>{status}</span>
@@ -51,7 +54,7 @@ function SourceBody({ title, tone, status, detail, note }: { title: string; tone
     >
       {/* A div, not a paragraph: daisyUI makes every paragraph in a card body grow to fill an expanded card. */}
       <div className={`${expanded ? "text-base" : "text-sm"} opacity-70`}>{detail}</div>
-      <div className={expanded ? "flex flex-1 items-center justify-center text-base opacity-60" : "py-4 text-center text-sm opacity-60"}>{note}</div>
+      <div className={`flex flex-1 items-center justify-center text-center opacity-60 ${expanded ? "text-base" : "text-sm"}`}>{note}</div>
     </CardBody>
   );
 }
