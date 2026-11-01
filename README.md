@@ -89,7 +89,7 @@ A message is a run. It keeps going after the browser closes, and each event is s
 
 A new agent gets a random name from a bank of Norse names: gods, giants, valkyries, dwarves, heroes, saga figures, and rulers of the Viking Age. No two agents share a name at the same time. The bank is in `src/backend/app/names.ts`.
 
-An agent can ask you a question with buttons, a checklist, a text box, or a slider. The controls show under its reply, and your answer is sent as your next message.
+An agent can ask you a question with buttons, a checklist, a text box, or a slider. A choice and a checklist also have an Other option for your own answer. The controls show under its reply, and your answer is sent as your next message.
 
 ## Bots
 

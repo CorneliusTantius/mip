@@ -7,15 +7,7 @@ export function AskCard({ ask, disabled, onAnswer }: { ask: Ask; disabled: boole
   return (
     <div className="mt-2 flex flex-col gap-2 border-t border-base-content/10 pt-2">
       <div className="text-sm font-medium">{ask.question}</div>
-      {ask.kind === "choice" && (
-        <div className="flex flex-wrap gap-2">
-          {ask.options.map((option) => (
-            <button key={option} className="btn btn-sm btn-outline" disabled={disabled} onClick={() => onAnswer(option)}>
-              {option}
-            </button>
-          ))}
-        </div>
-      )}
+      {ask.kind === "choice" && <Choice options={ask.options} disabled={disabled} onAnswer={onAnswer} />}
       {ask.kind === "multi" && <MultiChoice options={ask.options} disabled={disabled} onAnswer={onAnswer} />}
       {ask.kind === "text" && <TextAnswer placeholder={ask.placeholder} disabled={disabled} onAnswer={onAnswer} />}
       {ask.kind === "slider" && <SliderAnswer ask={ask} disabled={disabled} onAnswer={onAnswer} />}
@@ -23,9 +15,33 @@ export function AskCard({ ask, disabled, onAnswer }: { ask: Ask; disabled: boole
   );
 }
 
-// Several options, sent together in the order they are listed.
+// One option is sent at once. Other opens a box for an answer of the user's own.
+function Choice({ options, disabled, onAnswer }: { options: string[]; disabled: boolean; onAnswer: (answer: string) => void }) {
+  const [otherOpen, setOtherOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => (
+          <button key={option} className="btn btn-sm btn-outline" disabled={disabled} onClick={() => onAnswer(option)}>
+            {option}
+          </button>
+        ))}
+        <button className="btn btn-sm btn-outline" disabled={disabled} aria-expanded={otherOpen} onClick={() => setOtherOpen(!otherOpen)}>
+          Other
+        </button>
+      </div>
+      {otherOpen && <TextAnswer placeholder="Type your own answer" disabled={disabled} onAnswer={onAnswer} />}
+    </div>
+  );
+}
+
+// Several options, sent together in the order they are listed. Other adds an answer of the user's own after them.
 function MultiChoice({ options, disabled, onAnswer }: { options: string[]; disabled: boolean; onAnswer: (answer: string) => void }) {
   const [picked, setPicked] = useState<string[]>([]);
+  const [otherOn, setOtherOn] = useState(false);
+  const [otherText, setOtherText] = useState("");
+  const answers = [...options.filter((option) => picked.includes(option)), ...(otherOn && otherText.trim() ? [otherText.trim()] : [])];
 
   function toggle(option: string, on: boolean) {
     setPicked(options.filter((candidate) => (candidate === option ? on : picked.includes(candidate))));
@@ -45,7 +61,20 @@ function MultiChoice({ options, disabled, onAnswer }: { options: string[]; disab
           {option}
         </label>
       ))}
-      <button className="btn btn-sm btn-primary self-start" disabled={disabled || picked.length === 0} onClick={() => onAnswer(picked.join(", "))}>
+      <label className="label cursor-pointer justify-start gap-2 text-sm">
+        <input type="checkbox" className="checkbox checkbox-sm" checked={otherOn} disabled={disabled} onChange={(e) => setOtherOn(e.currentTarget.checked)} />
+        Other
+      </label>
+      {otherOn && (
+        <input
+          className="input input-sm w-full"
+          placeholder="Type your own answer"
+          value={otherText}
+          disabled={disabled}
+          onInput={(e) => setOtherText(e.currentTarget.value)}
+        />
+      )}
+      <button className="btn btn-sm btn-primary self-start" disabled={disabled || answers.length === 0} onClick={() => onAnswer(answers.join(", "))}>
         Send
       </button>
     </div>

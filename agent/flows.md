@@ -156,7 +156,7 @@ Skills card: `features/skills/SkillsCard.tsx` (the installed skills, with Create
 1. The model calls `ask_user` (`app/tools/ask.ts`, offered to every agent). The input is a question and a kind: `choice` (one of 2 to 8 options), `multi` (any of them), `text` (a short answer with a placeholder), or `slider` (min, max, step, value). Bad input comes back as a failed result.
 2. The tool keeps the question in a map keyed by agent id. A run asks one question. A second one is refused until the reply takes the first.
 3. When the run ends, `execute` in `app/runs.ts` calls `takePendingAsk` and saves the question on the reply (`messages.ask`). The reply's text is what came before the question, and the controls show under it.
-4. The run does not wait. The answer is the user's next message, sent through the normal send path. `AskCard` (`features/agent/AskCard.tsx`) draws the controls. They are disabled while the agent is busy, and once a user message follows the question.
+4. The run does not wait. The answer is the user's next message, sent through the normal send path. `AskCard` (`features/agent/AskCard.tsx`) draws the controls. A choice and a checklist always add an Other option, which takes the user's own answer. The controls are disabled while the agent is busy, and once a user message follows the question.
 
 ## 20. Bots sending tasks to agents (agent_ask)
 
