@@ -94,6 +94,7 @@ export function BotEditor({
           options={(provider?.models ?? []).map((m) => ({ value: m.id, label: m.name }))}
           placeholder="Default model"
           disabled={!provider?.models.length}
+          searchable
           onChange={(modelId) => setDraft({ ...draft, model: modelId, thinking: "" })}
         />
         <OptionDropdown

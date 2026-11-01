@@ -24,7 +24,7 @@ Shared pieces. Each is used by more than one feature.
 | `ConfirmDialog.tsx` | `ConfirmDialog` | A yes-or-no question, with an `error` line. Built on `Modal`. |
 | `ErrorAlert.tsx` | `ErrorAlert` | A red alert for a message. Renders nothing without one. |
 | `Icon.tsx` | `Icon`, `IconName` | Named SVG icons. |
-| `OptionDropdown.tsx` | `OptionDropdown` | A fixed-width dropdown with ellipsis, for model, thinking, provider, and copy-to-agent. |
+| `OptionDropdown.tsx` | `OptionDropdown` | A fixed-width dropdown with ellipsis, for model, thinking, provider, and copy-to-agent. With `searchable`, a search box at the top narrows the options by a plain contains match on the label or value (`filterOptions.ts`, tested by `filterOptions.test.mjs`). The session and bot-form model pickers are searchable. |
 | `RunScopePills.tsx` | `RunScopePills`, `RunScope` | The All / Agent / Bot pill that picks a card's view. One size larger when its card is expanded. Used by the Tools and Skills cards. |
 | `ToolCallDetails.tsx` | `ToolCallDetails` | One tool call's name, input, and result. Used by the tool-call dialog. |
 | `toolName.ts` | `toolLabel`, `prettyJson` | Pure helpers. `toolLabel` drops the `mcp__<server>__` prefix. |

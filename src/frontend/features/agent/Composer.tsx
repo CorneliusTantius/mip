@@ -48,6 +48,7 @@ export function Composer({
           options={models.map((m) => ({ value: m.id, label: m.name }))}
           placeholder={agent ? "No models available" : "Model"}
           disabled={!agent || !models.length}
+          searchable
           onChange={(next) => onChangeSettings({ model: next })}
         />
         <OptionDropdown

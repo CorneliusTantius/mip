@@ -440,14 +440,15 @@
 | src/frontend/ui/Icon.tsx | 20 | type | IconName |
 | src/frontend/ui/Icon.tsx | 22 | function | Icon |
 | src/frontend/ui/Modal.tsx | 24 | function | Modal |
-| src/frontend/ui/OptionDropdown.tsx | 4 | interface | DropdownOption |
-| src/frontend/ui/OptionDropdown.tsx | 11 | function | OptionDropdown |
+| src/frontend/ui/OptionDropdown.tsx | 5 | interface | DropdownOption |
+| src/frontend/ui/OptionDropdown.tsx | 13 | function | OptionDropdown |
 | src/frontend/ui/RunScopePills.tsx | 4 | type | RunScope |
 | src/frontend/ui/RunScopePills.tsx | 13 | function | RunScopePills |
 | src/frontend/ui/Starfield.tsx | 17 | function | Starfield |
 | src/frontend/ui/ToolCallDetails.tsx | 5 | function | ToolCallDetails |
 | src/frontend/ui/ToolCallsDialog.tsx | 8 | function | ToolCallsButton |
 | src/frontend/ui/ToolCallsDialog.tsx | 21 | function | ToolCallsDialog |
+| src/frontend/ui/filterOptions.ts | 3 | function | filterOptions |
 | src/frontend/ui/hooks.ts | 5 | function | usePolling |
 | src/frontend/ui/hooks.ts | 17 | function | useAnnouncement |
 | src/frontend/ui/toolName.ts | 3 | function | toolLabel |
