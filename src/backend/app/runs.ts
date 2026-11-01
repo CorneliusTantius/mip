@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AgentEvent, AgentProvider, ThinkingLevel } from "../adapters/contract.js";
+import type { AgentEvent, AgentProvider, ThinkingLevel, ToolSpec } from "../adapters/contract.js";
 import { activeRunForAgent, appendRunEvent, createRun, getRun, listRunEvents, setRunStatus } from "../storage/runs.js";
 import { addMessage, getAgent, saveProviderSession, type Agent } from "../storage/agents.js";
 import { HOST, PORT } from "./config.js";
@@ -8,7 +8,7 @@ import { recallFor } from "./memory.js";
 import { personaPrompt } from "./personas.js";
 import { findProvider } from "./providers.js";
 import { repoNote } from "./repos.js";
-import { AGENT_DEFERRED, AGENT_TOOLS, registerRun, releaseRun, toolGuidesPrompt } from "./tools/index.js";
+import { AGENT_TOOLS, agentDeferredTools, registerRun, releaseRun, toolGuidesPrompt } from "./tools/index.js";
 import { withSkillCommand } from "./skills/registry.js";
 import { ToolCallLog } from "./tools/calls.js";
 import { workspaceFor } from "./tools/workspace.js";
@@ -28,8 +28,9 @@ export function startRun(input: { agentId: string; prompt: string }): string {
   addMessage(agent.id, { role: "user", text: prompt, tools: [], error: null });
 
   const workspace = workspaceFor(agent.id);
-  const token = registerRun({ workspace, agentId: agent.id, tools: AGENT_TOOLS, deferred: AGENT_DEFERRED });
-  execute({ runId, agent, provider, prompt, workspace, token }).catch((err: unknown) => {
+  const deferred = agentDeferredTools();
+  const token = registerRun({ workspace, agentId: agent.id, tools: AGENT_TOOLS, deferred });
+  execute({ runId, agent, provider, prompt, workspace, token, deferred }).catch((err: unknown) => {
     console.error(`run ${runId} failed to save:`, err);
   });
   return runId;
@@ -53,6 +54,8 @@ interface RunJob {
   prompt: string;
   workspace: string;
   token: string;
+  // The deferred tools the run may find with tool_search and run with tool_call.
+  deferred: ToolSpec[];
 }
 
 async function execute(job: RunJob): Promise<void> {
@@ -73,7 +76,7 @@ async function execute(job: RunJob): Promise<void> {
         .filter(Boolean)
         .join("\n\n"),
       tools: AGENT_TOOLS,
-      deferredTools: AGENT_DEFERRED,
+      deferredTools: job.deferred,
       workspace: job.workspace,
       agentId: job.agent.id,
       toolServer: { url: `http://${HOST}:${PORT}/mcp`, token: job.token },

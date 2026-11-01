@@ -1,5 +1,6 @@
 import type { Route } from "../router.js";
 import { botRoutes } from "./bots.js";
+import { mcpServerRoutes } from "./mcp-servers.js";
 import { memoryRoutes } from "./memory.js";
 import { personaRoutes } from "./personas.js";
 import { providerRoutes } from "./providers.js";
@@ -26,5 +27,6 @@ export const routes: Route[] = [
   ...syncRoutes,
   ...skillRoutes,
   ...toolRoutes,
+  ...mcpServerRoutes,
   ...systemRoutes,
 ];

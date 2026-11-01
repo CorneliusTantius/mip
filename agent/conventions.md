@@ -37,6 +37,7 @@ Docs:
     node src/backend/app/tools/calls.test.mjs
     node src/backend/app/skills/format.test.mjs
     node src/backend/app/skills/skills.test.mjs
+    node src/backend/app/mcp/mcp.test.mjs
     node src/backend/app/sync/github.test.mjs
     node src/backend/app/sync/merge.test.mjs
     node src/backend/app/sync/sync.test.mjs
@@ -125,6 +126,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders. A skill is read only through `skill_read` and `skill_file`. Every agent and bot can read every installed skill.
 - Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools.
 - Each kind of run has its own tool lists. A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
+- MCP servers: `data/mcp.json` can hold tokens, so it never syncs. The status API never returns environment values or headers. An MCP tool is deferred for agents, and no bot gets one yet.
 - A rename of a word must skip the names of libraries. daisyUI's chat bubbles use the classes `chat`, `chat-start`, `chat-end`, `chat-header`, `chat-bubble`, and `chat-bubble-*`. The chat-to-agent rename once broke them, so the bubbles rendered as plain text. Check the class names of the library after a rename.
 - Expanded cards step their text up one size. Put that in `RunScopePills` and the card's own classes, not in one-off styles.
 

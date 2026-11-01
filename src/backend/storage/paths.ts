@@ -7,6 +7,8 @@ export const MIP_HOME = process.env.MIP_HOME ?? join(homedir(), ".mip");
 export const DATA_DIR = join(MIP_HOME, "data");
 // This installation's device ID, for providers that identify each install. It stays on this machine.
 export const DEVICE_ID_FILE = join(DATA_DIR, "device-id");
+// The MCP servers mip connects to. It can hold tokens, so it stays on this machine and is never synced.
+export const MCP_CONFIG_FILE = join(DATA_DIR, "mcp.json");
 export const SESSIONS_DIR = join(MIP_HOME, "sessions");
 // Master clones of repositories. Each agent gets its own copy in its workspace.
 export const REPOS_DIR = join(MIP_HOME, "repos");

@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { HOST, PORT } from "../app/config.js";
 import { errorMessage, AppError } from "../app/errors.js";
+import { startMcpServers } from "../app/mcp/manager.js";
 import { handleMcp } from "./mcp.js";
 import { notFound, readJson, sendJson } from "./respond.js";
 import { matchRoute } from "./router.js";
@@ -32,4 +33,6 @@ createServer((req, res) => {
   });
 }).listen(PORT, HOST, () => {
   console.log(`mip dashboard: http://${HOST}:${PORT}`);
+  // The MCP servers connect in the background, so the dashboard is up while they start.
+  void startMcpServers();
 });

@@ -118,6 +118,14 @@ GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is
 
 `accounts` lists every account gh is signed in to, and `login` is the one sync uses (null when there is none). `error` says why when gh is missing or signed out. The chosen account is kept in `sync/state.json`. `lastSync` is `{at, ok, message, pulled, pushed, notes}`. A failed run has `ok: false` and the reason in `message` (public repo, empty local database, GitHub changed during the run).
 
+## MCP servers — `routes/mcp-servers.ts`
+The servers listed in `data/mcp.json`. Each one shows its state and tools. Environment values and headers are never returned.
+
+| method | path | status | body | errors |
+| --- | --- | --- | --- | --- |
+| GET | /api/mcp | 200 | `{configFile, servers: {name, transport, status, error, tools: {name, remoteName, description}[]}[], problems: {server, error}[]}`. `status` is connecting, connected, or error | |
+| POST | /api/mcp/reload | 200 | the same shape, after every server has connected or failed. Closes the old connections first | |
+
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |
 | --- | --- | --- | --- | --- |

@@ -9,7 +9,7 @@ Each entry gives the file, its job, its main exports, and who calls it. Line num
 - `mcp.ts`: `handleMcp`. JSON-RPC 2.0 for the Claude CLI: `initialize`, `tools/list`, and `tools/call`. Both list and call use the run's offered tools. Without a live run token it answers 401.
 - `static.ts`: serves `dist/frontend`, and keeps every path inside it.
 - `routes/index.ts`: concatenates the domain route lists. A new domain is added here.
-- `routes/<domain>.ts`: one `Route[]` per domain: `agents`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
+- `routes/<domain>.ts`: one `Route[]` per domain: `agents`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`, `mcp-servers`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
 
 ## app/: use cases
 Flat files, one per domain:
@@ -45,6 +45,10 @@ Flat files, one per domain:
 - `result.ts`: `ok` and `fail`.
 - `guides.test.mjs`: checks that every tool has a guide and that the guides reach the prompt.
 
+## app/mcp/: external MCP servers
+- `config.ts`: `parseMcpConfig` (pure) and `readMcpConfig`. Reads `data/mcp.json`: a stdio server has a `command`, `args`, and `env`, and a Streamable HTTP server has a `url` and `headers`. A bad entry is reported by name, and the others still load. Tested by `mcp.test.mjs`.
+- `manager.ts`: `startMcpServers` connects every configured server in parallel, with 30 s for the start and the tool list. `closeMcpServers`, `mcpTools` (the tools of the connected servers), `mcpStatus`, and `mcpToolName` (`mcp_<server>_<tool>`, cut to 64 characters). A tool whose name another tool already has is skipped and reported. A connection that drops marks its server as error.
+
 ## app/skills/: installed skills
 - `format.ts`: pure rules. `parseSkill` (the `SKILL.md` header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
 - `registry.ts`: what is installed. `listSkills`, `loadSkill`, `readSkillFile`, `searchSkills`, `withSkillCommand` (a leading `/name` in a message gets that skill's instructions), `removeSkill`.
@@ -69,7 +73,7 @@ Flat files, one per domain:
 
 ## storage/
 - `db.ts`: the connection, the schema, the additive migrations (`hasColumn`), and startup recovery.
-- `paths.ts`: `MIP_HOME`, `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `SKILLS_DIR`, `ensureMipDirs`.
+- `paths.ts`: `MIP_HOME`, `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `SKILLS_DIR`, `MCP_CONFIG_FILE`, `ensureMipDirs`.
 - `agents.ts`: agents and messages, including each message's `calls`.
 - `runs.ts`, `notes.ts`, `personas.ts`, `bots.ts`, `room.ts`, `rooms.ts`, `repos.ts`: one file per domain.
 - `bot-colors.ts`: `BOT_COLORS` (the palette, in the order a new bot takes them), `BotColor`, and `isBotColor`. Used by storage, the schema migration, and the bot rules.

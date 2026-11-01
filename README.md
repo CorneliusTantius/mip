@@ -114,6 +114,21 @@ Memory is one set of notes shared by every agent. Notes live in SQLite with a fu
 - The **Memory card** on the main page draws the notes as a graph. Drag to pan, scroll to zoom, double-click to reset, hover a dot to see its links, and click a dot to open its note.
 - Expand the **Memory card** with its expand button to get the memory screen, where you can search, read, create, edit, and delete notes. Links and backlinks are clickable. A click on a dot in the graph expands the card on that note.
 
+## MCP servers
+
+mip can connect to MCP servers and give agents their tools. List them in `~/.mip/data/mcp.json`, in the same shape Claude Code uses:
+
+```json
+{
+  "mcpServers": {
+    "notes": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/you/notes"] },
+    "docs": { "type": "http", "url": "https://mcp.example.com/mcp", "headers": { "Authorization": "Bearer <token>" } }
+  }
+}
+```
+
+After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots don't get MCP tools yet. The file can hold tokens, so it is never synced.
+
 ## Skills
 
 A skill is a folder with a `SKILL.md`: a header that gives its name and a one-line description, then its instructions. It can also hold text files that the instructions name. Add one from the **Skills** card in one of two ways. **Create** writes it from a form: a name, a one-line description, and the instructions. **Import** takes a folder: give its full path, review what will be installed, then confirm. Only text files are accepted for imports. Scripts, binaries, and symbolic links are refused, so a skill is instructions and cannot run code by itself.
@@ -200,6 +215,8 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | POST | `/api/skills/imports` | Stage a skill folder for review. Body: `{ path }` |
 | POST | `/api/skills/imports/:id/confirm` | Install a staged skill |
 | DELETE | `/api/skills/imports/:id` | Drop a staged skill without installing it |
+| GET | `/api/mcp` | Each MCP server's state and tools |
+| POST | `/api/mcp/reload` | Reconnect to the servers in `mcp.json` |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 
 ## Storage
@@ -209,6 +226,7 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
 ```
 ~/.mip/
   data/mip.db           SQLite: personas, agents, messages, runs, memory, repositories
+  data/mcp.json         MCP servers to connect to. It can hold tokens, so it never syncs
   repos/<name>/         Master clones from the Repositories card
   sessions/claude/      Claude CLI config, login, and transcripts
   sessions/pi/          Pi session files

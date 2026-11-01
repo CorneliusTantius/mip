@@ -138,7 +138,7 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 - **tool_call.** Runs one deferred tool by name with its inputs. It refuses any name not in the run's deferred list, so a basic tool, or a tool a bot was not given, is never run this way.
 - **Other providers.** Claude gets the search tools through `/mcp`, and the deferred list is read from the run's token. Pi gets them as custom tools, with `deferredTools` in its context.
 - **Guides.** Every tool has a `guide`. `runs.ts` puts the guides of the tools a run is offered into the system prompt (`toolGuidesPrompt`). A deferred tool's guide is in the `tool_search` result, so it reaches the model when the tool is found.
-- **Not built.** Code mode, and external MCP servers. Code mode needs a sandbox first.
+- **Not built.** Code mode. It needs a sandbox first.
 
 ## 16. Skills
 Skills card: `features/skills/SkillsCard.tsx` (the installed skills, with Create, Import, and Remove), `CreateSkillDialog.tsx` and `ImportSkillDialog.tsx`, `useSkills.ts`. Every agent and bot can use every installed skill, so the card lists no per-agent or per-bot skills.
@@ -150,3 +150,11 @@ Skills card: `features/skills/SkillsCard.tsx` (the installed skills, with Create
 - **The / command.** In an agent's message box, typing `/` at the start lists the installed skills, and picking one puts `/name ` in the box. When the message is sent, `runs.ts` passes the prompt through `withSkillCommand`: a leading `/name` for an installed skill becomes that skill's instructions, followed by the rest of the message. The saved message is what was typed. A `/` that matches no installed skill is sent as it is. Rooms have no `/` command.
 - **Other agents.** Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Neither reads its own skill folders.
 - Tests: `app/skills/format.test.mjs` (the header and file rules) and `app/skills/skills.test.mjs` (import review, refusals, search, the `/name` command, the tools, the tool lists, and removal), both with a temporary `MIP_HOME`. The dropped per-agent and per-bot skill tables are checked by `storage/db.test.mjs`.
+
+## 17. External MCP servers
+- **Config.** `data/mcp.json` (`MCP_CONFIG_FILE`) holds a `mcpServers` map. A stdio entry has `command`, `args`, and `env`. An http entry has `url` and `headers`. `parseMcpConfig` checks each entry, and a bad one is reported by name.
+- **Start.** `server.ts` calls `startMcpServers` once it is listening, so the dashboard is up while the servers start. Each server connects on its own: start, then list its tools, with 30 s for each step.
+- **Tools.** Each tool becomes `mcp_<server>_<tool>`. `agentDeferredTools()` builds an agent run's deferred list when the run starts, so `tool_search` finds these tools and `tool_call` runs them. A failed result from the server comes back as a failed tool result.
+- **Reload.** `POST /api/mcp/reload` closes every connection and starts again from the file. A run in progress keeps its tool list, so its calls to a closed server fail.
+- **Bots.** No bot is offered MCP tools yet.
+- Tests: `app/mcp/mcp.test.mjs`, with a fake stdio server and a temporary `MIP_HOME`.

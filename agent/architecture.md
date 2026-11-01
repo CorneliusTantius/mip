@@ -37,6 +37,7 @@ Dependency direction is one way: `http → app → adapters | storage`, and `sto
 | path | contents | written by |
 | --- | --- | --- |
 | `data/mip.db` | all app data (SQLite, `node:sqlite`) | `storage/*` |
+| `data/mcp.json` | the MCP servers mip connects to. It can hold tokens, so it never syncs | `app/mcp/config.ts` |
 | `sessions/claude/` | Claude CLI config (`CLAUDE_CONFIG_DIR`): login, CLI transcripts | `adapters/claude-cli.ts` |
 | `sessions/pi/` | Pi session files | `adapters/pi.ts` |
 | `repos/<name>/` | master clones of repositories | `app/repos.ts` |
@@ -77,11 +78,11 @@ Deleting an agent removes `workspaces/<agentId>` (`app/tools/workspace.ts`). Pro
 - Kinds of run take their lists from the registry: agents get `AGENT_TOOLS` and `AGENT_DEFERRED`. Bots get `BOT_TOOLS`, which holds the memory tools, the skill tools, and `room_search`, and `BOT_DEFERRED`, which is empty.
 - Guides: each tool has a `guide`. The guides of the offered tools go into the system prompt (`toolGuidesPrompt`). A deferred tool's guide comes back with its `tool_search` result.
 - Claude reaches the tools through `/mcp`, with `--strict-mcp-config`, built-in tools off (`--tools ""`), `--allowedTools mcp__mip__<name>`, and `--disable-slash-commands`.
+- External MCP servers (`data/mcp.json`) connect at startup. Their tools are deferred for agents: `mcp_<server>_<tool>`, found with `tool_search` and run with `tool_call`. Both providers reach them the same way.
 - Pi gets the tools as custom tools. Its built-in tools are off, and its own skill folders are off (`noSkills`).
 - Paths are confined to the workspace by `inWorkspace` (`app/tools/workspace.ts`). `bash` is not sandboxed.
 - Planned, not built:
   - Code mode, where the model writes a short program against the tool API. It needs a real sandbox first.
-  - External MCP servers. mip is an MCP server for the Claude CLI, and it does not connect to other servers yet.
 
 ## Frontend
 - Preact 11, daisyUI 5, Tailwind 4, Vite 8. Dark Nord theme in `styles.css`.
