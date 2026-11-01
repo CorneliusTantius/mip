@@ -383,7 +383,7 @@
 | src/frontend/features/agent/AgentSkillsDialog.tsx | 8 | function | AgentSkillsDialog |
 | src/frontend/features/agent/Composer.tsx | 17 | function | Composer |
 | src/frontend/features/agent/PersonasDialog.tsx | 15 | function | PersonasDialog |
-| src/frontend/features/agent/Transcript.tsx | 7 | function | Transcript |
+| src/frontend/features/agent/Transcript.tsx | 8 | function | Transcript |
 | src/frontend/features/agent/useAgents.ts | 10 | function | useAgents |
 | src/frontend/features/agent/useTranscript.ts | 11 | function | useTranscript |
 | src/frontend/features/bots/BotEditor.tsx | 23 | function | BotEditor |
@@ -393,7 +393,7 @@
 | src/frontend/features/bots/MentionInput.tsx | 7 | function | MentionInput |
 | src/frontend/features/bots/MessageText.tsx | 5 | function | MessageText |
 | src/frontend/features/bots/RoomDialog.tsx | 10 | function | RoomDialog |
-| src/frontend/features/bots/RoomTranscript.tsx | 9 | function | RoomTranscript |
+| src/frontend/features/bots/RoomTranscript.tsx | 10 | function | RoomTranscript |
 | src/frontend/features/bots/botColors.ts | 4 | const | BOT_COLORS |
 | src/frontend/features/bots/botColors.ts | 7 | function | nextBotColor |
 | src/frontend/features/bots/mentions.ts | 4 | interface | Mention |
@@ -439,6 +439,7 @@
 | src/frontend/ui/ErrorAlert.tsx | 2 | function | ErrorAlert |
 | src/frontend/ui/Icon.tsx | 20 | type | IconName |
 | src/frontend/ui/Icon.tsx | 22 | function | Icon |
+| src/frontend/ui/Markdown.tsx | 10 | function | Markdown |
 | src/frontend/ui/Modal.tsx | 24 | function | Modal |
 | src/frontend/ui/OptionDropdown.tsx | 5 | interface | DropdownOption |
 | src/frontend/ui/OptionDropdown.tsx | 13 | function | OptionDropdown |
@@ -451,5 +452,9 @@
 | src/frontend/ui/filterOptions.ts | 3 | function | filterOptions |
 | src/frontend/ui/hooks.ts | 5 | function | usePolling |
 | src/frontend/ui/hooks.ts | 17 | function | useAnnouncement |
+| src/frontend/ui/markdown.ts | 5 | type | Inline |
+| src/frontend/ui/markdown.ts | 12 | type | Block |
+| src/frontend/ui/markdown.ts | 39 | function | parseBlocks |
+| src/frontend/ui/markdown.ts | 103 | function | parseInline |
 | src/frontend/ui/toolName.ts | 3 | function | toolLabel |
 | src/frontend/ui/toolName.ts | 8 | function | prettyJson |

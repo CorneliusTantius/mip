@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "preact/hooks";
 import type { AgentMessage } from "../../api/types";
+import { Markdown } from "../../ui/Markdown";
 import { ToolCallsButton } from "../../ui/ToolCallsDialog";
 
-// The messages of the open agent. It scrolls to the newest message as they arrive. A reply that used tools has a button at its
-// bottom that lists those tool calls.
+// The messages of the open agent. It scrolls to the newest message as they arrive. A reply is drawn as Markdown; your own messages
+// are shown as written. A reply that used tools has a button at its bottom that lists those tool calls.
 export function Transcript({ messages, busy, emptyText }: { messages: AgentMessage[]; busy: boolean; emptyText: string }) {
   const log = useRef<HTMLDivElement>(null);
 
@@ -17,7 +18,11 @@ export function Transcript({ messages, busy, emptyText }: { messages: AgentMessa
       {messages.map((m, i) => (
         <div key={i} className={"chat " + (m.role === "user" ? "chat-end" : "chat-start")}>
           <div className={"chat-bubble whitespace-pre-wrap " + (m.error ? "chat-bubble-error" : m.role === "user" ? "chat-bubble-primary" : "")}>
-            {m.text || m.error || (busy && i === messages.length - 1 ? <span className="loading loading-dots loading-sm" /> : null)}
+            {m.role === "assistant" && m.text ? (
+              <Markdown text={m.text} />
+            ) : (
+              m.text || m.error || (busy && i === messages.length - 1 ? <span className="loading loading-dots loading-sm" /> : null)
+            )}
             {m.error && m.text && <p className="mt-1 text-sm">{m.error}</p>}
             {m.tools.length > 0 && <ToolCallsButton calls={m.calls} names={m.tools} />}
           </div>
