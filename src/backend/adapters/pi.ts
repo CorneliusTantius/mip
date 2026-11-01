@@ -232,7 +232,7 @@ export class PiProvider implements AgentProvider {
         cwd,
         agentDir: getAgentDir(),
         noContextFiles: true,
-        // Pi's own skills are off. An agent uses only the skills enabled for it, through the app's skill tools.
+        // Pi's own skills are off. An agent reads skills through the app's skill tools.
         noSkills: true,
         systemPrompt: options.systemPrompt,
       });

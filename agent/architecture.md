@@ -71,7 +71,7 @@ Deleting an agent removes `workspaces/<agentId>` (`app/tools/workspace.ts`). Pro
 ## Tools
 - `ToolSpec` (`adapters/contract.ts`): `name`, `description`, `guide`, `inputSchema`, and `run(input, context)`. The context holds the workspace, the agent id, the offered and deferred lists, and the abort signal.
 - Registry: `app/tools/index.ts`. Three groups:
-  - `BASIC_TOOLS` are always offered: `bash`, `read`, `edit`, `write`, `skill_read`.
+  - `BASIC_TOOLS` are always offered: `bash`, `read`, `edit`, `write`, `skill_search`, `skill_read`.
   - `DEFERRED_TOOLS` are not offered. The model finds one with `tool_search` and runs it with `tool_call`: `memory_search`, `memory_read`, `memory_edit`, `skill_file`.
   - The search tools, `tool_search` and `tool_call`, live in `app/tools/search.ts`.
 - Kinds of run take their lists from the registry: agents get `AGENT_TOOLS` and `AGENT_DEFERRED`. Bots get `BOT_TOOLS`, which holds the memory tools, the skill tools, and `room_search`, and `BOT_DEFERRED`, which is empty.

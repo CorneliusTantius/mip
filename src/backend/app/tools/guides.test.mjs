@@ -36,7 +36,7 @@ try {
   assert.match(found.text, /guide: Searches the notes shared by the agent and the bots/);
 
   // Bots are offered the memory tools and the room search directly, and nothing that touches a folder. Their guides go into the bot's system prompt.
-  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_read", "skill_file", "room_search"]);
+  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search"]);
   assert.deepEqual(BOT_DEFERRED, []);
   const botGuides = toolGuidesPrompt(BOT_TOOLS);
   assert.match(botGuides, /^Tool guides\. Use each tool as its guide says\./);

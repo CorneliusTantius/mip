@@ -99,7 +99,7 @@ Bots are named agents, and they talk in rooms. Create them with **Manage bots** 
 - Each bot has a color, set in its settings. Its messages take a light tint of it, and each `@Name` is a pill in that color. Click a pill to see the bot's profile.
 - A bot with nothing to add replies `PASS`.
 - One message sets off at most 8 turns. After that the room waits for your next message.
-- Each turn sees the last 30 messages of its room. A bot has six tools: memory search, memory read, memory edit (only for notes that already exist), skill read and skill file (for the skills checked for it), and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
+- Each turn sees the last 30 messages of its room. A bot has seven tools: memory search, memory read, memory edit (only for notes that already exist), skill search, skill read, skill file, and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
 - Bots only run when you post. Nothing runs on a schedule yet.
 
 ## Memory
@@ -118,7 +118,7 @@ Memory is one set of notes shared by every agent. Notes live in SQLite with a fu
 
 A skill is a folder with a `SKILL.md`: a header that gives its name and a one-line description, then its instructions. It can also hold text files that the instructions name. Add one from the **Skills** card in one of two ways. **Create** writes it from a form: a name, a one-line description, and the instructions. **Import** takes a folder: give its full path, review what will be installed, then confirm. Only text files are accepted for imports. Scripts, binaries, and symbolic links are refused, so a skill is instructions and cannot run code by itself.
 
-Each agent picks its skills with its **Skills** button, and each bot picks its skills in its settings under **Manage bots**. An agent or a bot can read only the skills it has enabled. The model sees their names and descriptions, and reads the full text with `skill_read` when a task needs it. mip reads only its own skills folder (`~/.mip/skills`), never your Claude Code or Pi skill folders.
+Every agent and bot can use every installed skill. The model searches for one with `skill_search`, reads it with `skill_read`, and reads its files with `skill_file`. In an agent's message box, typing `/` lists the installed skills, and `/name` with a message asks for that skill for that message. mip reads only its own skills folder (`~/.mip/skills`), never your Claude Code or Pi skill folders.
 
 ## Tool calls
 
@@ -126,7 +126,7 @@ Each reply keeps the tool calls it made, with their inputs and results. Click **
 
 ## Tools
 
-Every provider gets the same tools, defined in `src/backend/app/tools/`. Five are always offered: `bash`, `read`, `edit`, `write`, and `skill_read`. Four are deferred: the three memory tools and `skill_file`. The model finds a deferred tool with `tool_search`, then runs it with `tool_call`, so the list of tools stays short. Each tool has a short guide that tells the model when and how to use it. An offered tool's guide goes into the system prompt, and a deferred tool's guide comes back with `tool_search`. The built-in persona keeps only how the assistant works.
+Every provider gets the same tools, defined in `src/backend/app/tools/`. Six are always offered: `bash`, `read`, `edit`, `write`, `skill_search`, and `skill_read`. Four are deferred: the three memory tools and `skill_file`. The model finds a deferred tool with `tool_search`, then runs it with `tool_call`, so the list of tools stays short. Each tool has a short guide that tells the model when and how to use it. An offered tool's guide goes into the system prompt, and a deferred tool's guide comes back with `tool_search`. The built-in persona keeps only how the assistant works.
 
 - **Pi** gets them as custom tools. Pi's own copies are off.
 - **Claude** reaches them through the app's `/mcp` endpoint. Each run gets a token that opens only that run's workspace, and the token stops working when the run ends. Claude's built-in tools are off for these runs.
@@ -195,12 +195,11 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | GET | `/api/tools` | The tool registry: each tool, and whether agents and bots may use it |
 | GET | `/api/skills` | Installed skills, and any folders that could not be read |
 | GET | `/api/skills/:name` | One skill with its instructions |
-| DELETE | `/api/skills/:name` | Remove a skill from mip and from every agent |
+| DELETE | `/api/skills/:name` | Remove a skill from mip |
 | POST | `/api/skills` | Create a skill from a form. Body: `{ name, description, body }` |
 | POST | `/api/skills/imports` | Stage a skill folder for review. Body: `{ path }` |
 | POST | `/api/skills/imports/:id/confirm` | Install a staged skill |
 | DELETE | `/api/skills/imports/:id` | Drop a staged skill without installing it |
-| PUT | `/api/agents/:id/skills` | Choose the skills an agent may use. Body: `{ skills: [names] }` |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 
 ## Storage

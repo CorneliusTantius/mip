@@ -17,9 +17,9 @@ export interface ToolResult {
 // What a tool may use while it runs: the agent's workspace folder, and a signal that fires when the run is stopped.
 export interface ToolContext {
   workspace: string;
-  // The agent the run belongs to. Skill tools use it to check which skills the agent has enabled.
+  // The agent the run belongs to.
   agentId?: string;
-  // The bot a turn belongs to. Skill tools use it to check which skills the bot has enabled.
+  // The bot a turn belongs to.
   botId?: string;
   // The room a bot's turn is in. The room tools read its messages.
   roomId?: string;

@@ -23,7 +23,7 @@ function hasColumn(table: string, column: string): boolean {
 if (hasTable("sessions") && !hasTable("agents")) {
   db.exec("ALTER TABLE sessions RENAME TO agents");
 }
-for (const table of ["messages", "runs", "skill_enablements"]) {
+for (const table of ["messages", "runs"]) {
   if (hasColumn(table, "session_id")) {
     db.exec(`ALTER TABLE ${table} RENAME COLUMN session_id TO agent_id`);
   }
@@ -119,17 +119,10 @@ db.exec(`
     error TEXT,
     created_at INTEGER NOT NULL
   );
-  CREATE TABLE IF NOT EXISTS skill_enablements (
-    agent_id TEXT NOT NULL,
-    skill TEXT NOT NULL,
-    PRIMARY KEY (agent_id, skill)
-  );
-  CREATE TABLE IF NOT EXISTS bot_skill_enablements (
-    bot_id TEXT NOT NULL,
-    skill TEXT NOT NULL,
-    PRIMARY KEY (bot_id, skill)
-  );
 `);
+
+// Every agent and bot can use every installed skill now, so the per-agent and per-bot skill lists are dropped.
+db.exec("DROP TABLE IF EXISTS skill_enablements; DROP TABLE IF EXISTS bot_skill_enablements;");
 
 // Migrations for databases made before some columns existed. Each one adds the column only when it is missing.
 

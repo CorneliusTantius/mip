@@ -1,12 +1,11 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { SKILLS_DIR } from "../../storage/paths.js";
-import { botSkillNames, enabledSkillNames, removeSkillEnablements, saveAgentSkills, saveBotSkills } from "../../storage/skills.js";
 import { AppError, errorMessage } from "../errors.js";
 import { isSafeRelativePath, isTextFile, isValidName, MAX_READ_BYTES, MAX_SKILL_MD_BYTES, parseSkill } from "./format.js";
 
-// The skill registry: the folders under MIP_HOME/skills, one per skill. Only this module reads them. An agent or a bot can use only
-// the skills it has enabled, and a skill is read only through the tools in app/tools/skills.ts.
+// The skill registry: the folders under MIP_HOME/skills, one per skill. Only this module reads them. Every agent and bot can use every
+// installed skill, through the skill tools in app/tools/skills.ts.
 const SKILL_FILE = "SKILL.md";
 
 export interface SkillSummary {
@@ -68,80 +67,48 @@ export function readSkillFile(name: string, path: string): string {
   return readFileSync(full, "utf8");
 }
 
-// The skills an agent has enabled, as they are installed now. A skill that was removed is left out.
-export function enabledSkills(agentId: string): SkillSummary[] {
-  return installedNamed(enabledSkillNames(agentId));
+// The installed skills that match the words, best first. A skill matches when its name or description holds one of the words, and a
+// skill that holds more of them ranks higher. An empty query lists the first skills by name.
+export function searchSkills(query: string, limit = 10): SkillSummary[] {
+  const skills = listSkills().skills;
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return skills.slice(0, limit);
+  return skills
+    .map((skill) => {
+      const text = `${skill.name} ${skill.description}`.toLowerCase();
+      return { skill, hits: words.filter((word) => text.includes(word)).length };
+    })
+    .filter((match) => match.hits > 0)
+    .sort((a, b) => b.hits - a.hits || a.skill.name.localeCompare(b.skill.name))
+    .slice(0, limit)
+    .map((match) => match.skill);
 }
 
-// The skills a bot has enabled, as they are installed now. A skill that was removed is left out.
-export function botSkills(botId: string): SkillSummary[] {
-  return installedNamed(botSkillNames(botId));
-}
-
-// The installed skills with these names, in name order.
-function installedNamed(names: string[]): SkillSummary[] {
-  const wanted = new Set(names);
-  return listSkills().skills.filter((skill) => wanted.has(skill.name));
-}
-
-// The skill an agent may read. Refused unless the agent has enabled it.
-export function enabledSkill(agentId: string, name: string): SkillDetail {
-  if (!enabledSkillNames(agentId).includes(name)) throw new Error(`skill "${name}" is not enabled for this agent`);
-  return loadSkill(name);
-}
-
-// The skill a bot may read. Refused unless the bot has enabled it.
-export function enabledBotSkill(botId: string, name: string): SkillDetail {
-  if (!botSkillNames(botId).includes(name)) throw new Error(`skill "${name}" is not enabled for this bot`);
-  return loadSkill(name);
-}
-
-// The part of the system prompt that lists an agent's skills. Empty when the agent has none enabled.
-export function skillsPrompt(agentId: string): string {
-  return skillListPrompt(enabledSkills(agentId), "agent");
-}
-
-// The part of a bot's system prompt that lists its skills. Empty when the bot has none enabled.
-export function botSkillsPrompt(botId: string): string {
-  return skillListPrompt(botSkills(botId), "bot");
-}
-
-function skillListPrompt(skills: SkillSummary[], who: "agent" | "bot"): string {
-  if (skills.length === 0) return "";
+// A message that starts with /name asks for that installed skill with the rest of the message. The model gets the skill's
+// instructions with the message. Any other message, or a /name that is not an installed skill, is sent as it is.
+export function withSkillCommand(message: string): string {
+  const match = /^\/([A-Za-z0-9][\w.-]*)(?:\s+([\s\S]*))?$/.exec(message);
+  if (!match) return message;
+  const name = match[1] ?? "";
+  if (!listSkills().skills.some((skill) => skill.name === name)) return message;
+  const skill = loadSkill(name);
+  const files = skill.files.length > 0 ? `\n\nFiles in this skill (read them with skill_file): ${skill.files.join(", ")}` : "";
   return [
-    `Skills enabled for this ${who}. Each one holds instructions for a kind of task.`,
-    "When a task matches a skill, call skill_read with its name first, and follow it. Call skill_file to read a file the skill names.",
-    ...skills.map((skill) => `- ${skill.name}: ${skill.description}`),
+    `The user asked for the skill "${name}" with this message. Follow its instructions for the message.`,
+    "",
+    `# ${skill.name}`,
+    "",
+    `${skill.body}${files}`,
+    "",
+    "The user's message:",
+    (match[2] ?? "").trim() || "(no further text)",
   ].join("\n");
 }
 
-// Checks that every name is an installed skill, and returns the names sorted, without repeats.
-export function checkSkillNames(names: string[]): string[] {
-  const installed = new Set(listSkills().skills.map((skill) => skill.name));
-  const unknown = names.filter((name) => !installed.has(name));
-  if (unknown.length > 0) throw new AppError(400, `no such skill: ${unknown.join(", ")}`);
-  return [...new Set(names)].sort();
-}
-
-// Replaces an agent's enabled skills. Every name must be an installed skill.
-export function setAgentSkills(agentId: string, names: string[]): string[] {
-  const unique = checkSkillNames(names);
-  saveAgentSkills(agentId, unique);
-  return unique;
-}
-
-// Replaces a bot's enabled skills. Every name must be an installed skill.
-export function setBotSkills(botId: string, names: string[]): string[] {
-  const unique = checkSkillNames(names);
-  saveBotSkills(botId, unique);
-  return unique;
-}
-
-// Removes an installed skill, and takes it away from every agent that had it enabled.
+// Removes an installed skill from mip.
 export function removeSkill(name: string): void {
   loadSkill(name);
   rmSync(skillFolder(name), { recursive: true, force: true });
-  removeSkillEnablements(name);
 }
 
 function readSkillMd(name: string): string {

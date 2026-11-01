@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
-import type { Bot, ProviderInfo, SkillSummary } from "../../api/types";
+import type { Bot, ProviderInfo } from "../../api/types";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { Modal } from "../../ui/Modal";
@@ -10,8 +10,6 @@ import { BotEditor } from "./BotEditor";
 export function BotsDialog({ open, startWith, onClose }: { open: boolean; startWith?: Bot; onClose: () => void }) {
   const [bots, setBots] = useState<Bot[]>([]);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
-  // The installed skills, for the skills a bot may use.
-  const [installed, setInstalled] = useState<SkillSummary[]>([]);
   // The bot being edited, "new" for a new bot, or undefined for the list.
   const [editing, setEditing] = useState<Bot | "new">();
   const [deleting, setDeleting] = useState<Bot>();
@@ -24,7 +22,6 @@ export function BotsDialog({ open, startWith, onClose }: { open: boolean; startW
     if (!open) return;
     load();
     api.get<{ providers: ProviderInfo[] }>("/api/providers").then((data) => setProviders(data.providers));
-    api.get<{ skills: SkillSummary[] }>("/api/skills").then((data) => setInstalled(data.skills));
     setEditing(startWith);
   }, [open]);
 
@@ -65,7 +62,6 @@ export function BotsDialog({ open, startWith, onClose }: { open: boolean; startW
               key={editing === "new" ? "new" : editing.id}
               bot={editing === "new" ? undefined : editing}
               providers={providers}
-              installed={installed}
               usedColors={bots.filter((b) => b.id !== (editing === "new" ? undefined : editing)?.id).map((b) => b.color)}
               onCancel={() => setEditing(undefined)}
               onSaved={() => {

@@ -20,8 +20,6 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `room_bots` | room_id, bot_id (the room's members) | (room_id, bot_id) | `storage/rooms.ts` (+ `bots.ts` delete) | `app/room/rooms.ts` |
 | `room_messages` | id (autoincrement), room_id, kind (`user`/`bot`/`system`), bot_id (nullable), author_name, text, calls (JSON), created_at | id; index (room_id, id) | `storage/room.ts` | `app/room/room.ts` |
 | `repos` | id, name (UNIQUE), url, status (`cloning`/`ready`/`error`), error (nullable), created_at | id | `storage/repos.ts` | `app/repos.ts`, `db.ts` (recovery) |
-| `skill_enablements` | agent_id, skill (the skill's name) | (agent_id, skill) | `storage/skills.ts` (+ `agents.ts` delete) | `app/skills/registry.ts` |
-| `bot_skill_enablements` | bot_id, skill (the skill's name) | (bot_id, skill) | `storage/skills.ts` (+ `bots.ts` delete) | `app/skills/registry.ts` |
 
 ## Invariants
 - An agent has at most one `running` run (`app/runs.ts`).

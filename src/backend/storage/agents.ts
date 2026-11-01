@@ -119,7 +119,6 @@ export function deleteAgent(id: string): void {
     db.prepare("DELETE FROM run_events WHERE run_id IN (SELECT id FROM runs WHERE agent_id = ?)").run(id);
     db.prepare("DELETE FROM runs WHERE agent_id = ?").run(id);
     db.prepare("DELETE FROM messages WHERE agent_id = ?").run(id);
-    db.prepare("DELETE FROM skill_enablements WHERE agent_id = ?").run(id);
     db.prepare("DELETE FROM agents WHERE id = ?").run(id);
     db.exec("COMMIT");
   } catch (err) {

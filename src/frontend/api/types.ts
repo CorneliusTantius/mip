@@ -55,8 +55,6 @@ export interface Agent {
   thinking: string | null;
   title: string;
   updatedAt: number;
-  // The skills the agent has enabled. The agent list includes it; an agent created just now may not.
-  skills?: string[];
 }
 
 // A tool in the registry, and which kinds of run may use it.
@@ -119,8 +117,6 @@ export interface Bot {
   model: string | null;
   thinking: string | null;
   color: BotColor;
-  // The names of the installed skills this bot may use.
-  skills: string[];
 }
 
 // A room of bots. Its messages are its own, and its members are the bots that answer in it.

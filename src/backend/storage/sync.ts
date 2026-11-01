@@ -137,7 +137,6 @@ export function writeBotRow(bot: BotRow): void {
 
 export function removeBotRow(name: string): boolean {
   db.prepare("DELETE FROM room_bots WHERE bot_id IN (SELECT id FROM bots WHERE name = ? COLLATE NOCASE)").run(name);
-  db.prepare("DELETE FROM bot_skill_enablements WHERE bot_id IN (SELECT id FROM bots WHERE name = ? COLLATE NOCASE)").run(name);
   db.prepare("DELETE FROM bots WHERE name = ? COLLATE NOCASE").run(name);
   return true;
 }

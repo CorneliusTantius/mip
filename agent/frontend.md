@@ -25,7 +25,7 @@ Shared pieces. Each is used by more than one feature.
 | `ErrorAlert.tsx` | `ErrorAlert` | A red alert for a message. Renders nothing without one. |
 | `Icon.tsx` | `Icon`, `IconName` | Named SVG icons. |
 | `OptionDropdown.tsx` | `OptionDropdown` | A fixed-width dropdown with ellipsis, for model, thinking, provider, and copy-to-agent. With `searchable`, a search box at the top narrows the options by a plain contains match on the label or value (`filterOptions.ts`, tested by `filterOptions.test.mjs`). The session and bot-form model pickers are searchable. |
-| `RunScopePills.tsx` | `RunScopePills`, `RunScope` | The All / Agent / Bot pill that picks a card's view. One size larger when its card is expanded. Used by the Tools and Skills cards. |
+| `RunScopePills.tsx` | `RunScopePills`, `RunScope` | The All / Agent / Bot pill that picks a card's view. One size larger when its card is expanded. Used by the Tools card. |
 | `ToolCallDetails.tsx` | `ToolCallDetails` | One tool call's name, input, and result. Used by the tool-call dialog. |
 | `toolName.ts` | `toolLabel`, `prettyJson` | Pure helpers. `toolLabel` drops the `mcp__<server>__` prefix. |
 | `hooks.ts` | `usePolling`, `useAnnouncement` | An interval that always runs the latest function, and a window-event listener. |
@@ -46,18 +46,18 @@ Shared pieces. Each is used by more than one feature.
 ## features/agent/
 | file | exports | job |
 | --- | --- | --- |
-| `AgentCard.tsx` | `AgentCard` | Composes the pieces. Opens the newest agent on load. Its header has a Skills button (opens `AgentSkillsDialog`). Phones close the agent list. |
+| `AgentCard.tsx` | `AgentCard` | Composes the pieces. Opens the newest agent on load. Phones close the agent list. |
 | `useAgents.ts` | `useAgents` | Providers, personas, agents, the open agent, and new-agent choices. Announces `AGENTS_CHANGED`, and listens for `PERSONAS_CHANGED` and `PROVIDERS_CHANGED`. |
 | `useTranscript.ts` | `useTranscript` | Messages, busy, and the run being followed. `applyEvent` builds a reply live: text, tool names, each call with its input, and its result matched by id. Polls run events every 600 ms while a run goes. |
 | `AgentList.tsx` | `AgentList` | The sidebar: provider and persona selects, New agent, the list with inline rename and delete. |
 | `PersonasDialog.tsx` | `PersonasDialog` | Manage personas: pick, edit, set default, and delete with confirmation. |
-| `AgentSkillsDialog.tsx` | `AgentSkillsDialog` | Checkboxes for the installed skills this agent may use. Saves with `PUT /api/agents/:id/skills`. |
 | `AgentHeader.tsx` | `AgentHeader` | The title, the persona and provider badges, and the header controls. |
 | `Transcript.tsx` | `Transcript` | Message bubbles. An agent's reply is drawn as Markdown; your own messages are shown as written. A reply that used tools has a View tool calls button at its bottom. |
 | `ui/Markdown.tsx` | `Markdown` | A reply drawn as Markdown: paragraphs, headings, lists, quotes, code blocks, rules, bold, italic, code spans, and web links. Built as elements, never as HTML. `renderText` draws each plain-text run, so room replies keep their mention pills. |
 | `ui/markdown.ts` | `parseBlocks`, `parseInline` | The Markdown reader, with no DOM: text in, blocks and inline pieces out. Only http and https links are links. Tested by `ui/markdown.test.mjs`. |
 | `ui/ToolCallsDialog.tsx` | `ToolCallsButton`, `ToolCallsDialog` | The button and the dialog listing one reply's tool calls with their inputs and results. Used by agent replies and bot replies in the room. A reply saved before details were recorded lists its names only. |
-| `Composer.tsx` | `Composer` | Model and thinking dropdowns, and the message box. Owns the draft. |
+| `Composer.tsx` | `Composer` | Model and thinking dropdowns, the message box, and the `/` list of installed skills. Owns the draft. |
+| `skillCommand.ts` | `skillCommandQuery`, `matchingSkills` | Pure rules for the `/` list: which text opens it, and which skills it offers. Tested by `skillCommand.test.mjs`. |
 
 ## features/bots/
 | file | exports | job |
@@ -73,7 +73,7 @@ Shared pieces. Each is used by more than one feature.
 | `BotProfileModal.tsx` | `BotProfileModal` | A bot's profile: color, provider, model, thinking level, and persona. Its Edit button opens the bot's form in `BotsDialog`. |
 | `botColors.ts` | `BOT_COLORS`, `nextBotColor` | The palette, in the order a new bot takes its colors. The server has the same list. |
 | `BotsDialog.tsx` | `BotsDialog` | Manage bots: list, New, Edit, and Delete with confirmation. |
-| `BotEditor.tsx` | `BotEditor` | The bot form, with a color picker of eight swatches and checkboxes for the installed skills the bot may use. A new bot starts on the first color no other bot uses. Clears model and thinking when the provider or model changes. |
+| `BotEditor.tsx` | `BotEditor` | The bot form, with a color picker of eight swatches. A new bot starts on the first color no other bot uses. Clears model and thinking when the provider or model changes. |
 
 ## features/memory/
 | file | exports | job |
@@ -93,7 +93,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/skills/
 | file | exports | job |
 | --- | --- | --- |
-| `SkillsCard.tsx` | `SkillsCard` | The installed skills with the All / Agent / Bot pill. All lists skills, with the selected skill's text when expanded. Agent lists each agent (an agent conversation) and its skills. Bot lists each bot and the skills it has enabled. Create, Import, and Remove. |
+| `SkillsCard.tsx` | `SkillsCard` | The installed skills, with Create, Import, and Remove. Expanded, the selected skill's text shows, with remove. Every agent and bot can use every installed skill. |
 | `CreateSkillDialog.tsx` | `CreateSkillDialog` | Creates a skill from a form: name, description, instructions. |
 | `ImportSkillDialog.tsx` | `ImportSkillDialog` | Two steps: review a folder's files and `SKILL.md`, then install. |
 | `useSkills.ts` | `useSkills` | Loads the installed skills and any folders that could not be read. |
@@ -131,7 +131,7 @@ Shared pieces. Each is used by more than one feature.
 | graph data, and the note a graph click asked for | `MemoryBody` in `MemoryCard.tsx` |
 | repos, agents, link, pulls | `RepositoriesCard` |
 | installed skills, selected skill, dialogs | `SkillsCard` and `useSkills` |
-| scope pill, selected tool | `ToolsCard` and `SkillsCard` |
+| scope pill, selected tool | `ToolsCard` |
 | sync status | `useSync` |
 | providers, selected service | `ProviderTab` |
 | settings tab | `SettingsDialog` |

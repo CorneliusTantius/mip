@@ -9,7 +9,7 @@ import { personaPrompt } from "./personas.js";
 import { findProvider } from "./providers.js";
 import { repoNote } from "./repos.js";
 import { AGENT_DEFERRED, AGENT_TOOLS, registerRun, releaseRun, toolGuidesPrompt } from "./tools/index.js";
-import { skillsPrompt } from "./skills/registry.js";
+import { withSkillCommand } from "./skills/registry.js";
 import { ToolCallLog } from "./tools/calls.js";
 import { workspaceFor } from "./tools/workspace.js";
 
@@ -66,9 +66,10 @@ async function execute(job: RunJob): Promise<void> {
   const record = (event: AgentEvent) => appendRunEvent(job.runId, ++seq, event);
   try {
     for await (const event of job.provider.run({
-      prompt: job.prompt,
-      // The persona's prompt, the repositories in the workspace, the skills the agent enabled, the guides of the tools offered, and any shared notes that match this message.
-      systemPrompt: [personaPrompt(job.agent.personaId), repoNote(job.workspace), skillsPrompt(job.agent.id), toolGuidesPrompt(AGENT_TOOLS), recallFor(job.prompt)]
+      // A leading /skill-name is expanded here, so the model gets the skill's instructions. The message is saved as it was typed.
+      prompt: withSkillCommand(job.prompt),
+      // The persona's prompt, the repositories in the workspace, the guides of the tools offered, and any shared notes that match this message.
+      systemPrompt: [personaPrompt(job.agent.personaId), repoNote(job.workspace), toolGuidesPrompt(AGENT_TOOLS), recallFor(job.prompt)]
         .filter(Boolean)
         .join("\n\n"),
       tools: AGENT_TOOLS,

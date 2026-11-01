@@ -1,4 +1,4 @@
-// Checks the rename from chats to agents on a database made before it: its rows, messages, runs, and skill enablements all keep their data.
+// Checks the rename from chats to agents on a database made before it: its rows, messages, and runs keep their data, and the old per-agent and per-bot skill lists are dropped.
 // Run after a build: node src/backend/storage/db.test.mjs. It sets MIP_HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -37,7 +37,6 @@ try {
   // Opening the database with the current code renames the tables and columns, and keeps the rows.
   const agents = await import(`${DIST}storage/agents.js`);
   const runs = await import(`${DIST}storage/runs.js`);
-  const skills = await import(`${DIST}storage/skills.js`);
   const bots = await import(`${DIST}storage/bots.js`);
   const room = await import(`${DIST}storage/room.js`);
   const rooms = await import(`${DIST}storage/rooms.js`);
@@ -49,7 +48,10 @@ try {
   assert.equal(listed[0].providerSessionId, "p1");
   assert.equal(agents.listMessages("a1")[0].text, "hello");
   assert.equal(runs.getRun("r1").status, "done");
-  assert.deepEqual(skills.enabledSkillNames("a1"), ["notes"]);
+  // The skill lists are gone: the old table was dropped, and nothing is left under either name.
+  const check = new DatabaseSync(join(process.env.MIP_HOME, "data", "mip.db"));
+  assert.deepEqual(check.prepare("SELECT name FROM sqlite_master WHERE name IN ('skill_enablements', 'bot_skill_enablements')").all(), []);
+  check.close();
   assert.deepEqual(Object.fromEntries(bots.listBots().map((bot) => [bot.name, bot.color])), { Freya: "frost", Thorin: "orange" });
   // The room that existed becomes Main, with every bot that existed, and its messages move into it. Its calls are empty.
   const main = rooms.getRoom("main");

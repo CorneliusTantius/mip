@@ -1,6 +1,8 @@
-import { useState } from "preact/hooks";
-import type { ModelOption, Agent } from "../../api/types";
+import { useEffect, useState } from "preact/hooks";
+import { api } from "../../api/client";
+import type { ModelOption, Agent, SkillSummary } from "../../api/types";
 import { OptionDropdown } from "../../ui/OptionDropdown";
+import { matchingSkills, skillCommandQuery } from "./skillCommand";
 
 // Thinking levels as people read them.
 const THINKING_LABELS: Record<string, string> = {
@@ -14,6 +16,8 @@ const THINKING_LABELS: Record<string, string> = {
 };
 
 // The model and thinking dropdowns above the message box, and the box itself. A change applies to the next message.
+// Typing "/" at the start opens the list of installed skills. Picking one puts "/name " in the box, and the run reads the skill's
+// instructions from it.
 export function Composer({
   agent,
   models,
@@ -28,8 +32,23 @@ export function Composer({
   onChangeSettings: (changes: { model?: string; thinking?: string }) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [skills, setSkills] = useState<SkillSummary[]>([]);
   const model = models.find((m) => m.id === (agent?.model ?? ""));
   const levels = model?.thinkingLevels ?? [];
+  const query = skillCommandQuery(draft);
+  const typingSkill = query !== undefined;
+  const matches = query === undefined ? [] : matchingSkills(skills, query);
+  // The list steps aside once the only match is the name already typed, so Enter sends.
+  const listOpen = matches.length > 0 && !(matches.length === 1 && matches[0].name === query);
+
+  // Reads the installed skills each time a "/" starts the message, so a skill added on the Skills card shows up.
+  useEffect(() => {
+    if (!typingSkill) return;
+    api.get<{ skills: SkillSummary[] }>("/api/skills").then(
+      (data) => setSkills(data.skills),
+      () => setSkills([]),
+    );
+  }, [typingSkill]);
 
   function send(e: Event) {
     e.preventDefault();
@@ -37,6 +56,17 @@ export function Composer({
     if (!prompt || busy || !agent) return;
     setDraft("");
     onSend(prompt);
+  }
+
+  function pick(skill: SkillSummary) {
+    setDraft(`/${skill.name} `);
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (e.key === "Enter" && listOpen) {
+      e.preventDefault();
+      pick(matches[0]);
+    }
   }
 
   return (
@@ -61,18 +91,33 @@ export function Composer({
         />
       </div>
 
-      <form className="join w-full" onSubmit={send}>
-        <input
-          className="input join-item w-full"
-          placeholder={agent ? (busy ? "This agent is still working" : "Message mip") : "Create an agent first"}
-          value={draft}
-          disabled={busy || !agent}
-          onInput={(e) => setDraft(e.currentTarget.value)}
-        />
-        <button className="btn btn-primary join-item" disabled={busy || !agent || !draft.trim()}>
-          Send
-        </button>
-      </form>
+      <div className="relative">
+        {listOpen && (
+          <ul className="menu absolute bottom-full left-0 right-0 z-10 mb-1 max-h-60 w-full flex-nowrap overflow-y-auto rounded-box bg-base-200 p-1 shadow-lg">
+            {matches.map((skill) => (
+              <li key={skill.name}>
+                <button type="button" className="flex flex-col items-start gap-0" onClick={() => pick(skill)}>
+                  <span className="font-medium">/{skill.name}</span>
+                  <span className="text-xs opacity-70">{skill.description}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form className="join w-full" onSubmit={send}>
+          <input
+            className="input join-item w-full"
+            placeholder={agent ? (busy ? "This agent is still working" : "Message mip, or type / for a skill") : "Create an agent first"}
+            value={draft}
+            disabled={busy || !agent}
+            onInput={(e) => setDraft(e.currentTarget.value)}
+            onKeyDown={onKeyDown}
+          />
+          <button className="btn btn-primary join-item" disabled={busy || !agent || !draft.trim()}>
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

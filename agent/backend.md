@@ -18,7 +18,7 @@ Flat files, one per domain:
 - `git.ts`: `runGit(args, env?)`. Prompts are off, so a clone that needs a password fails instead of waiting. `env` adds variables for one call.
 - `names.ts`: `pickAgentName`. Norse names, with no repeats among open agents.
 - `system.ts`: `pullLatest` (`git pull --ff-only`) and `restartMip` (a detached shell that waits, runs `npm install` and `npm run build`, then starts the server).
-- `agents.ts`: agents. `listAgents` (with each agent's enabled skill names), `createAgent`, `getAgent` (agent, messages, active run, skills), `updateAgent`, `chooseAgentSkills`, `deleteAgent`.
+- `agents.ts`: agents. `listAgents`, `createAgent`, `getAgent` (agent, messages, active run), `updateAgent`, `deleteAgent`.
 - `runs.ts`: a turn in an agent. `startRun` and `readRun` for the routes, and `execute`, the background loop. It builds the system prompt, streams the provider's events into the run, records the tool calls, and saves the reply.
 - `personas.ts`: the built-in persona. Its prompt holds identity and style only. `DEFAULT_PERSONA_ID`, `personaPrompt`, and the create, edit, default, and remove functions.
 - `bots.ts`: bot create, edit, and remove, and the name rule. Model and thinking are checked against the provider's live catalog. A color is checked against the palette, and `nextBotColor` gives a new bot the first color no bot uses.
@@ -28,7 +28,7 @@ Flat files, one per domain:
 - `repos.ts`: repository clones, pull all, copies into agents, and `repoNote`.
 
 ## app/room/: the bots room
-- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus` (per room), and `runTurn`. A bot turn registers its own run token for `BOT_TOOLS`, with the room's id and no workspace, since none of its tools read a folder. Its system prompt is the persona, the room's rules (which name the room), the bot's enabled skills, and the tool guides. Its run token also carries the bot id, for the skill tools.
+- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus` (per room), and `runTurn`. A bot turn registers its own run token for `BOT_TOOLS`, with the room's id and no workspace, since none of its tools read a folder. Its system prompt is the persona, the room's rules (which name the room), and the tool guides. Its run token also carries the bot id.
 - `rooms.ts`: `allRooms`, `createRoom`, `editRoom`, `removeRoom`. A name is unique ignoring case and at most 40 characters. The last room cannot be removed. Tested by `rooms.test.mjs`.
 - `engine.ts`: pure turn-taking: `mentionedBots`, `isSilent`, `converseRoom`. Tested by `engine.test.mjs`.
 
@@ -40,17 +40,17 @@ Flat files, one per domain:
 - `files.ts`: `read`, `write`, `edit`. Paths go through `inWorkspace`.
 - `bash.ts`: `bash`. The working directory is the workspace. Output keeps the last 50 KB. The default timeout is 120 seconds. Not sandboxed.
 - `memory.ts`: `memory_search`, `memory_read`, `memory_edit`. Only existing notes can be edited.
-- `skills.ts`: `skill_read` and `skill_file`. Both need the agent to have enabled the skill.
+- `skills.ts`: `skill_search`, `skill_read`, and `skill_file`. Every installed skill is open to every agent and bot.
 - `workspace.ts`: `workspacePath`, `workspaceFor`, `removeWorkspace`, `inWorkspace`.
 - `result.ts`: `ok` and `fail`.
 - `guides.test.mjs`: checks that every tool has a guide and that the guides reach the prompt.
 
 ## app/skills/: installed skills
 - `format.ts`: pure rules. `parseSkill` (the `SKILL.md` header), `isValidName`, `isTextFile`, `isSafeRelativePath`, and the size limits. Tested by `format.test.mjs`.
-- `registry.ts`: what is installed. `listSkills`, `loadSkill`, `readSkillFile`, `enabledSkills`, `enabledSkill` (refused unless enabled), `skillsPrompt`, `setAgentSkills`, `removeSkill`.
+- `registry.ts`: what is installed. `listSkills`, `loadSkill`, `readSkillFile`, `searchSkills`, `withSkillCommand` (a leading `/name` in a message gets that skill's instructions), `removeSkill`.
 - `imports.ts`: the two-step install. `stageImport` copies and checks a folder into staging, `confirmImport` moves it into place, and `discardImport` drops it.
 - `create.ts`: `createSkill`, which writes a skill from a form and never replaces an installed one.
-- `skills.test.mjs`: import review, refusals, enablement, the tools, and removal.
+- `skills.test.mjs`: import review, refusals, search, the `/name` command, the tools, and removal.
 
 ## app/sync/: GitHub sync
 - `engine.ts`: `syncStatus` (accounts, the one in use, last run), `chooseAccount` (saved to `state.json`), `startSync` (background), and `syncWith({url, env, repo})` (one sync, also used by the tests). The merge base is kept per repo in `base.json`.
@@ -70,10 +70,9 @@ Flat files, one per domain:
 ## storage/
 - `db.ts`: the connection, the schema, the additive migrations (`hasColumn`), and startup recovery.
 - `paths.ts`: `MIP_HOME`, `DATA_DIR`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `SKILLS_DIR`, `ensureMipDirs`.
-- `agents.ts`: agents and messages, including each message's `calls`. `deleteAgent` also removes the agent's skill enablements.
+- `agents.ts`: agents and messages, including each message's `calls`.
 - `runs.ts`, `notes.ts`, `personas.ts`, `bots.ts`, `room.ts`, `rooms.ts`, `repos.ts`: one file per domain.
 - `bot-colors.ts`: `BOT_COLORS` (the palette, in the order a new bot takes them), `BotColor`, and `isBotColor`. Used by storage, the schema migration, and the bot rules.
-- `skills.ts`: `enabledSkillNames`, `saveAgentSkills`, `removeSkillEnablements`.
 - `sync.ts`: the rows GitHub sync reads and writes. A `remove` returns false where the database must keep the row (the default persona, a persona an agent uses, an agent with a running run).
 
 ## Rules across the backend

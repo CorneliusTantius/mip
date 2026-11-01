@@ -35,8 +35,8 @@ Matching: path segments are decoded before matching; a trailing slash is tolerat
 ## Bots — `routes/bots.ts`
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/bots | 200 | `{bots: Bot[]}`, each with its `skills` (the names it has enabled) | |
-| POST | /api/bots | 201 | `Bot` with its `skills` (body `{name, persona, providerId, model?, thinking?, color?, skills?}`) | 400 name rule / persona / provider / model / thinking / color; 409 name taken |
+| GET | /api/bots | 200 | `{bots: Bot[]}` | |
+| POST | /api/bots | 201 | `Bot` (body `{name, persona, providerId, model?, thinking?, color?}`) | 400 name rule / persona / provider / model / thinking / color; 409 name taken |
 | PUT | /api/bots/:botId | 200 | `Bot` | same; 404 |
 | DELETE | /api/bots/:botId | 200 | `{ok:true}` | 404 |
 
@@ -98,7 +98,7 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 | --- | --- | --- | --- | --- |
 | GET | /api/skills | 200 | `{skills: SkillSummary[], problems: {folder, error}[]}` | |
 | GET | /api/skills/:name | 200 | `SkillDetail`: `{name, description, body, files}` | 404 no such skill; 409 the skill is not valid |
-| DELETE | /api/skills/:name | 200 | `{ok:true}`. The skill is removed from every agent | 404 |
+| DELETE | /api/skills/:name | 200 | `{ok:true}` | 404 |
 | POST | /api/skills | 201 | `SkillDetail` (body `{name, description, body}`). Never replaces an installed skill | 400 bad name, missing or multi-line description, empty instructions, too long; 409 a skill with that name is installed; 415 |
 | POST | /api/skills/imports | 201 | `{id, name, description, files, source, skillMd, replaces}` (body `{path}`, a full folder path) | 400 not a folder, no SKILL.md, a symbolic link, a non-text file, too large, bad header; 415 |
 | POST | /api/skills/imports/:importId/confirm | 200 | `SkillDetail`. Replaces a skill with the same name | 404 no such import; 415 |
@@ -106,13 +106,6 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 
 ## Tools — `routes/tools.ts`
 `GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, guide, inputSchema, load, agent, bot}`. `guide` is one paragraph on when and how to use the tool. `load` is `basic` (always offered), `deferred` (found with `tool_search`, run with `tool_call`), or `search` (the two tools that do the finding). `agent` and `bot` say whether that kind of run may use the tool. Agents can use every tool but `room_search`. Bots are offered `memory_search`, `memory_read`, `memory_edit`, and `room_search` directly, and no others. A tool's `load` is how an agent gets it, so `memory_search` is `deferred` for agents and `basic` for bots.
-
-## Agents — enabled skills
-`GET /api/agents/:agentId` also returns `skills`, the names the agent has enabled. Replace them with:
-
-| method | path | status | body | errors |
-| --- | --- | --- | --- | --- |
-| PUT | /api/agents/:agentId/skills | 200 | `{skills: string[]}` (body `{skills: [names]}`) | 400 a name is not an installed skill, or the body is not a list of names; 404 no such agent |
 
 ## Sync — `routes/sync.ts`
 GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is signed in to on this machine. The run needs `Content-Type: application/json`, or it returns 415. The run is in the background: poll `GET /api/sync` until `running` is false.

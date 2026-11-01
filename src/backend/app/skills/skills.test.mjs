@@ -1,4 +1,4 @@
-// Checks the skill registry end to end: review before install, refusals, per-agent enablement, the skill tools, and the tool lists.
+// Checks the skill registry end to end: review before install, refusals, search, the /name command, the skill tools, and the tool lists.
 // Run after a build: node src/backend/app/skills/skills.test.mjs
 // It sets MIP_HOME to a temporary folder before the modules load, so the real skills folder is not touched.
 import assert from "node:assert/strict";
@@ -13,8 +13,7 @@ process.env.MIP_HOME = join(root, "mip-home");
 
 try {
   const { confirmImport, discardImport, stageImport } = await import(`${DIST}app/skills/imports.js`);
-  const { enabledSkill, listSkills, loadSkill, readSkillFile, removeSkill, setAgentSkills, skillsPrompt } = await import(`${DIST}app/skills/registry.js`);
-  const { enabledSkillNames } = await import(`${DIST}storage/skills.js`);
+  const { listSkills, loadSkill, readSkillFile, removeSkill, searchSkills, withSkillCommand } = await import(`${DIST}app/skills/registry.js`);
   const { BOT_TOOLS, AGENT_TOOLS, TOOLS, describeTools, registerRun, releaseRun, runContextForToken } = await import(`${DIST}app/tools/index.js`);
   const { SKILLS_DIR } = await import(`${DIST}storage/paths.js`);
   const { createSkill } = await import(`${DIST}app/skills/create.js`);
@@ -72,42 +71,62 @@ try {
   discardImport(again.id);
   assert.match(loadSkill("codeword").body, /PELICAN-42/);
 
-  // Per-agent enablement: only the agent that enabled a skill can read it.
-  assert.deepEqual(setAgentSkills("agent-a", ["codeword"]), ["codeword"]);
-  assert.match(skillsPrompt("agent-a"), /- codeword: The project codeword\./);
-  assert.equal(enabledSkill("agent-a", "codeword").name, "codeword");
-  assert.throws(() => enabledSkill("agent-b", "codeword"), /not enabled for this agent/);
-  assert.equal(skillsPrompt("agent-b"), "", "an agent with no skills gets no skills section");
-  assert.throws(() => setAgentSkills("agent-a", ["missing-skill"]), /no such skill/);
+  // Search finds an installed skill by a word in its name or description. A skill that holds more of the words ranks first.
+  writeSkill(join(SKILLS_DIR, "meeting-notes"), "meeting-notes", "Write the notes after a meeting, with the decisions and owners.");
+  writeSkill(join(SKILLS_DIR, "weekly-report"), "weekly-report", "Summarise the week into a report for the team.", "Start with the wins, then the blockers.");
+  assert.deepEqual(searchSkills("report").map((skill) => skill.name), ["weekly-report"]);
+  assert.deepEqual(searchSkills("meeting decisions").map((skill) => skill.name), ["meeting-notes"]);
+  assert.deepEqual(searchSkills("team week").map((skill) => skill.name), ["weekly-report"], "the skill with both words ranks first, and a word that matches nothing is ignored");
+  assert.deepEqual(searchSkills("zebra"), [], "no match gives an empty list");
+  assert.equal(searchSkills("").length, 3, "an empty query lists the installed skills");
+  assert.equal(searchSkills("", 1).length, 1, "the limit caps the list");
 
-  // A replaced skill keeps its enablement, and the new text is what gets read.
+  // A message that starts with /name gets that skill's instructions. Anything else is sent as it was typed.
+  const command = withSkillCommand("/weekly-report for the platform team");
+  assert.match(command, /^The user asked for the skill "weekly-report"/);
+  assert.match(command, /# weekly-report/);
+  assert.match(command, /Start with the wins, then the blockers\./);
+  assert.match(command, /The user's message:\nfor the platform team$/);
+  assert.match(withSkillCommand("/weekly-report"), /\(no further text\)$/, "a bare /name still asks for the skill");
+  assert.equal(withSkillCommand("/no-such-skill hello"), "/no-such-skill hello", "an unknown /name is sent as it was typed");
+  assert.equal(withSkillCommand("write a report"), "write a report", "a message without a leading slash is unchanged");
+  assert.equal(withSkillCommand("see /weekly-report"), "see /weekly-report", "only a leading /name counts");
+  assert.equal(withSkillCommand("/usr/bin/env"), "/usr/bin/env", "a path is not a skill name");
+
+  // A replaced skill is read with its new text.
   const second = stageImport(updated);
   confirmImport(second.id);
-  assert.match(enabledSkill("agent-a", "codeword").body, /HERON-7/);
+  assert.match(loadSkill("codeword").body, /HERON-7/);
 
   // Reference files: only listed files are readable, and nothing outside the skill is.
   assert.throws(() => readSkillFile("codeword", "../SKILL.md"), /has no file/);
   assert.throws(() => readSkillFile("codeword", "notes/other.md"), /has no file/);
 
-  // The skill tools. A run without an agent has no skills. Refused calls come back as failed results, not exceptions.
+  // The skill tools. Every run reads every installed skill, an agent or a bot alike. Refused calls come back as failed results, not exceptions.
+  const skillSearch = TOOLS.find((tool) => tool.name === "skill_search");
   const skillRead = TOOLS.find((tool) => tool.name === "skill_read");
   const skillFile = TOOLS.find((tool) => tool.name === "skill_file");
-  const noAgent = await skillRead.run({ name: "codeword" }, { workspace: root });
-  assert.equal(noAgent.isError, true);
+  const found = await skillSearch.run({ query: "codeword" }, { workspace: root });
+  assert.equal(found.isError, false);
+  assert.equal(found.text, "- codeword: The project codeword, updated.", "the replaced skill is the one found");
+  const none = await skillSearch.run({ query: "zebra" }, { workspace: root });
+  assert.equal(none.text, "No installed skill matches that.");
   const inAgent = await skillRead.run({ name: "codeword" }, { workspace: root, agentId: "agent-a" });
   assert.equal(inAgent.isError, false);
   assert.match(inAgent.text, /HERON-7/);
   assert.match(inAgent.text, /notes\/history\.md/, "the reply lists the files the skill names");
-  const otherAgent = await skillRead.run({ name: "codeword" }, { workspace: root, agentId: "agent-b" });
-  assert.equal(otherAgent.isError, true);
+  const inBot = await skillRead.run({ name: "codeword" }, { workspace: root, botId: "bot-a" });
+  assert.equal(inBot.isError, false, "a bot reads the same skills");
+  const missing = await skillRead.run({ name: "no-such-skill" }, { workspace: root, agentId: "agent-a" });
+  assert.equal(missing.isError, true);
   const file = await skillFile.run({ name: "codeword", path: "notes/history.md" }, { workspace: root, agentId: "agent-a" });
   assert.equal(file.text, "Chosen in 2026.");
   const escape = await skillFile.run({ name: "codeword", path: "../SKILL.md" }, { workspace: root, agentId: "agent-a" });
   assert.equal(escape.isError, true);
 
-  // One registry, two lists: agents get every tool, bots get the memory tools, their skill tools, and the room search. A run's token carries its own list.
+  // One registry, two lists: agents get every tool, bots get the memory tools, the skill tools, and the room search. A run's token carries its own list.
   assert.ok(AGENT_TOOLS.some((tool) => tool.name === "skill_read") && AGENT_TOOLS.some((tool) => tool.name === "bash"));
-  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_read", "skill_file", "room_search"]);
+  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search"]);
   const token = registerRun({ tools: BOT_TOOLS });
   assert.ok(runContextForToken(token).tools.some((tool) => tool.name === "skill_read"), "a bot's run reaches its skills");
   assert.ok(!runContextForToken(token).tools.some((tool) => tool.name === "bash"), "a bot's run has no shell");
@@ -118,21 +137,21 @@ try {
   const described = describeTools();
   assert.equal(described.length, TOOLS.length);
   assert.ok(described.filter((tool) => tool.name !== "room_search").every((tool) => tool.agent === true));
-  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["skill_read", "memory_search", "memory_read", "memory_edit", "skill_file", "room_search"]);
+  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["skill_search", "skill_read", "memory_search", "memory_read", "memory_edit", "skill_file", "room_search"]);
   assert.equal(described.find((tool) => tool.name === "skill_read").description, TOOLS.find((tool) => tool.name === "skill_read").description);
 
   // A folder in the registry that is not a valid skill is reported, not hidden.
   mkdirSync(join(SKILLS_DIR, "broken"), { recursive: true });
   writeFileSync(join(SKILLS_DIR, "broken", "SKILL.md"), "no header here");
   const listing = listSkills();
-  assert.equal(listing.skills.length, 1);
-  assert.equal(listing.problems[0].folder, "broken");
+  assert.equal(listing.skills.length, 3);
+  assert.deepEqual(listing.problems.map((problem) => problem.folder), ["broken"]);
 
-  // Removing a skill takes it away from the agents that had it enabled.
+  // Removing a skill deletes its folder, and it is no longer found or read.
   removeSkill("codeword");
-  assert.deepEqual(enabledSkillNames("agent-a"), []);
-  assert.equal(skillsPrompt("agent-a"), "");
   assert.equal(existsSync(join(SKILLS_DIR, "codeword")), false);
+  assert.equal(searchSkills("codeword").length, 0);
+  assert.equal(withSkillCommand("/codeword hi"), "/codeword hi");
 
   // Create from a form. The skill reads back like an import, and an installed skill is never replaced.
   const made = createSkill({ name: "release-checklist", description: "Steps before a release: tests, changelog, tag.", body: "1. Run the tests.\n2. Update the changelog." });

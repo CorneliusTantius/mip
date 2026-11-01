@@ -3,7 +3,6 @@ import { errorText } from "../../api/client";
 import type { Agent } from "../../api/types";
 import { Card, ExpandButton } from "../../ui/Card";
 import { ConfirmDialog } from "../../ui/ConfirmDialog";
-import { AgentSkillsDialog } from "./AgentSkillsDialog";
 import { PersonasDialog } from "./PersonasDialog";
 import { AgentHeader } from "./AgentHeader";
 import { Composer } from "./Composer";
@@ -23,7 +22,6 @@ export function AgentCard() {
   const [sidebarOpen, setSidebarOpen] = useState(isDesktop);
   const [pendingDelete, setPendingDelete] = useState<Agent>();
   const [managingPersonas, setManagingPersonas] = useState(false);
-  const [choosingSkills, setChoosingSkills] = useState(false);
   const [deleteError, setDeleteError] = useState<string>();
 
   // Opens the newest agent on first load.
@@ -89,14 +87,7 @@ export function AgentCard() {
               title={agent?.title || "Agent"}
               badges={agent && [agents.personaName(agent.personaId), agents.providerName(agent.providerId)]}
               onToggleAgents={() => setSidebarOpen(!sidebarOpen)}
-              trailing={
-                <>
-                  <button className="btn btn-ghost btn-sm" disabled={!agent} onClick={() => setChoosingSkills(true)}>
-                    Skills
-                  </button>
-                  <ExpandButton />
-                </>
-              }
+              trailing={<ExpandButton />}
             />
             <Transcript
               key={agents.currentId}
@@ -116,7 +107,6 @@ export function AgentCard() {
       </div>
 
       <PersonasDialog open={managingPersonas} onClose={() => setManagingPersonas(false)} />
-      {agent && <AgentSkillsDialog open={choosingSkills} agentId={agent.id} onClose={() => setChoosingSkills(false)} />}
 
       <ConfirmDialog
         open={!!pendingDelete}
