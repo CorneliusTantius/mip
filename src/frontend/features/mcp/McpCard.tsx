@@ -1,11 +1,15 @@
+import { useState } from "preact/hooks";
+import { errorText } from "../../api/client";
 import type { McpServer } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
+import { ConfirmDialog } from "../../ui/ConfirmDialog";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { AddMcpDialog } from "./AddMcpDialog";
 import { summaryLine } from "./mcpSummary";
 import { useMcpServers } from "./useMcpServers";
 
-// The MCP servers listed in mcp.json. Each one shows whether it is connected and the tools it offers, and an error when it is not.
-// Reload reconnects from the file after the file changes.
+// The MCP servers in mcp.json. Each one shows whether it is connected and the tools it offers, and an error when it is not. A server
+// that signs in with OAuth shows its sign-in link. Add server writes a new entry, and Remove takes one out. Reload reconnects from the file.
 export function McpCard() {
   return (
     <Card glow="red">
@@ -16,8 +20,27 @@ export function McpCard() {
 
 function McpBody() {
   const { expanded } = useCardExpansion();
-  const { status, busy, error, reload } = useMcpServers();
+  const { status, busy, error, reload, signIn, add, remove } = useMcpServers();
   const servers = status?.servers ?? [];
+  const [adding, setAdding] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<string>();
+  const [removeError, setRemoveError] = useState<string>();
+
+  async function confirmRemove() {
+    if (!pendingRemove) return;
+    setRemoveError(undefined);
+    try {
+      await remove(pendingRemove);
+      setPendingRemove(undefined);
+    } catch (err) {
+      setRemoveError(errorText(err));
+    }
+  }
+
+  function cancelRemove() {
+    setPendingRemove(undefined);
+    setRemoveError(undefined);
+  }
 
   return (
     <CardBody
@@ -25,6 +48,9 @@ function McpBody() {
       className={expanded ? "min-h-0 flex-1" : ""}
       actions={
         <>
+          <button className="btn btn-ghost btn-sm" onClick={() => setAdding(true)} disabled={busy}>
+            Add server
+          </button>
           <button className="btn btn-ghost btn-sm" onClick={reload} disabled={busy}>
             {busy && <span className="loading loading-spinner loading-xs" />}
             Reload
@@ -38,14 +64,20 @@ function McpBody() {
 
       {status && servers.length === 0 && (
         <div className="py-4 text-center text-sm opacity-60">
-          No MCP servers yet. List them in <code className="break-all">{status.configFile}</code>, then press Reload.
+          No MCP servers yet. Press Add server to connect one, or list them in <code className="break-all">{status.configFile}</code>, then press Reload.
         </div>
       )}
 
       {servers.length > 0 && (
         <ul className={expanded ? "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto" : "flex flex-col gap-2"}>
           {servers.map((server) => (
-            <ServerRow key={server.name} server={server} />
+            <ServerRow
+              key={server.name}
+              server={server}
+              busy={busy}
+              onSignIn={() => void signIn(server.name)}
+              onRemove={() => setPendingRemove(server.name)}
+            />
           ))}
         </ul>
       )}
@@ -60,21 +92,36 @@ function McpBody() {
         </div>
       )}
       <ErrorAlert message={error} />
+
+      <AddMcpDialog open={adding} onClose={() => setAdding(false)} onAdd={add} />
+      <ConfirmDialog
+        open={!!pendingRemove}
+        glow="red"
+        title="Remove this server?"
+        message={`"${pendingRemove ?? ""}" is taken out of mcp.json, with its sign-in and any token it holds. Its tools go away.`}
+        error={removeError}
+        onConfirm={confirmRemove}
+        onCancel={cancelRemove}
+      />
     </CardBody>
   );
 }
 
-// One server: its name, how it connects, its state, and the reason it failed. Expanded, it also lists its tools.
-function ServerRow({ server }: { server: McpServer }) {
+// One server: its name, how it connects, its state, and the reason it failed. A server that signs in with OAuth shows its sign-in link
+// while it waits. Expanded, it also lists its tools.
+function ServerRow({ server, busy, onSignIn, onRemove }: { server: McpServer; busy: boolean; onSignIn: () => void; onRemove: () => void }) {
   const { expanded } = useCardExpansion();
   const size = expanded ? "badge-sm" : "badge-xs";
+  // Only a web link is offered as a button, so a link from a server's own metadata cannot open anything else.
+  const link = server.signInUrl && /^https?:\/\//.test(server.signInUrl) ? server.signInUrl : null;
   return (
     <li className="flex min-w-0 flex-col gap-1 rounded-box border border-base-300 p-2">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium break-all">{server.name}</span>
-        <span className={`badge badge-ghost ${size}`}>{server.transport}</span>
+        <span className={`badge badge-ghost ${size}`}>{server.oauth ? "OAuth" : server.transport}</span>
         {server.status === "connecting" && <span className={`badge badge-warning badge-soft ${size}`}>starting</span>}
         {server.status === "connected" && <span className={`badge badge-success badge-soft ${size}`}>connected</span>}
+        {server.status === "sign-in" && <span className={`badge badge-info badge-soft ${size}`}>needs sign-in</span>}
         {server.status === "error" && <span className={`badge badge-error badge-soft ${size}`}>failed</span>}
         {server.status === "connected" && (
           <span className="text-xs opacity-60">
@@ -84,6 +131,8 @@ function ServerRow({ server }: { server: McpServer }) {
       </div>
 
       {server.error && <p className={`${expanded ? "text-sm" : "text-xs"} break-words text-error`}>{server.error}</p>}
+
+      {server.status === "sign-in" && <div className="text-xs opacity-70">Sign in on the server's page. This row updates once you have.</div>}
 
       {!expanded && server.tools.length > 0 && (
         <p className="truncate text-xs opacity-60">{server.tools.map((tool) => tool.name).join(", ")}</p>
@@ -109,6 +158,27 @@ function ServerRow({ server }: { server: McpServer }) {
           </tbody>
         </table>
       )}
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {server.oauth && server.status === "sign-in" && link && (
+          <a className="btn btn-primary btn-sm" href={link} target="_blank" rel="noopener noreferrer">
+            Sign in
+          </a>
+        )}
+        {server.oauth && (server.status === "error" || (server.status === "sign-in" && !link)) && (
+          <button className="btn btn-outline btn-sm" onClick={onSignIn} disabled={busy}>
+            Sign in
+          </button>
+        )}
+        {server.oauth && server.status === "sign-in" && link && (
+          <button className="btn btn-ghost btn-sm" onClick={onSignIn} disabled={busy}>
+            New link
+          </button>
+        )}
+        <button className="btn btn-ghost btn-sm text-error" onClick={onRemove} disabled={busy}>
+          Remove
+        </button>
+      </div>
     </li>
   );
 }

@@ -119,12 +119,16 @@ GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is
 `accounts` lists every account gh is signed in to, and `login` is the one sync uses (null when there is none). `error` says why when gh is missing or signed out. The chosen account is kept in `sync/state.json`. `lastSync` is `{at, ok, message, pulled, pushed, notes}`. A failed run has `ok: false` and the reason in `message` (public repo, empty local database, GitHub changed during the run).
 
 ## MCP servers — `routes/mcp-servers.ts`
-The servers listed in `data/mcp.json`. Each one shows its state and tools. Environment values and headers are never returned.
+The servers listed in `data/mcp.json`. Each one shows its state and tools. Environment values, headers, and OAuth tokens are never returned.
 
 | method | path | status | body | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/mcp | 200 | `{configFile, servers: {name, transport, status, error, tools: {name, remoteName, description}[]}[], problems: {server, error}[]}`. `status` is connecting, connected, or error | |
+| GET | /api/mcp | 200 | `{configFile, servers: {name, transport, status, error, tools: {name, remoteName, description}[]}[], problems: {server, error}[]}`. `status` is connecting, connected, sign-in, or error. `sign-in` means the server waits for the user to sign in at `signInUrl`. Each server also says whether it uses OAuth (`oauth`) | |
 | POST | /api/mcp/reload | 200 | the same shape, after every server has connected or failed. Closes the old connections first | |
+| POST | /api/mcp | 201 | the same shape, with the new server connected, waiting for sign-in, or failed. Body `{name, transport: "oauth" \| "http" \| "stdio", url?, headers?, command?, args?, env?}`. Writes its entry to mcp.json, then connects again | 400 a name, transport, url, or command the file would not load; 409 the name is listed already; 415 not JSON |
+| DELETE | /api/mcp/:name | 200 | the same shape, after the server is removed from mcp.json and the others have connected again | 404 no such server |
+| POST | /api/mcp/:name/sign-in | 200 | the same shape. Starts the sign-in again, so `signInUrl` is a new link | 400 the server does not sign in with OAuth; 404 no such server; 415 not JSON |
+| GET | /api/mcp/oauth/callback | 200 HTML | a page, not JSON. The authorization server redirects the browser here with `code` and `state`. The sign-in finishes, and the server connects. The page says so | 400 page when the server refused, or no sign-in is waiting for that state |
 
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |

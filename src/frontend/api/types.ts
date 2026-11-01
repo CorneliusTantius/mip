@@ -86,14 +86,22 @@ export interface McpTool {
   description: string;
 }
 
-// One MCP server from mcp.json. An error says why it is not connected.
+// One MCP server from mcp.json. An error says why it is not connected. "sign-in" means the server waits for the user to sign in at signInUrl.
 export interface McpServer {
   name: string;
   transport: "stdio" | "http";
-  status: "connecting" | "connected" | "error";
+  status: "connecting" | "connected" | "error" | "sign-in";
   error: string | null;
+  oauth: boolean;
+  signInUrl: string | null;
   tools: McpTool[];
 }
+
+// What the add form sends. An OAuth server gives only its address. A manual one gives its headers, or its command and environment.
+export type NewMcpServer =
+  | { name: string; transport: "oauth"; url: string }
+  | { name: string; transport: "http"; url: string; headers: Record<string, string> }
+  | { name: string; transport: "stdio"; command: string; args: string[]; env: Record<string, string> };
 
 // The MCP servers as the backend sees them, with entries in mcp.json that could not be read.
 export interface McpStatus {

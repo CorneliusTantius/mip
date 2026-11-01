@@ -7,10 +7,22 @@ import {
   type Tool,
   toLlmContent,
 } from "@earendil-works/pi-mcp";
+import {
+  adaptOAuthProvider,
+  authorizeMcp,
+  McpOAuthAuthorizationRequiredError,
+  McpOAuthProvider,
+  type McpOAuthState,
+} from "@earendil-works/pi-mcp/oauth";
 import type { ToolResult, ToolSpec } from "../../adapters/contract.js";
+import { HOST, PORT } from "../config.js";
 import { MCP_CONFIG_FILE } from "../../storage/paths.js";
-import { errorMessage } from "../errors.js";
-import { type McpConfigProblem, type McpServerConfig, readMcpConfig } from "./config.js";
+import { AppError, errorMessage } from "../errors.js";
+import { type McpConfigProblem, type McpServerConfig, editMcpFile, readMcpConfig } from "./config.js";
+
+// Where a sign-in comes back to: this app, on the path that finishes it (see http/mcp-oauth.ts).
+export const OAUTH_CALLBACK_PATH = "/api/mcp/oauth/callback";
+const OAUTH_REDIRECT_URL = `http://${HOST}:${PORT}${OAUTH_CALLBACK_PATH}`;
 
 // The MCP servers mip is connected to. Each server's tools become ToolSpecs, and the agents find them with tool_search, the same way as
 // any deferred tool. Servers connect on their own, so one that is down does not hold up the others.
@@ -32,8 +44,12 @@ export interface McpToolInfo {
 export interface McpServerStatus {
   name: string;
   transport: "stdio" | "http";
-  status: "connecting" | "connected" | "error";
+  // "sign-in": the server signs in with OAuth and is waiting for the user to do so, through signInUrl.
+  status: "connecting" | "connected" | "error" | "sign-in";
   error: string | null;
+  // Whether the server signs in with OAuth. The link to sign in is signInUrl, while the server waits for it.
+  oauth: boolean;
+  signInUrl: string | null;
   tools: McpToolInfo[];
 }
 
@@ -45,6 +61,10 @@ interface Connection {
   tools: { info: McpToolInfo; spec: ToolSpec }[];
   // Set when a newer start or a close replaces this connection, so a late connect is closed instead of kept.
   removed: boolean;
+  // The OAuth provider of an OAuth server, made on the first connect and kept for its later connects.
+  oauth?: McpOAuthProvider;
+  // The sign-in link the server gave, and the state it carries, while the server waits for the user.
+  signIn: { url: string; state: string } | null;
 }
 
 const state: { connections: Connection[]; problems: McpConfigProblem[] } = { connections: [], problems: [] };
@@ -53,7 +73,7 @@ const state: { connections: Connection[]; problems: McpConfigProblem[] } = { con
 export async function startMcpServers(): Promise<void> {
   await closeMcpServers();
   const { servers, problems } = readMcpConfig();
-  const connections: Connection[] = servers.map((config) => ({ config, status: "connecting", error: null, tools: [], removed: false }));
+  const connections: Connection[] = servers.map((config) => ({ config, status: "connecting", error: null, tools: [], removed: false, signIn: null }));
   state.connections = connections;
   state.problems = problems;
   await Promise.all(connections.map(connect));
@@ -82,6 +102,8 @@ export function mcpStatus(): { configFile: string; servers: McpServerStatus[]; p
       transport: connection.config.transport,
       status: connection.status,
       error: connection.error,
+      oauth: connection.config.transport === "http" && connection.config.oauth !== undefined,
+      signInUrl: connection.signIn?.url ?? null,
       tools: connection.tools.map((tool) => tool.info),
     })),
     problems: state.problems,
@@ -96,8 +118,9 @@ export function mcpToolName(server: string, tool: string): string {
 async function connect(connection: Connection): Promise<void> {
   const client = new McpClient({ name: "mip", version: "0.1.0", requestTimeoutMs: CALL_TIMEOUT_MS });
   connection.client = client;
+  connection.signIn = null;
   try {
-    await withTimeout(client.connect(openTransport(connection.config)), CONNECT_TIMEOUT_MS, "start");
+    await withTimeout(client.connect(openTransport(connection)), CONNECT_TIMEOUT_MS, "start");
     const listed = await withTimeout(client.listTools(), CONNECT_TIMEOUT_MS, "list its tools");
     if (connection.removed) {
       await client.close().catch(() => undefined);
@@ -114,10 +137,80 @@ async function connect(connection: Connection): Promise<void> {
     });
   } catch (err) {
     if (connection.removed) return;
-    connection.status = "error";
-    connection.error = failureText(err);
+    // A server that needs the user to sign in is not broken. The link is kept, and the card shows it.
+    if (err instanceof McpOAuthAuthorizationRequiredError) {
+      connection.status = "sign-in";
+      connection.error = null;
+    } else {
+      connection.status = "error";
+      connection.error = failureText(err);
+    }
     await client.close().catch(() => undefined);
   }
+}
+
+// Starts the sign-in of an OAuth server again, for a new link. The server connects once the user has signed in.
+export async function signInServer(name: string): Promise<void> {
+  const connection = state.connections.find((candidate) => candidate.config.name === name);
+  if (!connection) throw new AppError(404, `no MCP server called "${name}"`);
+  if (connection.config.transport !== "http" || !connection.config.oauth) throw new AppError(400, `"${name}" does not sign in with OAuth`);
+  await connection.client?.close().catch(() => undefined);
+  connection.status = "connecting";
+  connection.error = null;
+  await connect(connection);
+}
+
+// Finishes a sign-in. The authorization server sent the user back with a code for the state of a server waiting for sign-in. The code
+// becomes tokens, which are saved, and the server connects again. Returns the server's name.
+export async function completeSignIn(callbackState: string, code: string, iss?: string): Promise<string> {
+  const connection = state.connections.find((candidate) => candidate.status === "sign-in" && candidate.signIn?.state === callbackState);
+  if (!connection?.oauth || connection.config.transport !== "http") {
+    throw new AppError(400, "This sign-in is no longer waiting. Start it again from the MCP card.");
+  }
+  const { name, url } = connection.config;
+  try {
+    await authorizeMcp(connection.oauth, { serverUrl: url, authorizationCode: code, iss });
+  } catch (err) {
+    connection.status = "error";
+    connection.error = failureText(err);
+    connection.signIn = null;
+    throw new AppError(502, `The sign-in did not finish: ${failureText(err)}`);
+  }
+  connection.status = "connecting";
+  connection.error = null;
+  void connect(connection);
+  return name;
+}
+
+// The OAuth provider of an http server with OAuth. Its sign-in state is saved in mcp.json, so tokens survive a restart and reach the
+// other machine through sync. The link the server gives back is kept on the connection, for the card to show.
+function oauthOf(connection: Connection, config: Extract<McpServerConfig, { transport: "http" }>): McpOAuthProvider {
+  if (connection.oauth) return connection.oauth;
+  let saved: McpOAuthState | undefined = config.oauth;
+  connection.oauth = new McpOAuthProvider({
+    serverUrl: config.url,
+    redirectUrl: OAUTH_REDIRECT_URL,
+    clientMetadata: { client_name: "mip" },
+    store: {
+      load: () => saved,
+      save: (next) => {
+        saved = next;
+        saveSignIn(config.name, next);
+      },
+    },
+    onRedirect: (url) => {
+      connection.signIn = { url: url.toString(), state: url.searchParams.get("state") ?? "" };
+    },
+  });
+  return connection.oauth;
+}
+
+// Writes an OAuth server's sign-in state into its entry in mcp.json. The entry is left alone when it was removed meanwhile.
+function saveSignIn(name: string, oauth: McpOAuthState): void {
+  editMcpFile((servers) => {
+    const entry = servers[name];
+    if (typeof entry === "object" && entry !== null) servers[name] = { ...entry, oauth };
+  });
 }
 
 // The message of a failed start or call. A network error says only "fetch failed" on its own, so its cause is kept too.
@@ -176,10 +269,15 @@ function resultText(result: CallToolResult): string {
   return text || "(no output)";
 }
 
-function openTransport(config: McpServerConfig): McpTransport {
-  return config.transport === "stdio"
-    ? new StdioTransport({ command: config.command, args: config.args, env: config.env })
-    : new StreamableHttpTransport({ url: config.url, headers: config.headers });
+function openTransport(connection: Connection): McpTransport {
+  const { config } = connection;
+  if (config.transport === "stdio") return new StdioTransport({ command: config.command, args: config.args, env: config.env });
+  if (!config.oauth) return new StreamableHttpTransport({ url: config.url, headers: config.headers });
+  return new StreamableHttpTransport({
+    url: config.url,
+    headers: config.headers,
+    authProvider: adaptOAuthProvider(oauthOf(connection, config)),
+  });
 }
 
 function withTimeout<T>(work: Promise<T>, ms: number, what: string): Promise<T> {

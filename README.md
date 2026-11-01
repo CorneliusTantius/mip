@@ -131,6 +131,8 @@ mip can connect to MCP servers and give agents their tools. List them in `~/.mip
 }
 ```
 
+You can also add a server from the MCP card with **Add server**. OAuth sign-in is the default: give the server's address, then press **Sign in** on its row and sign in on the server's own page. Choose **Manual entry** for a server without OAuth: a web address with headers, or a local command with its arguments and environment. A command runs on this machine. **Remove** takes a server out of the file.
+
 After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots get them too. The file can hold tokens. Sync carries the servers, tokens included, to your private dotmip repo.
 
 ## Skills
@@ -221,6 +223,10 @@ All routes are on the dashboard port. Requests and responses are JSON.
 | DELETE | `/api/skills/imports/:id` | Drop a staged skill without installing it |
 | GET | `/api/mcp` | Each MCP server's state and tools |
 | POST | `/api/mcp/reload` | Reconnect to the servers in `mcp.json` |
+| POST | `/api/mcp` | Add a server: OAuth, a web address with headers, or a local command |
+| DELETE | `/api/mcp/:name` | Remove a server from `mcp.json` |
+| POST | `/api/mcp/:name/sign-in` | Start an OAuth server's sign-in again, with a new link |
+| GET | `/api/mcp/oauth/callback` | Where the OAuth sign-in returns to. Finishes the sign-in |
 | POST | `/mcp` | Tool endpoint for the Claude CLI. Needs a run's bearer token |
 
 ## Storage

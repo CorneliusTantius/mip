@@ -94,9 +94,11 @@ Shared pieces. Each is used by more than one feature.
 ## features/mcp/
 | file | exports | job |
 | --- | --- | --- |
-| `McpCard.tsx` | `McpCard` | The MCP servers from mcp.json: a summary line, each server with its state and error, and its tools when expanded. Reload reconnects from the file. Its text is in divs, not paragraphs, since daisyUI grows every paragraph in an expanded card body. |
-| `useMcpServers.ts` | `useMcpServers` | Loads `GET /api/mcp`, reconnects with `POST /api/mcp/reload`, and re-reads every 1.5 s while a server is starting. |
-| `mcpSummary.ts` | `summaryLine` | The summary line, such as "1 connected, 2 failed, 2 tools". Tested by `mcpSummary.test.mjs`. |
+| `McpCard.tsx` | `McpCard` | The MCP servers from mcp.json: a summary line, each server with its state and error, and its tools when expanded. Add server opens the add form. Remove takes a server out after a confirm, and a server that signs in with OAuth shows its sign-in link. Reload reconnects from the file. Its text is in divs, not paragraphs, since daisyUI grows every paragraph in an expanded card body. |
+| `useMcpServers.ts` | `useMcpServers` | Loads `GET /api/mcp`, and reconnects, adds, removes, and signs in through the MCP routes. Reload and sign-in show a failure on the card, while add and remove hand it to the dialog or the confirm box that asked. Re-reads every 1.5 s while a server is starting or waiting for sign-in. |
+| `AddMcpDialog.tsx` | `AddMcpDialog` | The add form. OAuth sign-in is the default, with a server address. Manual entry takes a web address with headers, or a local command with its arguments and environment. A line the readers refuse is shown in the form. |
+| `mcpForm.ts` | `parseHeaders`, `parseEnv`, `parseArgs` | Readers for the form's text boxes. Each names the line that is wrong. Tested by `mcpForm.test.mjs`. |
+| `mcpSummary.ts` | `summaryLine` | The summary line, such as "1 connected, 2 failed, 2 tools". A server waiting for sign-in counts as "need sign-in". Tested by `mcpSummary.test.mjs`. |
 
 ## features/skills/
 | file | exports | job |

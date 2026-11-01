@@ -1,15 +1,16 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { HOST, PORT } from "../app/config.js";
 import { errorMessage, AppError } from "../app/errors.js";
-import { startMcpServers } from "../app/mcp/manager.js";
+import { OAUTH_CALLBACK_PATH, startMcpServers } from "../app/mcp/manager.js";
 import { importLegacyPiAuth } from "../app/pi/store.js";
 import { handleMcp } from "./mcp.js";
+import { handleOAuthCallback } from "./mcp-oauth.js";
 import { notFound, readJson, sendJson } from "./respond.js";
 import { matchRoute } from "./router.js";
 import { routes } from "./routes/index.js";
 import { serveStatic } from "./static.js";
 
-// Every request goes through here, in this order: the web build, the tool endpoint, then the API routes.
+// Every request goes through here, in this order: the web build, the tool endpoint, the MCP sign-in callback, then the API routes.
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url ?? "/", `http://${HOST}`);
 
@@ -18,6 +19,11 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   // The tool endpoint for the Claude CLI. Each run's bearer token decides what it may reach.
   if (req.method === "POST" && url.pathname === "/mcp") {
     return handleMcp(req, res, await readJson(req));
+  }
+
+  // An MCP server's sign-in comes back here from the browser, with the code the page is handed.
+  if (req.method === "GET" && url.pathname === OAUTH_CALLBACK_PATH) {
+    return handleOAuthCallback(url, res);
   }
 
   const match = matchRoute(routes, req.method ?? "", url.pathname);

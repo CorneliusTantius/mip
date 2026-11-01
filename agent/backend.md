@@ -7,6 +7,7 @@ Each entry gives the file, its job, its main exports, and who calls it. Line num
 - `router.ts`: `get`, `post`, `put`, `patch`, `del`, and `matchRoute`. `:name` captures one decoded path segment. The first match wins.
 - `respond.ts`: `Reply` and the helpers `ok`, `created`, `accepted`, `ack`, `notFound`, `sendJson`, `readJson` (an empty body reads as `{}`), and `requireJson` (415 for a non-JSON request, used by routes that act on this machine).
 - `mcp.ts`: `handleMcp`. JSON-RPC 2.0 for the Claude CLI: `initialize`, `tools/list`, and `tools/call`. Both list and call use the run's offered tools. Without a live run token it answers 401.
+- `mcp-oauth.ts`: `handleOAuthCallback`, the page an MCP sign-in returns to. It finishes the sign-in with the `code` and `state`, and shows the result. Tested by `mcp-oauth.test.mjs`.
 - `static.ts`: serves `dist/frontend`, and keeps every path inside it.
 - `routes/index.ts`: concatenates the domain route lists. A new domain is added here.
 - `routes/<domain>.ts`: one `Route[]` per domain: `agents`, `runs`, `personas`, `bots`, `room`, `repos`, `memory`, `providers`, `system`, `sync`, `skills`, `tools`, `mcp-servers`. Each handler reads the body, calls one `app/*` function, and returns a `Reply`. The routes are listed in `api.md`.
@@ -48,8 +49,9 @@ Flat files, one per domain:
 - `guides.test.mjs`: checks that every tool has a guide and that the guides reach the prompt.
 
 ## app/mcp/: external MCP servers
-- `config.ts`: `parseMcpConfig` (pure) and `readMcpConfig`. Reads `data/mcp.json`: a stdio server has a `command`, `args`, and `env`, and a Streamable HTTP server has a `url` and `headers`. A bad entry is reported by name, and the others still load. Tested by `mcp.test.mjs`.
-- `manager.ts`: `startMcpServers` connects every configured server in parallel, with 30 s for the start and the tool list. `closeMcpServers`, `mcpTools` (the tools of the connected servers), `mcpStatus`, and `mcpToolName` (`mcp_<server>_<tool>`, cut to 64 characters). A tool whose name another tool already has is skipped and reported. A connection that drops marks its server as error.
+- `config.ts`: `parseMcpConfig` (pure) and `readMcpConfig`. Reads `data/mcp.json`: a stdio server has a `command`, `args`, and `env`, and a Streamable HTTP server has a `url` and `headers`. A bad entry is reported by name, and the others still load. An http entry may carry `oauth`, its sign-in state with the tokens. `editMcpFile` changes the file as JSON and keeps every entry the app does not load. Tested by `mcp.test.mjs`.
+- `manager.ts`: `startMcpServers` connects every configured server in parallel, with 30 s for the start and the tool list. `closeMcpServers`, `mcpTools` (the tools of the connected servers), `mcpStatus`, and `mcpToolName` (`mcp_<server>_<tool>`, cut to 64 characters). A tool whose name another tool already has is skipped and reported. A connection that drops marks its server as error. An OAuth server whose first connect needs the user waits in status `sign-in`, with its link in `signInUrl`. `completeSignIn` finishes the sign-in from the callback, `signInServer` starts it again, and the OAuth store saves its state into mcp.json (`saveSignIn`).
+- `servers.ts`: `addMcpServer` and `removeMcpServer`. The card's form becomes an mcp.json entry, which `parseMcpConfig` checks before `editMcpFile` writes it. Then the servers connect again. Tested by `mcp-oauth.test.mjs`.
 - Sync: `app/sync/snapshot.ts` reads these servers as the `mcp` part, and rewrites mcp.json when a sync changes them, after the new text is checked to load. `merge.ts` keeps GitHub's copy when both sides changed one server.
 
 ## app/pi/: Pi's credentials and catalogs
