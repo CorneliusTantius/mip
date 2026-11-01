@@ -27,6 +27,7 @@ Run it after changing anything under `src/`.
     npm run build              # backend and frontend
     npm run build:backend      # backend only
     npm run build:frontend     # frontend only; the server serves new files without a restart
-    npm run serve              # node dist/backend/http/server.js
+    npm start                  # builds, then node dist/backend/http/server.js
+    npm run serve              # node dist/backend/http/server.js, without a build
 
 The backend tests run after `npm run build:backend`. The full list is in `conventions.md`.

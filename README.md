@@ -22,9 +22,10 @@ Pi's Anthropic provider is hidden. Its only option is an API key, which bills se
 
 ```bash
 npm install
-npm run build
-npm run serve
+npm start
 ```
+
+`npm start` builds first, then runs the server. `npm run serve` runs the last build as it is.
 
 Open http://127.0.0.1:3000. The gear icon opens Settings, where you sign providers in and out, and update mip (see Updating). Set `CLAUDE_BIN` if `claude` isn't on your PATH.
 
