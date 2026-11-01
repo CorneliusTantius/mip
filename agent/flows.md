@@ -156,5 +156,5 @@ Skills card: `features/skills/SkillsCard.tsx` (the installed skills, with Create
 - **Start.** `server.ts` calls `startMcpServers` once it is listening, so the dashboard is up while the servers start. Each server connects on its own: start, then list its tools, with 30 s for each step.
 - **Tools.** Each tool becomes `mcp_<server>_<tool>`. `agentDeferredTools()` builds an agent run's deferred list when the run starts, so `tool_search` finds these tools and `tool_call` runs them. A failed result from the server comes back as a failed tool result.
 - **Reload.** `POST /api/mcp/reload` closes every connection and starts again from the file. A run in progress keeps its tool list, so its calls to a closed server fail.
-- **Bots.** No bot is offered MCP tools yet.
+- **Bots.** A bot turn takes `botDeferredTools()` when it starts. Its `tool_search` and `tool_call` reach the MCP tools, the same as an agent's.
 - Tests: `app/mcp/mcp.test.mjs`, with a fake stdio server and a temporary `MIP_HOME`.

@@ -107,21 +107,31 @@ try {
   const called = await search.toolCallTool.run({ name: "mcp_fake_echo", input: { text: "via tool_call" } }, { workspace: root, deferred });
   assert.equal(called.text, "via tool_call");
 
-  // 5. The registry lists them as deferred for agents, and no bot is offered them.
-  const listed = tools.describeTools().find((tool) => tool.name === "mcp_fake_echo");
-  assert.deepEqual([listed.load, listed.agent, listed.bot], ["deferred", true, false]);
+  // 5. A bot turn gets the same tools as deferred tools, and finds and runs them the same way, with its own run context.
+  const botDeferred = tools.botDeferredTools();
+  assert.ok(botDeferred.some((tool) => tool.name === "mcp_fake_echo"), "bots get the server's tools as deferred tools");
+  const botFound = await search.toolSearchTool.run({ query: "echo text" }, { workspace: root, botId: "bot-a", roomId: "room-a", deferred: botDeferred });
+  assert.match(botFound.text, /mcp_fake_echo/);
+  const botCalled = await search.toolCallTool.run({ name: "mcp_fake_echo", input: { text: "from a bot" } }, { botId: "bot-a", roomId: "room-a", deferred: botDeferred });
+  assert.equal(botCalled.text, "from a bot");
 
-  // 6. A reload follows the file: a server removed from it goes away, and its tools stop being offered.
+  // 6. The registry lists them as deferred, for agents and for bots.
+  const listed = tools.describeTools().find((tool) => tool.name === "mcp_fake_echo");
+  assert.deepEqual([listed.load, listed.agent, listed.bot], ["deferred", true, true]);
+
+  // 7. A reload follows the file: a server removed from it goes away, and its tools stop being offered to agents and bots.
   writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { fake: { command: process.execPath, args: [serverPath] } } }));
   await manager.startMcpServers();
   assert.deepEqual(manager.mcpStatus().servers.map((server) => server.name), ["fake"]);
   assert.ok(tools.agentDeferredTools().some((tool) => tool.name === "mcp_fake_echo"));
+  assert.ok(tools.botDeferredTools().some((tool) => tool.name === "mcp_fake_echo"));
   writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: {} }));
   await manager.startMcpServers();
   assert.deepEqual(manager.mcpTools(), []);
   assert.ok(!tools.agentDeferredTools().some((tool) => tool.name.startsWith("mcp_")));
+  assert.deepEqual(tools.botDeferredTools(), []);
 
-  // 7. Closing a live server leaves nothing connected.
+  // 8. Closing a live server leaves nothing connected.
   writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { fake: { command: process.execPath, args: [serverPath] } } }));
   await manager.startMcpServers();
   assert.equal(manager.mcpTools().length, 2);

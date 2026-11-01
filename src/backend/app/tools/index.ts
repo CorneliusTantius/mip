@@ -48,9 +48,13 @@ export const AGENT_DEFERRED: ToolSpec[] = DEFERRED_TOOLS;
 export function agentDeferredTools(): ToolSpec[] {
   return [...AGENT_DEFERRED, ...mcpTools()];
 }
-// Bots are offered the memory tools, the skill tools, and the room search directly, and no deferred tools. A bot's turn has few tools, so none need finding.
-export const BOT_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, skillSearch, skillRead, skillFile, roomSearch];
-export const BOT_DEFERRED: ToolSpec[] = [];
+// Bots are offered the memory tools, the skill tools, the room search, and the two search tools directly. Their deferred tools are the
+// MCP tools, which the search tools find. The mip tools a bot has are few, so they are all offered directly.
+export const BOT_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, skillSearch, skillRead, skillFile, roomSearch, ...SEARCH_TOOLS];
+// The deferred tools of one bot turn: the MCP tools that are connected right now. Like an agent run, a turn takes this list when it starts.
+export function botDeferredTools(): ToolSpec[] {
+  return mcpTools();
+}
 
 // What one run may do: the folder its tools work in, the agent it belongs to, the room it is in, the tools it is offered, and the
 // deferred tools it may run. A bot's run has no folder and no agent, since none of its tools use them. It has the room it speaks in.
@@ -83,7 +87,7 @@ export function runContextForToken(token: string | undefined): RunContext | unde
 
 // What the registry offers, for the dashboard: each tool with its description and input, how an agent is offered it, and which kinds of run may use it.
 export function describeTools() {
-  // The MCP tools are listed with mip's own. They are deferred for agents, and no bot is offered them yet.
+  // The MCP tools are listed with mip's own. They are deferred for agents and for bots alike.
   const external = mcpTools();
   return [...TOOLS, ...external].map((tool) => ({
     name: tool.name,
@@ -92,7 +96,7 @@ export function describeTools() {
     inputSchema: tool.inputSchema,
     load: DEFERRED_TOOLS.includes(tool) || external.includes(tool) ? "deferred" : SEARCH_TOOLS.includes(tool) ? "search" : "basic",
     agent: AGENT_TOOLS.includes(tool) || AGENT_DEFERRED.includes(tool) || external.includes(tool),
-    bot: BOT_TOOLS.includes(tool) || BOT_DEFERRED.includes(tool),
+    bot: BOT_TOOLS.includes(tool) || external.includes(tool),
   }));
 }
 

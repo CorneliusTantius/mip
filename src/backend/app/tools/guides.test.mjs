@@ -12,7 +12,7 @@ const root = mkdtempSync(join(tmpdir(), "mip-guides-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { AGENT_DEFERRED, AGENT_TOOLS, BOT_DEFERRED, BOT_TOOLS, TOOLS, describeTools, toolGuidesPrompt } = await import(`${DIST}app/tools/index.js`);
+  const { AGENT_DEFERRED, AGENT_TOOLS, botDeferredTools, BOT_TOOLS, TOOLS, describeTools, toolGuidesPrompt } = await import(`${DIST}app/tools/index.js`);
   const { toolSearchTool } = await import(`${DIST}app/tools/search.js`);
   const { defaultPersona } = await import(`${DIST}app/personas.js`);
 
@@ -35,9 +35,10 @@ try {
   assert.equal(found.isError, false);
   assert.match(found.text, /guide: Searches the notes shared by the agent and the bots/);
 
-  // Bots are offered the memory tools and the room search directly, and nothing that touches a folder. Their guides go into the bot's system prompt.
-  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search"]);
-  assert.deepEqual(BOT_DEFERRED, []);
+  // Bots are offered the memory tools, the skill tools, the room search, and the search tools directly, and nothing that touches a folder.
+  // Their guides go into the bot's system prompt. Their deferred tools are the MCP tools, none in this test.
+  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search", "tool_search", "tool_call"]);
+  assert.deepEqual(botDeferredTools(), []);
   const botGuides = toolGuidesPrompt(BOT_TOOLS);
   assert.match(botGuides, /^Tool guides\. Use each tool as its guide says\./);
   assert.match(botGuides, /- room_search: /);

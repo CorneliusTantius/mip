@@ -11,7 +11,7 @@ const root = mkdtempSync(join(tmpdir(), "mip-search-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { BOT_DEFERRED, BOT_TOOLS, AGENT_DEFERRED, AGENT_TOOLS, DEFERRED_TOOLS, describeTools } = await import(`${DIST}app/tools/index.js`);
+  const { botDeferredTools, BOT_TOOLS, AGENT_DEFERRED, AGENT_TOOLS, DEFERRED_TOOLS, describeTools } = await import(`${DIST}app/tools/index.js`);
   const { searchTools, toolCallTool, toolSearchTool } = await import(`${DIST}app/tools/search.js`);
 
   const names = (list) => list.map((tool) => tool.name);
@@ -19,9 +19,9 @@ try {
   // An agent run is offered the basic tools and the two search tools. Memory and skill_file are deferred, found with tool_search.
   assert.deepEqual(names(AGENT_TOOLS), ["bash", "read", "edit", "write", "skill_search", "skill_read", "tool_search", "tool_call"]);
   assert.deepEqual(names(AGENT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file"]);
-  // A bot is offered the memory tools, the skill tools, and the room search directly, and has no deferred tools.
-  assert.deepEqual(names(BOT_TOOLS), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search"]);
-  assert.deepEqual(BOT_DEFERRED, []);
+  // A bot is offered the memory tools, the skill tools, the room search, and the search tools directly. Its deferred tools are the MCP tools, none here.
+  assert.deepEqual(names(BOT_TOOLS), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search", "tool_search", "tool_call"]);
+  assert.deepEqual(botDeferredTools(), []);
 
   // Search finds tools by the words of their names and descriptions. A query nothing matches finds nothing.
   assert.ok(names(searchTools(DEFERRED_TOOLS, "memory")).includes("memory_search"));
@@ -45,7 +45,7 @@ try {
   const basic = await toolCallTool.run({ name: "bash", input: { command: "echo hi" } }, context);
   assert.equal(basic.isError, true);
   assert.match(basic.text, /no deferred tool named bash/);
-  const forBot = await toolCallTool.run({ name: "memory_search", input: { query: "x" } }, { workspace: root, deferred: BOT_DEFERRED });
+  const forBot = await toolCallTool.run({ name: "memory_search", input: { query: "x" } }, { workspace: root, deferred: botDeferredTools() });
   assert.equal(forBot.isError, true);
 
   // With no deferred tools in the run, tool_search says so.
@@ -66,6 +66,8 @@ try {
     "memory_read",
     "memory_edit",
     "skill_file",
+    "tool_search",
+    "tool_call",
     "room_search",
   ]);
 

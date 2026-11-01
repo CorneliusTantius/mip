@@ -75,10 +75,10 @@ Deleting an agent removes `workspaces/<agentId>` (`app/tools/workspace.ts`). Pro
   - `BASIC_TOOLS` are always offered: `bash`, `read`, `edit`, `write`, `skill_search`, `skill_read`.
   - `DEFERRED_TOOLS` are not offered. The model finds one with `tool_search` and runs it with `tool_call`: `memory_search`, `memory_read`, `memory_edit`, `skill_file`.
   - The search tools, `tool_search` and `tool_call`, live in `app/tools/search.ts`.
-- Kinds of run take their lists from the registry: agents get `AGENT_TOOLS` and `AGENT_DEFERRED`. Bots get `BOT_TOOLS`, which holds the memory tools, the skill tools, and `room_search`, and `BOT_DEFERRED`, which is empty.
+- Kinds of run take their lists from the registry: agents get `AGENT_TOOLS` and `AGENT_DEFERRED`. Bots get `BOT_TOOLS`, which holds the memory tools, the skill tools, `room_search`, and the two search tools, and `botDeferredTools()`, which is the connected MCP tools.
 - Guides: each tool has a `guide`. The guides of the offered tools go into the system prompt (`toolGuidesPrompt`). A deferred tool's guide comes back with its `tool_search` result.
 - Claude reaches the tools through `/mcp`, with `--strict-mcp-config`, built-in tools off (`--tools ""`), `--allowedTools mcp__mip__<name>`, and `--disable-slash-commands`.
-- External MCP servers (`data/mcp.json`) connect at startup. Their tools are deferred for agents: `mcp_<server>_<tool>`, found with `tool_search` and run with `tool_call`. Both providers reach them the same way.
+- External MCP servers (`data/mcp.json`) connect at startup. Their tools are deferred for agents and bots: `mcp_<server>_<tool>`, found with `tool_search` and run with `tool_call`. Both providers reach them the same way.
 - Pi gets the tools as custom tools. Its built-in tools are off, and its own skill folders are off (`noSkills`).
 - Paths are confined to the workspace by `inWorkspace` (`app/tools/workspace.ts`). `bash` is not sandboxed.
 - Planned, not built:

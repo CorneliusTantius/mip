@@ -78,7 +78,7 @@ API regression check (used in the 2026-10-31 refactor): record each route's stat
 ### Add an agent tool
 1. Create a module in `src/backend/app/tools/`, exporting a `ToolSpec`. Give it a `description` (one line, for search), a `guide` (one paragraph on when and how to use it), and an `inputSchema`. Return `ok(text)` or `fail(text)` from `tools/result.ts`.
 2. List it in `app/tools/index.ts`: in `BASIC_TOOLS` if every run should have it, or in `DEFERRED_TOOLS` if the model should find it with `tool_search`.
-3. Agents get it through `AGENT_TOOLS` or `AGENT_DEFERRED`. Bots get it through `BOT_TOOLS` or `BOT_DEFERRED`. A bot's turn has its own run token and no workspace, so a bot tool must not need a folder. A bot's tool guides go into its system prompt, the same as an agent's.
+3. Agents get it through `AGENT_TOOLS` or `AGENT_DEFERRED`. Bots get it through `BOT_TOOLS` or `botDeferredTools()`. A bot's turn has its own run token and no workspace, so a bot tool must not need a folder. A bot's tool guides go into its system prompt, the same as an agent's.
 4. Paths go through `inWorkspace` (`tools/workspace.ts`).
 5. Each provider gets the tools through its own adapter: Claude through `/mcp`, Pi as a custom tool.
 6. Update `agent/backend.md` and the tool section of `agent/architecture.md`.
@@ -129,7 +129,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - Skills are text only. Imports refuse scripts, binaries, symbolic links, and oversized folders. A skill is read only through `skill_read` and `skill_file`. Every agent and bot can read every installed skill.
 - Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Skills reach the model only through the app's tools.
 - Each kind of run has its own tool lists. A tool is offered to a run only when that run's list includes it, and the MCP endpoint checks the same list.
-- MCP servers: `data/mcp.json` can hold tokens, so it never syncs. The status API never returns environment values or headers. An MCP tool is deferred for agents, and no bot gets one yet.
+- MCP servers: `data/mcp.json` can hold tokens, so it never syncs. The status API never returns environment values or headers. An MCP tool is deferred for agents and bots alike.
 - A rename of a word must skip the names of libraries. daisyUI's chat bubbles use the classes `chat`, `chat-start`, `chat-end`, `chat-header`, `chat-bubble`, and `chat-bubble-*`. The chat-to-agent rename once broke them, so the bubbles rendered as plain text. Check the class names of the library after a rename.
 - Expanded cards step their text up one size. Put that in `RunScopePills` and the card's own classes, not in one-off styles.
 

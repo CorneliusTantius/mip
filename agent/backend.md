@@ -28,12 +28,12 @@ Flat files, one per domain:
 - `repos.ts`: repository clones, pull all, copies into agents, and `repoNote`.
 
 ## app/room/: the bots room
-- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus` (per room), and `runTurn`. A bot turn registers its own run token for `BOT_TOOLS`, with the room's id and no workspace, since none of its tools read a folder. Its system prompt is the persona, the room's rules (which name the room), and the tool guides. Its run token also carries the bot id.
+- `room.ts`: `postToRoom`, `roomMessages`, `roomStatus` (per room), and `runTurn`. A bot turn registers its own run token for `BOT_TOOLS` and its deferred MCP tools, with the room's id and no workspace, since none of its tools read a folder. Its system prompt is the persona, the room's rules (which name the room), and the tool guides. Its run token also carries the bot id.
 - `rooms.ts`: `allRooms`, `createRoom`, `editRoom`, `removeRoom`. A name is unique ignoring case and at most 40 characters. The last room cannot be removed. Tested by `rooms.test.mjs`.
 - `engine.ts`: pure turn-taking: `mentionedBots`, `isSilent`, `converseRoom`. Tested by `engine.test.mjs`.
 
 ## app/tools/: the tool registry
-- `index.ts`: the registry. `BASIC_TOOLS`, `DEFERRED_TOOLS`, `TOOLS`, `AGENT_TOOLS`, `AGENT_DEFERRED`, `BOT_TOOLS`, `BOT_DEFERRED`. Also `RunContext`, `registerRun`, `releaseRun`, `runContextForToken`, `describeTools` (for `GET /api/tools`), and `toolGuidesPrompt`.
+- `index.ts`: the registry. `BASIC_TOOLS`, `DEFERRED_TOOLS`, `TOOLS`, `AGENT_TOOLS`, `AGENT_DEFERRED`, `BOT_TOOLS`, `agentDeferredTools`, `botDeferredTools`. Also `RunContext`, `registerRun`, `releaseRun`, `runContextForToken`, `describeTools` (for `GET /api/tools`), and `toolGuidesPrompt`.
 - `search.ts`: `toolSearchTool`, `toolCallTool`, and the pure `searchTools`. Tested by `tool-search.test.mjs`.
 - `room.ts`: `roomSearchTool` (`room_search`), the one tool only bots get. It searches the messages of the bot's own room with `storage/room.ts` `searchRoomMessages`, newest first. The run's room id comes from the run's token. Tested by `room-search.test.mjs`.
 - `calls.ts`: `ToolCallLog`. It records a reply's calls, matching results to calls by id, and cuts long text. Tested by `calls.test.mjs`.

@@ -7,7 +7,7 @@ import { HOST, PORT } from "../config.js";
 import { AppError } from "../errors.js";
 import { findProvider } from "../providers.js";
 import { ToolCallLog } from "../tools/calls.js";
-import { BOT_DEFERRED, BOT_TOOLS, registerRun, releaseRun, toolGuidesPrompt } from "../tools/index.js";
+import { BOT_TOOLS, botDeferredTools, registerRun, releaseRun, toolGuidesPrompt } from "../tools/index.js";
 import { converseRoom, mentionedBots } from "./engine.js";
 
 // How many turns one message can set off, and how much of its room each bot sees.
@@ -101,7 +101,8 @@ async function runTurn(room: Room, bot: Bot, members: Bot[]): Promise<{ text: st
   ].join("\n");
   const systemPrompt = [bot.persona, roomRules(room.name), toolGuidesPrompt(BOT_TOOLS)].filter(Boolean).join("\n\n");
 
-  const token = registerRun({ tools: BOT_TOOLS, deferred: BOT_DEFERRED, botId: bot.id, roomId: room.id });
+  const deferred = botDeferredTools();
+  const token = registerRun({ tools: BOT_TOOLS, deferred, botId: bot.id, roomId: room.id });
   const calls = new ToolCallLog();
   let text = "";
   try {
@@ -109,7 +110,7 @@ async function runTurn(room: Room, bot: Bot, members: Bot[]): Promise<{ text: st
       prompt,
       systemPrompt,
       tools: BOT_TOOLS,
-      deferredTools: BOT_DEFERRED,
+      deferredTools: deferred,
       botId: bot.id,
       roomId: room.id,
       toolServer: { url: `http://${HOST}:${PORT}/mcp`, token },

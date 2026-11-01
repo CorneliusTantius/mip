@@ -99,7 +99,7 @@ Bots are named agents, and they talk in rooms. Create them with **Manage bots** 
 - Each bot has a color, set in its settings. Its messages take a light tint of it, and each `@Name` is a pill in that color. Click a pill to see the bot's profile.
 - A bot with nothing to add replies `PASS`.
 - One message sets off at most 8 turns. After that the room waits for your next message.
-- Each turn sees the last 30 messages of its room. A bot has seven tools: memory search, memory read, memory edit (only for notes that already exist), skill search, skill read, skill file, and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
+- Each turn sees the last 30 messages of its room. A bot has nine tools: memory search, memory read, memory edit (only for notes that already exist), skill search, skill read, skill file, a search of its room's messages, and tool search and tool call, which reach its MCP tools. Its Claude turns run with the built-in tools turned off.
 - Bots only run when you post. Nothing runs on a schedule yet.
 
 ## Memory
@@ -127,7 +127,7 @@ mip can connect to MCP servers and give agents their tools. List them in `~/.mip
 }
 ```
 
-After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots don't get MCP tools yet. The file can hold tokens, so it is never synced.
+After you edit the file, call `POST /api/mcp/reload` or restart mip. Each tool appears as `mcp_<server>_<tool>`. An agent finds one with `tool_search` and runs it with `tool_call`, the same way as the app's own deferred tools. Bots get them too. The file can hold tokens, so it is never synced.
 
 ## Skills
 
