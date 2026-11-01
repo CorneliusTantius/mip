@@ -99,7 +99,7 @@ Bots are named agents, and they talk in rooms. Create them with **Manage bots** 
 - Each bot has a color, set in its settings. Its messages take a light tint of it, and each `@Name` is a pill in that color. Click a pill to see the bot's profile.
 - A bot with nothing to add replies `PASS`.
 - One message sets off at most 8 turns. After that the room waits for your next message.
-- Each turn sees the last 30 messages of its room. A bot has three tools: memory search, memory read, and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
+- Each turn sees the last 30 messages of its room. A bot has four tools: memory search, memory read, memory edit (only for notes that already exist), and a search of its room's messages. Its Claude turns run with the built-in tools turned off.
 - Bots only run when you post. Nothing runs on a schedule yet.
 
 ## Memory

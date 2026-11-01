@@ -105,7 +105,7 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 | DELETE | /api/skills/imports/:importId | 200 | `{ok:true}`. Drops the staged import | |
 
 ## Tools — `routes/tools.ts`
-`GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, guide, inputSchema, load, agent, bot}`. `guide` is one paragraph on when and how to use the tool. `load` is `basic` (always offered), `deferred` (found with `tool_search`, run with `tool_call`), or `search` (the two tools that do the finding). `agent` and `bot` say whether that kind of run may use the tool. Agents can use every tool but `room_search`. Bots are offered `memory_search`, `memory_read`, and `room_search` directly, and no others. A tool's `load` is how an agent gets it, so `memory_search` is `deferred` for agents and `basic` for bots.
+`GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, guide, inputSchema, load, agent, bot}`. `guide` is one paragraph on when and how to use the tool. `load` is `basic` (always offered), `deferred` (found with `tool_search`, run with `tool_call`), or `search` (the two tools that do the finding). `agent` and `bot` say whether that kind of run may use the tool. Agents can use every tool but `room_search`. Bots are offered `memory_search`, `memory_read`, `memory_edit`, and `room_search` directly, and no others. A tool's `load` is how an agent gets it, so `memory_search` is `deferred` for agents and `basic` for bots.
 
 ## Agents — enabled skills
 `GET /api/agents/:agentId` also returns `skills`, the names the agent has enabled. Replace them with:

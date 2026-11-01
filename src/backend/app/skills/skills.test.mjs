@@ -105,9 +105,9 @@ try {
   const escape = await skillFile.run({ name: "codeword", path: "../SKILL.md" }, { workspace: root, agentId: "agent-a" });
   assert.equal(escape.isError, true);
 
-  // One registry, two lists: agents get every tool, bots get the memory reads and the room search, and no skill tools. A run's token carries its own list.
+  // One registry, two lists: agents get every tool, bots get the memory tools and the room search, and no skill tools. A run's token carries its own list.
   assert.ok(AGENT_TOOLS.some((tool) => tool.name === "skill_read") && AGENT_TOOLS.some((tool) => tool.name === "bash"));
-  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "room_search"]);
+  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "room_search"]);
   const token = registerRun({ tools: BOT_TOOLS });
   assert.equal(runContextForToken(token).tools.some((tool) => tool.name === "skill_read"), false, "a bot's run cannot reach skills");
   releaseRun(token);
@@ -117,7 +117,7 @@ try {
   const described = describeTools();
   assert.equal(described.length, TOOLS.length);
   assert.ok(described.filter((tool) => tool.name !== "room_search").every((tool) => tool.agent === true));
-  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["memory_search", "memory_read", "room_search"]);
+  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "room_search"]);
   assert.equal(described.find((tool) => tool.name === "skill_read").description, TOOLS.find((tool) => tool.name === "skill_read").description);
 
   // A folder in the registry that is not a valid skill is reported, not hidden.

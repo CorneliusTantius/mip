@@ -44,7 +44,7 @@ export const memoryReadTool: ToolSpec = {
   },
 };
 
-// Changes part of a note that already exists. Agents can't create or delete notes: the user does that in the memory screen.
+// Changes part of a note that already exists. The agent and the bots can't create or delete notes: the user does that in the memory screen.
 export const memoryEditTool: ToolSpec = {
   name: "memory_edit",
   guide: "Changes one part of a note that already exists, such as correcting a fact or adding a line. You cannot create or delete notes; the user does that. Do not edit notes for small talk.",
@@ -61,7 +61,7 @@ export const memoryEditTool: ToolSpec = {
   },
   async run({ title, oldText, newText }) {
     const note = readNote(String(title ?? ""));
-    if (!note) return fail(`No note called "${title}". Agents can only edit notes that already exist.`);
+    if (!note) return fail(`No note called "${title}". Only notes that already exist can be edited.`);
     const search = String(oldText ?? "");
     if (!search) return fail("oldText is required");
 
