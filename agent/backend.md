@@ -36,10 +36,12 @@ Flat files, one per domain:
 - `index.ts`: the registry. `BASIC_TOOLS`, `DEFERRED_TOOLS`, `TOOLS`, `AGENT_TOOLS`, `AGENT_DEFERRED`, `BOT_TOOLS`, `agentDeferredTools`, `botDeferredTools`. Also `RunContext`, `registerRun`, `releaseRun`, `runContextForToken`, `describeTools` (for `GET /api/tools`), and `toolGuidesPrompt`.
 - `search.ts`: `toolSearchTool`, `toolCallTool`, and the pure `searchTools`. Tested by `tool-search.test.mjs`.
 - `room.ts`: `roomSearchTool` (`room_search`), the one tool only bots get. It searches the messages of the bot's own room with `storage/room.ts` `searchRoomMessages`, newest first. The run's room id comes from the run's token. Tested by `room-search.test.mjs`.
+- `index.ts` also defines `agents_list` and `agent_ask`, the bot-only tools for sending a task to an agent open to bots. `agent_ask` starts the agent's run with `startRun`, whose `onFinish` posts the reply to the room as an `agent` message and frees the room for the next task. One task per room at a time. They are defined in `index.ts`, not their own file, because `runs.ts` reads the registry: a tool file that imported `runs.ts` would break the module load order. Tested by `agents.test.mjs`.
 - `calls.ts`: `ToolCallLog`. It records a reply's calls, matching results to calls by id, and cuts long text. Tested by `calls.test.mjs`.
 - `files.ts`: `read`, `write`, `edit`. Paths go through `inWorkspace`.
 - `bash.ts`: `bash`. The working directory is the workspace. Output keeps the last 50 KB. The default timeout is 120 seconds. Not sandboxed.
 - `memory.ts`: `memory_search`, `memory_read`, `memory_edit`. Only existing notes can be edited.
+- `ask.ts`: `ask_user`, offered to every agent. It checks the question's kind and its controls (choice and multi take 2 to 8 options, a slider needs a min below its max). `takePendingAsk(agentId)` hands the question to the reply when the run ends. One question per run. Tested by `ask.test.mjs`.
 - `skills.ts`: `skill_search`, `skill_read`, and `skill_file`. Every installed skill is open to every agent and bot.
 - `workspace.ts`: `workspacePath`, `workspaceFor`, `removeWorkspace`, `inWorkspace`.
 - `result.ts`: `ok` and `fail`.

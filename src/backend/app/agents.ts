@@ -1,4 +1,4 @@
-import { deleteAgent, getAgent, insertAgent, listAgents, listMessages, renameAgent, setAgentSettings, type Agent } from "../storage/agents.js";
+import { deleteAgent, getAgent, insertAgent, listAgents, listMessages, renameAgent, setAgentOpenToBots, setAgentSettings, type Agent } from "../storage/agents.js";
 import { AppError } from "./errors.js";
 import { pickAgentName } from "./names.js";
 import { defaultPersona, hasPersona } from "./personas.js";
@@ -28,15 +28,22 @@ export function getAgentDetail(id: string) {
   };
 }
 
-// Renames an agent and/or sets its model and thinking level. Empty values mean the provider's default.
+// Renames an agent, sets whether bots may send it tasks, and/or sets its model and thinking level. Empty values mean the provider's default.
 // The model must be one the provider lists, and the thinking level one that model accepts.
 // The model and thinking level apply to the next message, and the agent keeps them.
-export async function updateAgent(id: string, changes: { title?: unknown; model?: unknown; thinking?: unknown }): Promise<Agent> {
+export async function updateAgent(
+  id: string,
+  changes: { title?: unknown; openToBots?: unknown; model?: unknown; thinking?: unknown },
+): Promise<Agent> {
   const agent = requireAgent(id);
   if (changes.title !== undefined) {
     const title = String(changes.title ?? "").trim();
     if (!title) throw new AppError(400, "title is required");
     renameAgent(id, title);
+  }
+  if (changes.openToBots !== undefined) {
+    if (typeof changes.openToBots !== "boolean") throw new AppError(400, "openToBots must be true or false");
+    setAgentOpenToBots(id, changes.openToBots);
   }
   if (changes.model !== undefined || changes.thinking !== undefined) {
     const model = changes.model === undefined ? agent.model : optionalText(changes.model);

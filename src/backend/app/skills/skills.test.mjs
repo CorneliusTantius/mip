@@ -126,7 +126,7 @@ try {
 
   // One registry, two lists: agents get every tool, bots get the memory tools, the skill tools, the room search, and the search tools. A run's token carries its own list.
   assert.ok(AGENT_TOOLS.some((tool) => tool.name === "skill_read") && AGENT_TOOLS.some((tool) => tool.name === "bash"));
-  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search", "tool_search", "tool_call"]);
+  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search", "agents_list", "agent_ask", "tool_search", "tool_call"]);
   const token = registerRun({ tools: BOT_TOOLS });
   assert.ok(runContextForToken(token).tools.some((tool) => tool.name === "skill_read"), "a bot's run reaches its skills");
   assert.ok(!runContextForToken(token).tools.some((tool) => tool.name === "bash"), "a bot's run has no shell");
@@ -136,8 +136,9 @@ try {
   // The registry lists every tool with the kinds of run that may use it: agents get all but the room search, bots the memory reads and the room search.
   const described = describeTools();
   assert.equal(described.length, TOOLS.length);
-  assert.ok(described.filter((tool) => tool.name !== "room_search").every((tool) => tool.agent === true));
-  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["skill_search", "skill_read", "memory_search", "memory_read", "memory_edit", "skill_file", "tool_search", "tool_call", "room_search"]);
+  const botOnly = ["room_search", "agents_list", "agent_ask"];
+  assert.ok(described.filter((tool) => !botOnly.includes(tool.name)).every((tool) => tool.agent === true));
+  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["skill_search", "skill_read", "memory_search", "memory_read", "memory_edit", "skill_file", "tool_search", "tool_call", "room_search", "agents_list", "agent_ask"]);
   assert.equal(described.find((tool) => tool.name === "skill_read").description, TOOLS.find((tool) => tool.name === "skill_read").description);
 
   // A folder in the registry that is not a valid skill is reported, not hidden.

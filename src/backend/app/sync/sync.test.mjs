@@ -181,6 +181,22 @@ function run() {
   assert.equal(stale.run.ok, true);
   assert.deepEqual(stale.agents, [], "the delete reaches machine E through its legacy base");
 
+  // An agent open to bots, and a question in its chat, reach the other machine. Machine A opens the agent and asks a question, and B reads both.
+  machine(a, `
+    const plans = agents.listAgents().find((s) => s.title === "Plans");
+    agents.setAgentOpenToBots(plans.id, true);
+    agents.addMessage(plans.id, { role: "assistant", text: "Which day?", tools: [], error: null, ask: { question: "Which day?", kind: "choice", options: ["Mon", "Tue"] } });
+    return await engine.syncWith(remote);
+  `);
+  const asked = machine(b, `
+    const run = await engine.syncWith(remote);
+    const plans = agents.listAgents().find((s) => s.title === "Plans");
+    return { run, openToBots: plans.openToBots, asks: agents.listMessages(plans.id).map((m) => m.ask) };
+  `);
+  assert.equal(asked.run.ok, true);
+  assert.equal(asked.openToBots, true, "the bot switch reaches the other machine");
+  assert.deepEqual(asked.asks.filter(Boolean), [{ question: "Which day?", kind: "choice", options: ["Mon", "Tue"] }], "the question reaches the other machine");
+
   // MCP servers sync with their tokens. Machine A adds two servers, and machine B gets both, with their values, in a file only this user reads.
   const PATHS = `const fs = await import("node:fs"); const paths = await import(${JSON.stringify(`${DIST}storage/paths.js`)});`;
   const HTTP = `{ type: "http", url: "http://127.0.0.1:47891/mcp", headers: { Authorization: "Bearer s3cret" } }`;

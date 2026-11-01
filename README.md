@@ -89,6 +89,8 @@ A message is a run. It keeps going after the browser closes, and each event is s
 
 A new agent gets a random name from a bank of Norse names: gods, giants, valkyries, dwarves, heroes, saga figures, and rulers of the Viking Age. No two agents share a name at the same time. The bank is in `src/backend/app/names.ts`.
 
+An agent can ask you a question with buttons, a checklist, a text box, or a slider. The controls show under its reply, and your answer is sent as your next message.
+
 ## Bots
 
 Bots are named agents, and they talk in rooms. Create them with **Manage bots** on the Bots card. Each bot has a name, a persona, and a provider, with its model and thinking level.
@@ -101,6 +103,8 @@ Bots are named agents, and they talk in rooms. Create them with **Manage bots** 
 - One message sets off at most 8 turns. After that the room waits for your next message.
 - Each turn sees the last 30 messages of its room. A bot has nine tools: memory search, memory read, memory edit (only for notes that already exist), skill search, skill read, skill file, a search of its room's messages, and tool search and tool call, which reach its MCP tools. Its Claude turns run with the built-in tools turned off.
 - Bots only run when you post. Nothing runs on a schedule yet.
+
+A bot can send a task to an agent that you have opened to bots, with the "Bots may ask" switch in the agent's composer. The agent does the task in its own chat, with its own tools, and its reply is posted to the room. A room sends one task at a time.
 
 ## Memory
 
@@ -141,7 +145,7 @@ Each reply keeps the tool calls it made, with their inputs and results. Click **
 
 ## Tools
 
-Every provider gets the same tools, defined in `src/backend/app/tools/`. Six are always offered: `bash`, `read`, `edit`, `write`, `skill_search`, and `skill_read`. Four are deferred: the three memory tools and `skill_file`. The model finds a deferred tool with `tool_search`, then runs it with `tool_call`, so the list of tools stays short. Each tool has a short guide that tells the model when and how to use it. An offered tool's guide goes into the system prompt, and a deferred tool's guide comes back with `tool_search`. The built-in persona keeps only how the assistant works.
+Every provider gets the same tools, defined in `src/backend/app/tools/`. Seven are always offered: `bash`, `read`, `edit`, `write`, `skill_search`, `skill_read`, and `ask_user`. Four are deferred: the three memory tools and `skill_file`. The model finds a deferred tool with `tool_search`, then runs it with `tool_call`, so the list of tools stays short. Each tool has a short guide that tells the model when and how to use it. An offered tool's guide goes into the system prompt, and a deferred tool's guide comes back with `tool_search`. The built-in persona keeps only how the assistant works.
 
 - **Pi** gets them as custom tools. Pi's own copies are off.
 - **Claude** reaches them through the app's `/mcp` endpoint. Each run gets a token that opens only that run's workspace, and the token stops working when the run ends. Claude's built-in tools are off for these runs.

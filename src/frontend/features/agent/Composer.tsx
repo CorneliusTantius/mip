@@ -29,7 +29,7 @@ export function Composer({
   models: ModelOption[];
   busy: boolean;
   onSend: (prompt: string) => void;
-  onChangeSettings: (changes: { model?: string; thinking?: string }) => void;
+  onChangeSettings: (changes: { model?: string; thinking?: string; openToBots?: boolean }) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [skills, setSkills] = useState<SkillSummary[]>([]);
@@ -89,6 +89,16 @@ export function Composer({
           disabled={!agent || !levels.length}
           onChange={(next) => onChangeSettings({ thinking: next })}
         />
+        <label className="flex cursor-pointer items-center gap-2 text-sm" title="Bots in a room may send this agent tasks">
+          <input
+            type="checkbox"
+            className="toggle toggle-sm"
+            checked={agent?.openToBots ?? false}
+            disabled={!agent}
+            onChange={(e) => onChangeSettings({ openToBots: e.currentTarget.checked })}
+          />
+          Bots may ask
+        </label>
       </div>
 
       <div className="relative">

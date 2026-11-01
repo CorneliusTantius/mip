@@ -63,8 +63,8 @@ export function useAgents() {
     await refresh();
   }
 
-  // Saves the model or thinking level on the open agent. It applies to the next message.
-  async function changeSettings(changes: { model?: string; thinking?: string }): Promise<void> {
+  // Saves the model, thinking level, or the bots' switch on the open agent. The model and thinking level apply to the next message.
+  async function changeSettings(changes: { model?: string; thinking?: string; openToBots?: boolean }): Promise<void> {
     if (!currentId) return;
     await api.patch(`/api/agents/${currentId}`, changes);
     await refresh();

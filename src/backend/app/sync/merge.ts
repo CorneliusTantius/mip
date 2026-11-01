@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Credential, ModelsStoreEntry } from "@earendil-works/pi-ai";
+import type { Ask } from "../../storage/agents.js";
 import type { McpServerEntry } from "../mcp/config.js";
 
 // The data GitHub sync keeps, in the form the dotmip repo stores it. Records hold no local ids, so two machines can share them.
@@ -37,6 +38,8 @@ export interface MessageRecord {
   text: string;
   tools: string[];
   error: string | null;
+  // The question the reply ends with, or null. A record written before questions existed has none.
+  ask: Ask | null;
 }
 
 // An agent's settings, and its messages. Messages are never edited, so both sides' messages are kept.
@@ -47,6 +50,8 @@ export interface AgentRecord {
   personaId: string;
   model: string | null;
   thinking: string | null;
+  // Whether bots may send tasks to the agent.
+  openToBots: boolean;
   updatedAt: number;
   messages: MessageRecord[];
 }

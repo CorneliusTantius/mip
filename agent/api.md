@@ -12,7 +12,7 @@ Matching: path segments are decoded before matching; a trailing slash is tolerat
 | GET | /api/agents | 200 | `{agents: Agent[]}` | |
 | POST | /api/agents | 201 | `Agent` (body `{providerId, personaId}`) | 400 unknown provider/persona |
 | GET | /api/agents/:agentId | 200 | `{agent, messages, activeRunId?}` | 404 no such agent |
-| PATCH | /api/agents/:agentId | 200 | `Agent` (body `{title?, model?, thinking?}`; `""` clears model/thinking) | 400 empty title, unknown model, thinking not accepted by model; 404 |
+| PATCH | /api/agents/:agentId | 200 | `Agent` (body `{title?, openToBots?, model?, thinking?}`; `""` clears model/thinking) | 400 empty title, openToBots not true or false, unknown model, thinking not accepted by model; 404 |
 | DELETE | /api/agents/:agentId | 200 | `{ok:true}` | 404; 409 run active |
 
 ## Runs — `routes/runs.ts`
@@ -105,7 +105,7 @@ Installed skills are folders under `MIP_HOME/skills`. A skill is added in one of
 | DELETE | /api/skills/imports/:importId | 200 | `{ok:true}`. Drops the staged import | |
 
 ## Tools — `routes/tools.ts`
-`GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, guide, inputSchema, load, agent, bot}`. `guide` is one paragraph on when and how to use the tool. `load` is `basic` (always offered), `deferred` (found with `tool_search`, run with `tool_call`), or `search` (the two tools that do the finding). `agent` and `bot` say whether that kind of run may use the tool. Agents can use every tool but `room_search`. Bots are offered `memory_search`, `memory_read`, `memory_edit`, and `room_search` directly, and no others. A tool's `load` is how an agent gets it, so `memory_search` is `deferred` for agents and `basic` for bots.
+`GET /api/tools` returns `{tools}`: the tool registry, read only. Each tool is `{name, description, guide, inputSchema, load, agent, bot}`. `guide` is one paragraph on when and how to use the tool. `load` is `basic` (always offered), `deferred` (found with `tool_search`, run with `tool_call`), or `search` (the two tools that do the finding). `agent` and `bot` say whether that kind of run may use the tool. Agents can use every tool but the bot-only ones: `room_search`, `agents_list`, and `agent_ask`. Bots are offered the memory tools, the skill tools, `room_search`, `agents_list`, `agent_ask`, and the two search tools directly. A tool's `load` is how an agent gets it, so `memory_search` is `deferred` for agents and `basic` for bots.
 
 ## Sync — `routes/sync.ts`
 GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is signed in to on this machine. The run needs `Content-Type: application/json`, or it returns 415. The run is in the background: poll `GET /api/sync` until `running` is false.

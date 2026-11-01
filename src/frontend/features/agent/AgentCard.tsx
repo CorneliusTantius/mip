@@ -94,6 +94,7 @@ export function AgentCard() {
               messages={transcript.messages}
               busy={transcript.busy}
               emptyText={agents.currentId ? "Ask something to start." : "Create an agent to start."}
+              onAnswer={(answer) => agent && transcript.send(agent.id, answer)}
             />
             <Composer
               agent={agent}

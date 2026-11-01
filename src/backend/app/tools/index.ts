@@ -1,12 +1,20 @@
 import { randomUUID } from "node:crypto";
 import type { ToolSpec } from "../../adapters/contract.js";
+import { getBot } from "../../storage/bots.js";
+import { listAgents, type Agent } from "../../storage/agents.js";
+import { addRoomMessage } from "../../storage/room.js";
+import { getRoom } from "../../storage/rooms.js";
 import { mcpTools } from "../mcp/manager.js";
+import { askUserTool } from "./ask.js";
 import { bashTool } from "./bash.js";
 import { editTool, readTool, writeTool } from "./files.js";
 import { memoryEditTool, memoryReadTool, memorySearchTool } from "./memory.js";
 import { roomSearchTool } from "./room.js";
 import { toolCallTool, toolSearchTool } from "./search.js";
 import { skillFileTool, skillReadTool, skillSearchTool } from "./skills.js";
+import { errorMessage } from "../errors.js";
+import { activeRunId, startRun } from "../runs.js";
+import { fail, ok } from "./result.js";
 
 // A tool that throws reports the error as a failed result, the same as any other failure.
 const guarded = (tool: ToolSpec): ToolSpec => ({
@@ -24,8 +32,9 @@ const guarded = (tool: ToolSpec): ToolSpec => ({
 const skillSearch = guarded(skillSearchTool);
 const skillRead = guarded(skillReadTool);
 const skillFile = guarded(skillFileTool);
-// Basic tools are offered to every run, so the model always has them.
-export const BASIC_TOOLS: ToolSpec[] = [bashTool, readTool, editTool, writeTool].map(guarded).concat(skillSearch, skillRead);
+// Basic tools are offered to every run, so the model always has them. Only agents ask the user questions, since a bot speaks in a room.
+const askUser = guarded(askUserTool);
+export const BASIC_TOOLS: ToolSpec[] = [bashTool, readTool, editTool, writeTool].map(guarded).concat(skillSearch, skillRead, askUser);
 // The memory tools are wrapped once. Agents defer them, and bots are offered them directly.
 const memorySearch = guarded(memorySearchTool);
 const memoryRead = guarded(memoryReadTool);
@@ -34,11 +43,82 @@ const memoryEdit = guarded(memoryEditTool);
 export const DEFERRED_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, skillFile];
 // The two tools that find and run deferred tools.
 const SEARCH_TOOLS: ToolSpec[] = [toolSearchTool, toolCallTool].map(guarded);
-// Only bots are offered the room search.
+// The bots' agent tools. They are defined here, not in their own file, because starting a run lives in runs.ts, which reads this
+// registry. A tool that imported runs.ts from its own file would make a cycle that breaks when that file loads first.
+// The agents the user has opened to bots.
+function openAgents(): Agent[] {
+  return listAgents().filter((agent) => agent.openToBots);
+}
+
+// The rooms that have a task out to an agent. A room sends one task at a time, so a bot cannot pile them up.
+const delegating = new Set<string>();
+
+// Lists the agents a bot may send tasks to, and whether each one is busy.
+const agentsListTool: ToolSpec = {
+  name: "agents_list",
+  guide: "Lists the agents that are open to bots, with the ones that are busy. Use it to find the agent to send a task to with agent_ask.",
+  description: "List the agents open to bots. Shows each one's name, and marks the ones that are busy.",
+  inputSchema: { type: "object", properties: {} },
+  async run() {
+    const open = openAgents();
+    if (open.length === 0) return ok("No agent is open to bots. The user opens one in its settings.");
+    return ok(open.map((agent) => `${agent.title}${activeRunId(agent.id) ? " (busy)" : ""}`).join("\n"));
+  },
+};
+
+// Sends a task to an agent that is open to bots. The agent does it in its own chat, with its own tools. Its reply is posted to the room when
+// it finishes, so this returns at once and the bot does not wait for it.
+const agentAskTool: ToolSpec = {
+  name: "agent_ask",
+  guide: "Sends a task to an agent from agents_list. The agent does it in its own chat, with its own tools, and posts its reply to this room when it is done. Use it when the task needs what that agent can do, such as work in its repositories. Do not send a task you can answer yourself. You will not see the reply in this turn; it is in the room's messages afterwards.",
+  description: "Send a task to an agent that is open to bots. Its reply is posted to this room when it finishes.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      agent: { type: "string", description: "The agent's name, as agents_list shows it" },
+      task: { type: "string", description: "What the agent should do. Write it so the agent can act without more context" },
+    },
+    required: ["agent", "task"],
+  },
+  async run({ agent, task }, context) {
+    if (!context.botId || !context.roomId) return fail("Only a bot in a room can send a task to an agent.");
+    const name = String(agent ?? "").trim().toLowerCase();
+    const target = openAgents().find((candidate) => candidate.title.toLowerCase() === name);
+    if (!target) return fail(`No agent called "${agent}" is open to bots. Use agents_list to see the agents that are.`);
+    const text = String(task ?? "").trim();
+    if (!text) return fail("task is required");
+
+    const room = getRoom(context.roomId);
+    const bot = getBot(context.botId);
+    if (!room || !bot) return fail("The room or the bot no longer exists.");
+    if (delegating.has(room.id)) return fail("A task from this room is still running. Wait for its reply first.");
+
+    delegating.add(room.id);
+    try {
+      // The agent's chat shows the task as a message from the bot, so the user can see what was asked.
+      startRun({
+        agentId: target.id,
+        prompt: `${bot.name} in ${room.name} asks: ${text}`,
+        onFinish: ({ text: reply, error }) => {
+          delegating.delete(room.id);
+          const body = error ? `${reply}\n\nError: ${error}`.trim() : reply.trim();
+          addRoomMessage({ roomId: room.id, kind: "agent", botId: null, authorName: target.title, text: body || "(no reply)" });
+        },
+      });
+    } catch (err) {
+      delegating.delete(room.id);
+      return fail(errorMessage(err));
+    }
+    return ok(`Sent to ${target.title}. Its reply will appear in this room when it is done.`);
+  },
+};
+
 const roomSearch = guarded(roomSearchTool);
+const agentsList = guarded(agentsListTool);
+const agentAsk = guarded(agentAskTool);
 
 // The one registry of tool definitions. Each kind of run takes its lists from here, so a definition exists in one place.
-export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS, roomSearch];
+export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS, roomSearch, agentsList, agentAsk];
 
 // Agents (the agents) are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
 export const AGENT_TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...SEARCH_TOOLS];
@@ -50,7 +130,18 @@ export function agentDeferredTools(): ToolSpec[] {
 }
 // Bots are offered the memory tools, the skill tools, the room search, and the two search tools directly. Their deferred tools are the
 // MCP tools, which the search tools find. The mip tools a bot has are few, so they are all offered directly.
-export const BOT_TOOLS: ToolSpec[] = [memorySearch, memoryRead, memoryEdit, skillSearch, skillRead, skillFile, roomSearch, ...SEARCH_TOOLS];
+export const BOT_TOOLS: ToolSpec[] = [
+  memorySearch,
+  memoryRead,
+  memoryEdit,
+  skillSearch,
+  skillRead,
+  skillFile,
+  roomSearch,
+  agentsList,
+  agentAsk,
+  ...SEARCH_TOOLS,
+];
 // The deferred tools of one bot turn: the MCP tools that are connected right now. Like an agent run, a turn takes this list when it starts.
 export function botDeferredTools(): ToolSpec[] {
   return mcpTools();

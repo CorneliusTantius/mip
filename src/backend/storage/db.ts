@@ -183,6 +183,14 @@ if (!hasColumn("agents", "meta_updated_at")) {
 if (!hasColumn("messages", "calls")) {
   db.exec("ALTER TABLE messages ADD COLUMN calls TEXT NOT NULL DEFAULT '[]'");
 }
+// Replies made before the agent could ask a question have no question. The column is null for them.
+if (!hasColumn("messages", "ask")) {
+  db.exec("ALTER TABLE messages ADD COLUMN ask TEXT");
+}
+// Agents made before bots could send them tasks are closed to bots.
+if (!hasColumn("agents", "open_to_bots")) {
+  db.exec("ALTER TABLE agents ADD COLUMN open_to_bots INTEGER NOT NULL DEFAULT 0");
+}
 // Bot replies in the room made before tool calls were recorded have no details, the same as agent replies.
 if (!hasColumn("room_messages", "calls")) {
   db.exec("ALTER TABLE room_messages ADD COLUMN calls TEXT NOT NULL DEFAULT '[]'");

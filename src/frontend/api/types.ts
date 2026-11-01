@@ -54,8 +54,17 @@ export interface Agent {
   model: string | null;
   thinking: string | null;
   title: string;
+  // Whether bots may send tasks to this agent.
+  openToBots: boolean;
   updatedAt: number;
 }
+
+// A question an agent asked. Its controls show under the reply it ends. The question is the reply's question, and the answer is the next message.
+export type Ask = { question: string } & (
+  | { kind: "choice" | "multi"; options: string[] }
+  | { kind: "text"; placeholder: string }
+  | { kind: "slider"; min: number; max: number; step: number; value: number }
+);
 
 // A tool in the registry, and which kinds of run may use it.
 export interface ToolInfo {
@@ -108,6 +117,8 @@ export interface AgentMessage {
   tools: string[];
   calls: ToolCall[];
   error?: string | null;
+  // The question the reply ends with, if the agent asked one.
+  ask?: Ask | null;
 }
 
 export interface AgentDetail {
@@ -151,7 +162,8 @@ export interface Room {
 
 export interface RoomMessage {
   id: number;
-  kind: "user" | "bot" | "system";
+  // An "agent" message is the reply of an agent a bot sent a task to.
+  kind: "user" | "bot" | "agent" | "system";
   // The bot that wrote the message, if a bot did.
   botId: string | null;
   authorName: string;

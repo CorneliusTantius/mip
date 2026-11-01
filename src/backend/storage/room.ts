@@ -3,10 +3,11 @@ import { db, type Row } from "./db.js";
 
 // One message in a room. The author's name is stored with it, so it stays readable after a bot is deleted. A bot's calls
 // are the tools its reply used, with their inputs and results. They stay on this machine, as an agent's calls do.
+// An "agent" message is the reply of an agent a bot sent a task to. Its author is the agent, so botId is null.
 export interface RoomMessage {
   id: number;
   roomId: string;
-  kind: "user" | "bot" | "system";
+  kind: "user" | "bot" | "agent" | "system";
   botId: string | null;
   authorName: string;
   text: string;

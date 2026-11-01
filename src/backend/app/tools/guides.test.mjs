@@ -37,11 +37,12 @@ try {
 
   // Bots are offered the memory tools, the skill tools, the room search, and the search tools directly, and nothing that touches a folder.
   // Their guides go into the bot's system prompt. Their deferred tools are the MCP tools, none in this test.
-  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search", "tool_search", "tool_call"]);
+  assert.deepEqual(BOT_TOOLS.map((tool) => tool.name), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search", "agents_list", "agent_ask", "tool_search", "tool_call"]);
   assert.deepEqual(botDeferredTools(), []);
   const botGuides = toolGuidesPrompt(BOT_TOOLS);
   assert.match(botGuides, /^Tool guides\. Use each tool as its guide says\./);
   assert.match(botGuides, /- room_search: /);
+  assert.match(botGuides, /- agent_ask: /);
   assert.match(botGuides, /- memory_read: /);
   assert.match(botGuides, /- memory_edit: /);
   assert.doesNotMatch(botGuides, /- (bash|read|write|edit): /);

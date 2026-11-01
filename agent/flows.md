@@ -132,7 +132,7 @@ Settings → Sync (`features/settings/SyncTab.tsx`, `useSync.ts`) → `/api/sync
 - **Not synced.** Tool details stay on the machine that ran them. The GitHub sync carries tool names but not calls.
 
 ## 18. Tool search
-- **Offered and deferred.** `app/tools/index.ts` splits the registry. `BASIC_TOOLS` (bash, read, edit, write, skill_search, skill_read) are offered to every agent run. `DEFERRED_TOOLS` (the three memory tools and skill_file) are not. The two search tools, `tool_search` and `tool_call`, are offered.
+- **Offered and deferred.** `app/tools/index.ts` splits the registry. `BASIC_TOOLS` (bash, read, edit, write, skill_search, skill_read, ask_user) are offered to every agent run. `DEFERRED_TOOLS` (the three memory tools and skill_file) are not. The two search tools, `tool_search` and `tool_call`, are offered.
 - **An agent run.** `runs.ts` passes `AGENT_TOOLS` as the offered list and `AGENT_DEFERRED` as the deferred list, to the run's token and to the provider. The system prompt gets the guides of the offered tools (`toolGuidesPrompt`), including the `tool_search` guide, which tells the model that more tools exist and how to find them.
 - **tool_search.** `searchTools` scores each deferred tool by the words in its name (two points) and description (one point), best first, up to eight. The reply lists each match with its inputs.
 - **tool_call.** Runs one deferred tool by name with its inputs. It refuses any name not in the run's deferred list, so a basic tool, or a tool a bot was not given, is never run this way.
@@ -150,6 +150,22 @@ Skills card: `features/skills/SkillsCard.tsx` (the installed skills, with Create
 - **The / command.** In an agent's message box, typing `/` at the start lists the installed skills, and picking one puts `/name ` in the box. When the message is sent, `runs.ts` passes the prompt through `withSkillCommand`: a leading `/name` for an installed skill becomes that skill's instructions, followed by the rest of the message. The saved message is what was typed. A `/` that matches no installed skill is sent as it is. Rooms have no `/` command.
 - **Other agents.** Claude runs with `--disable-slash-commands`, and Pi with `noSkills: true`. Neither reads its own skill folders.
 - Tests: `app/skills/format.test.mjs` (the header and file rules) and `app/skills/skills.test.mjs` (import review, refusals, search, the `/name` command, the tools, the tool lists, and removal), both with a temporary `MIP_HOME`. The dropped per-agent and per-bot skill tables are checked by `storage/db.test.mjs`.
+
+## 19. Asking the user (ask_user)
+
+1. The model calls `ask_user` (`app/tools/ask.ts`, offered to every agent). The input is a question and a kind: `choice` (one of 2 to 8 options), `multi` (any of them), `text` (a short answer with a placeholder), or `slider` (min, max, step, value). Bad input comes back as a failed result.
+2. The tool keeps the question in a map keyed by agent id. A run asks one question. A second one is refused until the reply takes the first.
+3. When the run ends, `execute` in `app/runs.ts` calls `takePendingAsk` and saves the question on the reply (`messages.ask`). The reply's text is what came before the question, and the controls show under it.
+4. The run does not wait. The answer is the user's next message, sent through the normal send path. `AskCard` (`features/agent/AskCard.tsx`) draws the controls. They are disabled while the agent is busy, and once a user message follows the question.
+
+## 20. Bots sending tasks to agents (agent_ask)
+
+1. An agent is closed to bots until its switch is on: "Bots may ask" in the composer, which sets `agents.open_to_bots` through `PATCH /api/agents/:id`.
+2. A bot calls `agents_list` for the open agents, then `agent_ask` with an agent's name and a task. Both are bot-only tools in `app/tools/index.ts`.
+3. `agent_ask` refuses a closed or unknown agent, an empty task, a call that is not a bot in a room, a room already sending a task, and an agent that is busy (`startRun` throws 409). A task that cannot start frees its room again.
+4. The task becomes a user message in the agent's chat ("Odin in Work asks: ..."). The agent runs it with its own tools, bash included. The switch is the user's consent for that.
+5. When the run ends, `onFinish` posts the reply to the room as an `agent` message (`storage/room.ts`) and frees the room. `onFinish` still runs if saving fails, so a room is never stuck.
+6. The bot does not wait. It sees the reply in the room on a later turn. A question the agent asks during a delegated task appears in the agent's own chat, and the room gets only the final reply.
 
 ## 17. External MCP servers
 - **Config.** `data/mcp.json` (`MCP_CONFIG_FILE`) holds a `mcpServers` map. A stdio entry has `command`, `args`, and `env`. An http entry has `url` and `headers`. `parseMcpConfig` checks each entry, and a bad one is reported by name.

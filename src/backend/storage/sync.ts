@@ -3,7 +3,7 @@ import { db, type Row } from "./db.js";
 import { deleteNote, getNoteByTitle, linksFrom, saveNote, tagsOf } from "./notes.js";
 import { deletePersona } from "./personas.js";
 import { deleteRoom, roomCount } from "./rooms.js";
-import { countAgentsWithPersona, deleteAgent } from "./agents.js";
+import { type Ask, countAgentsWithPersona, deleteAgent } from "./agents.js";
 
 // The rows GitHub sync reads and writes. Each write keeps the change time it is given, so a record that came from GitHub keeps
 // its own time. The app's sync code decides what to write. A remove returns false when the database must keep the row.
@@ -41,6 +41,8 @@ export interface AgentRow {
   personaId: string;
   model: string | null;
   thinking: string | null;
+  // Whether bots may send tasks to this agent.
+  openToBots: boolean;
   updatedAt: number;
 }
 
@@ -50,6 +52,8 @@ export interface MessageRow {
   text: string;
   tools: string[];
   error: string | null;
+  // Null for a message that asks nothing, and for a record written before questions existed.
+  ask: Ask | null;
 }
 
 // A room's name and members, by bot name. A room is found by its id, which every machine shares.
@@ -164,25 +168,38 @@ export function removeNoteRow(title: string): boolean {
 }
 
 export function readAgentRows(): AgentRow[] {
-  return (db.prepare("SELECT id, provider_id, persona_id, model, thinking, title, meta_updated_at FROM agents").all() as Row[]).map((row) => ({
-    id: row.id,
-    providerId: row.provider_id,
-    personaId: row.persona_id,
-    model: row.model ?? null,
-    thinking: row.thinking ?? null,
-    title: row.title,
-    updatedAt: row.meta_updated_at,
-  }));
+  return (db.prepare("SELECT id, provider_id, persona_id, model, thinking, title, open_to_bots, meta_updated_at FROM agents").all() as Row[]).map(
+    (row) => ({
+      id: row.id,
+      providerId: row.provider_id,
+      personaId: row.persona_id,
+      model: row.model ?? null,
+      thinking: row.thinking ?? null,
+      title: row.title,
+      openToBots: row.open_to_bots === 1,
+      updatedAt: row.meta_updated_at,
+    }),
+  );
 }
 
 // Inserts or updates an agent's settings. The agent's activity time only moves forward, so the agent list keeps its order.
 export function writeAgentRow(agent: AgentRow): void {
   db.prepare(
-    `INSERT INTO agents (id, provider_id, persona_id, title, model, thinking, updated_at, meta_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO agents (id, provider_id, persona_id, title, model, thinking, open_to_bots, updated_at, meta_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET provider_id = excluded.provider_id, persona_id = excluded.persona_id, title = excluded.title,
-     model = excluded.model, thinking = excluded.thinking, updated_at = MAX(agents.updated_at, excluded.updated_at),
-     meta_updated_at = excluded.meta_updated_at`,
-  ).run(agent.id, agent.providerId, agent.personaId, agent.title, agent.model, agent.thinking, agent.updatedAt, agent.updatedAt);
+     model = excluded.model, thinking = excluded.thinking, open_to_bots = excluded.open_to_bots,
+     updated_at = MAX(agents.updated_at, excluded.updated_at), meta_updated_at = excluded.meta_updated_at`,
+  ).run(
+    agent.id,
+    agent.providerId,
+    agent.personaId,
+    agent.title,
+    agent.model,
+    agent.thinking,
+    agent.openToBots ? 1 : 0,
+    agent.updatedAt,
+    agent.updatedAt,
+  );
 }
 
 // An agent that is running stays, so its reply is not lost. Otherwise the agent goes with its messages and runs.
@@ -193,24 +210,27 @@ export function removeAgentRow(id: string): boolean {
 }
 
 export function readMessageRows(agentId: string): MessageRow[] {
-  return (db.prepare("SELECT created_at, role, text, tools, error FROM messages WHERE agent_id = ? ORDER BY created_at, id").all(agentId) as Row[]).map(
+  return (db.prepare("SELECT created_at, role, text, tools, error, ask FROM messages WHERE agent_id = ? ORDER BY created_at, id").all(agentId) as Row[]).map(
     (row) => ({
       createdAt: row.created_at,
       role: row.role,
       text: row.text,
       tools: JSON.parse(row.tools),
       error: row.error ?? null,
+      ask: row.ask ? JSON.parse(row.ask) : null,
     }),
   );
 }
 
+// A message from GitHub may have no ask (written before questions), so it is stored as null then.
 export function insertMessageRow(agentId: string, message: MessageRow): void {
-  db.prepare("INSERT INTO messages (agent_id, role, text, tools, error, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO messages (agent_id, role, text, tools, error, ask, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
     agentId,
     message.role,
     message.text,
     JSON.stringify(message.tools),
     message.error,
+    message.ask ? JSON.stringify(message.ask) : null,
     message.createdAt,
   );
 }

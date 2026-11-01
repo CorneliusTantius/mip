@@ -17,10 +17,22 @@ try {
   const names = (list) => list.map((tool) => tool.name);
 
   // An agent run is offered the basic tools and the two search tools. Memory and skill_file are deferred, found with tool_search.
-  assert.deepEqual(names(AGENT_TOOLS), ["bash", "read", "edit", "write", "skill_search", "skill_read", "tool_search", "tool_call"]);
+  assert.deepEqual(names(AGENT_TOOLS), ["bash", "read", "edit", "write", "skill_search", "skill_read", "ask_user", "tool_search", "tool_call"]);
   assert.deepEqual(names(AGENT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file"]);
   // A bot is offered the memory tools, the skill tools, the room search, and the search tools directly. Its deferred tools are the MCP tools, none here.
-  assert.deepEqual(names(BOT_TOOLS), ["memory_search", "memory_read", "memory_edit", "skill_search", "skill_read", "skill_file", "room_search", "tool_search", "tool_call"]);
+  assert.deepEqual(names(BOT_TOOLS), [
+    "memory_search",
+    "memory_read",
+    "memory_edit",
+    "skill_search",
+    "skill_read",
+    "skill_file",
+    "room_search",
+    "agents_list",
+    "agent_ask",
+    "tool_search",
+    "tool_call",
+  ]);
   assert.deepEqual(botDeferredTools(), []);
 
   // Search finds tools by the words of their names and descriptions. A query nothing matches finds nothing.
@@ -52,13 +64,15 @@ try {
   const noneHere = await toolSearchTool.run({ query: "memory" }, { workspace: root, deferred: [] });
   assert.match(noneHere.text, /No other tools/);
 
-  // The registry says how each tool is offered: basic, deferred, or the search tools. Agents can use every tool but the room search.
+  // The registry says how each tool is offered: basic, deferred, or the search tools. Agents can use every tool but the bots' room and agent tools.
   const described = Object.fromEntries(describeTools().map((tool) => [tool.name, tool]));
   assert.equal(described.bash.load, "basic");
   assert.equal(described.memory_search.load, "deferred");
   assert.equal(described.tool_call.load, "search");
   assert.equal(described.room_search.load, "basic");
-  assert.ok(describeTools().filter((tool) => tool.name !== "room_search").every((tool) => tool.agent === true));
+  assert.equal(described.agent_ask.load, "basic");
+  const botOnly = ["room_search", "agents_list", "agent_ask"];
+  assert.ok(describeTools().filter((tool) => !botOnly.includes(tool.name)).every((tool) => tool.agent === true));
   assert.deepEqual(describeTools().filter((tool) => tool.bot).map((tool) => tool.name), [
     "skill_search",
     "skill_read",
@@ -69,6 +83,8 @@ try {
     "tool_search",
     "tool_call",
     "room_search",
+    "agents_list",
+    "agent_ask",
   ]);
 
   console.log("tool search tests passed");

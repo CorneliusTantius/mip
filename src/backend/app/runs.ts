@@ -9,13 +9,21 @@ import { personaPrompt } from "./personas.js";
 import { findProvider } from "./providers.js";
 import { repoNote } from "./repos.js";
 import { AGENT_TOOLS, agentDeferredTools, registerRun, releaseRun, toolGuidesPrompt } from "./tools/index.js";
+import { takePendingAsk } from "./tools/ask.js";
 import { withSkillCommand } from "./skills/registry.js";
 import { ToolCallLog } from "./tools/calls.js";
 import { workspaceFor } from "./tools/workspace.js";
 
+// How a run ended: the text it wrote, and the error it stopped with, if any.
+export interface RunReply {
+  text: string;
+  error: string | null;
+}
+
 // Starts a turn and returns its run id. The run is not tied to the browser: it keeps going if the page closes,
 // and each event is saved as it arrives, so the agent can pick it up again later. The agent's model and thinking level apply.
-export function startRun(input: { agentId: string; prompt: string }): string {
+// onFinish runs once the reply is saved. A bot's task uses it to post the reply to its room.
+export function startRun(input: { agentId: string; prompt: string; onFinish?: (reply: RunReply) => void }): string {
   const agent = getAgent(input.agentId);
   if (!agent) throw new AppError(404, "no such agent");
   const prompt = input.prompt.trim();
@@ -30,7 +38,7 @@ export function startRun(input: { agentId: string; prompt: string }): string {
   const workspace = workspaceFor(agent.id);
   const deferred = agentDeferredTools();
   const token = registerRun({ workspace, agentId: agent.id, tools: AGENT_TOOLS, deferred });
-  execute({ runId, agent, provider, prompt, workspace, token, deferred }).catch((err: unknown) => {
+  execute({ runId, agent, provider, prompt, workspace, token, deferred, onFinish: input.onFinish }).catch((err: unknown) => {
     console.error(`run ${runId} failed to save:`, err);
   });
   return runId;
@@ -56,6 +64,7 @@ interface RunJob {
   token: string;
   // The deferred tools the run may find with tool_search and run with tool_call.
   deferred: ToolSpec[];
+  onFinish?: (reply: RunReply) => void;
 }
 
 async function execute(job: RunJob): Promise<void> {
@@ -101,7 +110,13 @@ async function execute(job: RunJob): Promise<void> {
     releaseRun(job.token);
   }
 
-  addMessage(job.agent.id, { role: "assistant", text, tools, calls: calls.calls, error });
-  saveProviderSession(job.agent.id, providerSessionId);
-  setRunStatus(job.runId, error ? "error" : "done");
+  try {
+    // A question the run asked is saved on its reply, so the controls for the answer show under the reply's text.
+    addMessage(job.agent.id, { role: "assistant", text, tools, calls: calls.calls, error, ask: takePendingAsk(job.agent.id) });
+    saveProviderSession(job.agent.id, providerSessionId);
+    setRunStatus(job.runId, error ? "error" : "done");
+  } finally {
+    // Runs even if saving failed, so a bot waiting on this reply is not left waiting.
+    job.onFinish?.({ text, error });
+  }
 }

@@ -14,6 +14,8 @@ export interface Agent {
   thinking: string | null;
   // The agent's name, given when the agent is created. Renaming changes it.
   title: string;
+  // Whether bots may send tasks to this agent. The user turns it on per agent.
+  openToBots: boolean;
   updatedAt: number;
 }
 
@@ -25,6 +27,13 @@ export interface ToolCall {
   isError: boolean;
 }
 
+// A question the agent asks the user, shown under its reply. The answer is sent as the next message, so the run that asked has ended.
+export type Ask = { question: string } & (
+  | { kind: "choice" | "multi"; options: string[] }
+  | { kind: "text"; placeholder: string }
+  | { kind: "slider"; min: number; max: number; step: number; value: number }
+);
+
 // One message in an agent. Tool names are kept so the transcript can show what was used, and the calls keep the details.
 export interface Message {
   role: "user" | "assistant";
@@ -32,10 +41,12 @@ export interface Message {
   tools: string[];
   calls: ToolCall[];
   error: string | null;
+  // The question the reply ends with, if the agent asked one.
+  ask: Ask | null;
 }
 
 // What a caller saves. A message with no calls (a user's message, for example) can leave them out.
-export type NewMessage = Omit<Message, "calls"> & { calls?: ToolCall[] };
+export type NewMessage = Omit<Message, "calls" | "ask"> & { calls?: ToolCall[]; ask?: Ask | null };
 
 function toAgent(row: Row): Agent {
   return {
@@ -46,6 +57,7 @@ function toAgent(row: Row): Agent {
     model: row.model ?? null,
     thinking: row.thinking ?? null,
     title: row.title,
+    openToBots: row.open_to_bots === 1,
     updatedAt: row.updated_at,
   };
 }
@@ -79,18 +91,26 @@ export function countAgentsWithPersona(personaId: string): number {
 
 export function listMessages(agentId: string): Message[] {
   // Sent time first. Messages synced from another machine are inserted later, so the insert order is not always the agent order.
-  const rows = db.prepare("SELECT role, text, tools, calls, error FROM messages WHERE agent_id = ? ORDER BY created_at, id").all(agentId) as Row[];
-  return rows.map((row) => ({ role: row.role, text: row.text, tools: JSON.parse(row.tools), calls: JSON.parse(row.calls), error: row.error }));
+  const rows = db.prepare("SELECT role, text, tools, calls, error, ask FROM messages WHERE agent_id = ? ORDER BY created_at, id").all(agentId) as Row[];
+  return rows.map((row) => ({
+    role: row.role,
+    text: row.text,
+    tools: JSON.parse(row.tools),
+    calls: JSON.parse(row.calls),
+    error: row.error,
+    ask: row.ask ? JSON.parse(row.ask) : null,
+  }));
 }
 
 export function addMessage(agentId: string, message: NewMessage): void {
-  db.prepare("INSERT INTO messages (agent_id, role, text, tools, calls, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO messages (agent_id, role, text, tools, calls, error, ask, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
     agentId,
     message.role,
     message.text,
     JSON.stringify(message.tools),
     JSON.stringify(message.calls ?? []),
     message.error,
+    message.ask ? JSON.stringify(message.ask) : null,
     Date.now(),
   );
 }
@@ -101,6 +121,10 @@ export function renameAgent(id: string, title: string): void {
 
 export function setAgentSettings(id: string, model: string | null, thinking: string | null): void {
   db.prepare("UPDATE agents SET model = ?, thinking = ?, meta_updated_at = ? WHERE id = ?").run(model, thinking, Date.now(), id);
+}
+
+export function setAgentOpenToBots(id: string, openToBots: boolean): void {
+  db.prepare("UPDATE agents SET open_to_bots = ?, meta_updated_at = ? WHERE id = ?").run(openToBots ? 1 : 0, Date.now(), id);
 }
 
 // Called when a run ends. Stores the provider's agent id, so the next message resumes that conversation.

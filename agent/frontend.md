@@ -52,11 +52,12 @@ Shared pieces. Each is used by more than one feature.
 | `AgentList.tsx` | `AgentList` | The sidebar: provider and persona selects, New agent, the list with inline rename and delete. |
 | `PersonasDialog.tsx` | `PersonasDialog` | Manage personas: pick, edit, set default, and delete with confirmation. |
 | `AgentHeader.tsx` | `AgentHeader` | The title, the persona and provider badges, and the header controls. |
-| `Transcript.tsx` | `Transcript` | Message bubbles. An agent's reply is drawn as Markdown; your own messages are shown as written. A reply that used tools has a View tool calls button at its bottom. |
+| `Transcript.tsx` | `Transcript` | Message bubbles. An agent's reply is drawn as Markdown; your own messages are shown as written. A reply that used tools has a View tool calls button at its bottom. A reply that asked a question shows its `AskCard` under the text. An empty reply with no tools, error, or question gets no bubble. |
+| `AskCard.tsx` | `AskCard` | The controls for an agent's question: buttons for a choice, a checklist with Send for multi, a text box for text, and a range slider with Send for a slider. Each answer goes to `onAnswer`, which sends it as the next message. Disabled while the agent is busy or once the user has written after the question. |
 | `ui/Markdown.tsx` | `Markdown` | A reply drawn as Markdown: paragraphs, headings, lists, quotes, code blocks, rules, bold, italic, code spans, and web links. Built as elements, never as HTML. `renderText` draws each plain-text run, so room replies keep their mention pills. |
 | `ui/markdown.ts` | `parseBlocks`, `parseInline` | The Markdown reader, with no DOM: text in, blocks and inline pieces out. Only http and https links are links. Tested by `ui/markdown.test.mjs`. |
 | `ui/ToolCallsDialog.tsx` | `ToolCallsButton`, `ToolCallsDialog` | The button and the dialog listing one reply's tool calls with their inputs and results. Used by agent replies and bot replies in the room. A reply saved before details were recorded lists its names only. |
-| `Composer.tsx` | `Composer` | Model and thinking dropdowns, the message box, and the `/` list of installed skills. Owns the draft. |
+| `Composer.tsx` | `Composer` | Model and thinking dropdowns, the "Bots may ask" switch, the message box, and the `/` list of installed skills. Owns the draft. |
 | `skillCommand.ts` | `skillCommandQuery`, `matchingSkills` | Pure rules for the `/` list: which text opens it, and which skills it offers. Tested by `skillCommand.test.mjs`. |
 
 ## features/bots/
@@ -68,7 +69,7 @@ Shared pieces. Each is used by more than one feature.
 | `RoomDialog.tsx` | `RoomDialog` | Makes a room, or edits one: its name, its bots, and Delete room with a confirm. |
 | `MentionInput.tsx` | `MentionInput` | The input with the bot suggestion list. |
 | `mentions.ts` | `mentionAt`, `suggestions`, `completeMention` | Pure rules for `@partial` text. No React. |
-| `RoomTranscript.tsx` | `RoomTranscript` | Bubbles for people and bots, and centered lines for system notes. A bot's reply is drawn as Markdown, with its mentions still pills. A bot's bubble takes a light tint of its color, and its name takes the color. A reply that used tools has a View tool calls button at its bottom. |
+| `RoomTranscript.tsx` | `RoomTranscript` | Bubbles for people, bots, and agents, and centered lines for system notes. A bot's or an agent's reply is drawn as Markdown, with its mentions still pills. A bot's bubble takes a light tint of its color, and its name takes the color. A reply that used tools has a View tool calls button at its bottom. |
 | `MessageText.tsx` | `MessageText` | A message's text, with each mention of a bot as a pill in that bot's color. A click opens `BotProfileModal`. |
 | `BotProfileModal.tsx` | `BotProfileModal` | A bot's profile: color, provider, model, thinking level, and persona. Its Edit button opens the bot's form in `BotsDialog`. |
 | `botColors.ts` | `BOT_COLORS`, `nextBotColor` | The palette, in the order a new bot takes its colors. The server has the same list. |
