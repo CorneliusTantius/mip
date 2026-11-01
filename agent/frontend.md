@@ -39,7 +39,7 @@ Shared pieces. Each is used by more than one feature.
   3. `BotsCard`, one-third of the width on desktops.
   4. `MemoryCard`.
   5. `RepositoriesCard`.
-  6. The bottom row, two columns on tablets and five on desktops: `PlaceholderCard` Tasks, `PlaceholderCard` Activity, `ToolsCard`, `SkillsCard`, and `PlaceholderCard` MCP.
+  6. The bottom row, two columns on tablets and five on desktops: `PlaceholderCard` Tasks, `PlaceholderCard` Activity, `ToolsCard`, `SkillsCard`, and `McpCard`.
 - Breakpoints are the Tailwind defaults: md at 768px, xl at 1280px.
 - Gaps: `gap-4` (16px), and `xl:gap-5` (20px) on desktops.
 
@@ -90,6 +90,13 @@ Shared pieces. Each is used by more than one feature.
 | `RepositoriesCard.tsx` | `RepositoriesCard` | Clone form, Pull all, and the list. Reloads on `AGENTS_CHANGED`. Polls every 1.5 s while a clone runs. |
 | `RepoRow.tsx` | `RepoRow` | One repo: status, branch, link with credentials hidden, last pull message, copies, copy-to-agent, and Remove. Reads the expanded state, so its text grows with the card. |
 
+## features/mcp/
+| file | exports | job |
+| --- | --- | --- |
+| `McpCard.tsx` | `McpCard` | The MCP servers from mcp.json: a summary line, each server with its state and error, and its tools when expanded. Reload reconnects from the file. Its text is in divs, not paragraphs, since daisyUI grows every paragraph in an expanded card body. |
+| `useMcpServers.ts` | `useMcpServers` | Loads `GET /api/mcp`, reconnects with `POST /api/mcp/reload`, and re-reads every 1.5 s while a server is starting. |
+| `mcpSummary.ts` | `summaryLine` | The summary line, such as "1 connected, 2 failed, 2 tools". Tested by `mcpSummary.test.mjs`. |
+
 ## features/skills/
 | file | exports | job |
 | --- | --- | --- |
@@ -115,7 +122,7 @@ Shared pieces. Each is used by more than one feature.
 | `UpdateTab.tsx` | `UpdateTab` | Pull latest, and Restart. After a restart it waits for the server and reloads the page. |
 
 ## features/upcoming/
-- `PlaceholderCard.tsx`: `PlaceholderCard`, for Tasks, Activity, and MCP. No data yet. Its Open button shows a dialog with the placeholder note.
+- `PlaceholderCard.tsx`: `PlaceholderCard`, for Tasks and Activity. No data yet. Its Open button shows a dialog with the placeholder note.
 
 ## Who owns which state
 | state | owner |

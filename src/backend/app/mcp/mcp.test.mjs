@@ -78,7 +78,7 @@ try {
       mcpServers: {
         fake: { command: process.execPath, args: [serverPath], env: { SECRET_TOKEN: "hunter2" } },
         missing: { command: join(root, "no-such-command") },
-        closed: { type: "http", url: "http://127.0.0.1:9/mcp" },
+        closed: { type: "http", url: "http://127.0.0.1:47891/mcp" },
       },
     }),
   );
@@ -89,6 +89,7 @@ try {
   assert.deepEqual(byName.fake.tools.map((tool) => [tool.name, tool.remoteName]), [["mcp_fake_echo", "echo"], ["mcp_fake_fail", "fail"]]);
   assert.equal(byName.missing.status, "error");
   assert.equal(byName.closed.status, "error");
+  assert.match(byName.closed.error, /fetch failed: connect ECONNREFUSED 127.0.0.1:47891/, "a network failure keeps its cause");
   assert.equal(status.configFile, paths.MCP_CONFIG_FILE);
   assert.ok(!JSON.stringify(status).includes("hunter2"), "the status never shows environment values");
 

@@ -70,6 +70,29 @@ export interface ToolInfo {
   bot: boolean;
 }
 
+// One tool an MCP server offers. The name is what the model calls it by, and the remote name is what the server calls it.
+export interface McpTool {
+  name: string;
+  remoteName: string;
+  description: string;
+}
+
+// One MCP server from mcp.json. An error says why it is not connected.
+export interface McpServer {
+  name: string;
+  transport: "stdio" | "http";
+  status: "connecting" | "connected" | "error";
+  error: string | null;
+  tools: McpTool[];
+}
+
+// The MCP servers as the backend sees them, with entries in mcp.json that could not be read.
+export interface McpStatus {
+  configFile: string;
+  servers: McpServer[];
+  problems: { server: string; error: string }[];
+}
+
 // One tool call in a reply. The id is only known while the reply streams. The input is JSON text.
 export interface ToolCall {
   id?: string;

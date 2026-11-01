@@ -48,6 +48,9 @@ Docs:
     node src/frontend/features/bots/mentions.test.mjs
     node src/frontend/features/settings/outputLinks.test.mjs
     node src/frontend/ui/filterOptions.test.mjs
+    node src/frontend/ui/markdown.test.mjs
+    node src/frontend/features/agent/skillCommand.test.mjs
+    node src/frontend/features/mcp/mcpSummary.test.mjs
 
 The backend tests need `npm run build:backend` first. The skill, tool, and sync tests use a temporary `MIP_HOME`.
 

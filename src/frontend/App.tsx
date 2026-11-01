@@ -4,6 +4,7 @@ import { AgentCard } from "./features/agent/AgentCard";
 import { MemoryCard } from "./features/memory/MemoryCard";
 import { RepositoriesCard } from "./features/repos/RepositoriesCard";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
+import { McpCard } from "./features/mcp/McpCard";
 import { PlaceholderCard } from "./features/upcoming/PlaceholderCard";
 import { SkillsCard } from "./features/skills/SkillsCard";
 import { ToolsCard } from "./features/tools/ToolsCard";
@@ -54,7 +55,7 @@ export function App() {
           <PlaceholderCard title="Activity" summary="No activity yet." glow="blue" />
           <ToolsCard />
           <SkillsCard />
-          <PlaceholderCard title="MCP" summary="MCP servers that add tools to the agents. None connected yet." glow="red" />
+          <McpCard />
         </div>
       </main>
 

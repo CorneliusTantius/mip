@@ -115,9 +115,16 @@ async function connect(connection: Connection): Promise<void> {
   } catch (err) {
     if (connection.removed) return;
     connection.status = "error";
-    connection.error = errorMessage(err);
+    connection.error = failureText(err);
     await client.close().catch(() => undefined);
   }
+}
+
+// The message of a failed start or call. A network error says only "fetch failed" on its own, so its cause is kept too.
+function failureText(err: unknown): string {
+  const message = errorMessage(err);
+  const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : undefined;
+  return cause && !message.includes(cause) ? `${message}: ${cause}` : message;
 }
 
 // The tools of one server. A tool whose name another server's tool already has is skipped and reported, so no name is ambiguous.
@@ -151,7 +158,7 @@ function toolSpec(server: string, client: McpClient, tool: Tool, name: string): 
         const result = await client.callTool(tool.name, input ?? {}, { signal: context.signal, timeoutMs: CALL_TIMEOUT_MS });
         return { text: resultText(result), isError: result.isError === true };
       } catch (err) {
-        return { text: errorMessage(err), isError: true };
+        return { text: failureText(err), isError: true };
       }
     },
   };
