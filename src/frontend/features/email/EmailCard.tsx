@@ -1,9 +1,8 @@
 import { SourceCard } from "../../ui/SourceCard";
-import { gmailStatus } from "./gmailStatus";
-import { useGmailServer } from "./useGmailServer";
 
-// The email card: Gmail's connection, read from the MCP servers. The inbox view is not built yet, so the card shows the connection only.
+// The email card. No mail account is connected yet, so it shows that. Accounts and the inbox come with the IMAP integration.
 export function EmailCard() {
-  const { status, tone, detail } = gmailStatus(useGmailServer());
-  return <SourceCard title="Email" glow="frost" tone={tone} status={status} detail={detail} note="Inbox view coming next." />;
+  return (
+    <SourceCard title="Email" glow="frost" tone="neutral" status="Not connected" detail="No mail account is connected yet." note="Inbox view coming next." />
+  );
 }

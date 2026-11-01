@@ -201,7 +201,7 @@ function run() {
   const PATHS = `const fs = await import("node:fs"); const paths = await import(${JSON.stringify(`${DIST}storage/paths.js`)});`;
   const HTTP = `{ type: "http", url: "http://127.0.0.1:47891/mcp", headers: { Authorization: "Bearer s3cret" } }`;
   machine(a, `${PATHS}
-    fs.writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { docs: ${HTTP}, local: { command: "node", args: ["server.mjs"], env: { TOKEN: "t0k" }, allowedTools: ["echo"] } } }));
+    fs.writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { docs: ${HTTP}, local: { command: "node", args: ["server.mjs"], env: { TOKEN: "t0k" } } } }));
     return { run: await engine.syncWith(remote) };
   `);
   const mcpB = machine(b, `${PATHS}
@@ -212,7 +212,6 @@ function run() {
   assert.equal(mcpB.run.ok, true);
   assert.equal(mcpB.servers.docs.headers.Authorization, "Bearer s3cret", "machine B gets the token");
   assert.deepEqual(mcpB.servers.local.env, { TOKEN: "t0k" });
-  assert.deepEqual(mcpB.servers.local.allowedTools, ["echo"], "the tool list reaches the other machine");
   assert.equal(mcpB.servers.local.type, "stdio");
   assert.equal(mcpB.mode, "600", "the config file is readable only by this user");
   assert.match(lsTree(bare), /^mcp\/docs\.json$/m);

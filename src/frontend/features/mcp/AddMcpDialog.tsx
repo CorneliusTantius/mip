@@ -26,8 +26,6 @@ export function AddMcpDialog({
   const [command, setCommand] = useState("");
   const [args, setArgs] = useState("");
   const [env, setEnv] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   // The sign-in link of a server that was added while the browser blocked the sign-in tab. The dialog then offers the link as a button.
@@ -42,8 +40,6 @@ export function AddMcpDialog({
     setCommand("");
     setArgs("");
     setEnv("");
-    setClientId("");
-    setClientSecret("");
     setError(undefined);
     setSignInLink(undefined);
   }
@@ -57,7 +53,7 @@ export function AddMcpDialog({
   function build(): NewMcpServer {
     const serverName = name.trim();
     if (!serverName) throw new Error("Give the server a name.");
-    if (mode === "oauth") return { name: serverName, transport: "oauth", url: url.trim(), clientId: clientId.trim() || undefined, clientSecret: clientSecret.trim() || undefined };
+    if (mode === "oauth") return { name: serverName, transport: "oauth", url: url.trim() };
     if (kind === "web") return { name: serverName, transport: "http", url: url.trim(), headers: parseHeaders(headers) };
     return { name: serverName, transport: "stdio", command: command.trim(), args: parseArgs(args), env: parseEnv(env) };
   }
@@ -132,29 +128,11 @@ export function AddMcpDialog({
         {mode === "oauth" && (
           <>
             <div className="text-sm opacity-70">
-              mip adds the server, then opens its sign-in page in a new tab. You sign in there, and the server sends you back to mip. A new
-              server offers no tools until you allow some in the card.
+              mip adds the server, then opens its sign-in page in a new tab. You sign in there, and the server sends you back to mip.
             </div>
             <label className="flex flex-col gap-1 text-sm">
               Server address
               <input className="input input-sm w-full" placeholder="https://mcp.example.com/mcp" value={url} onInput={(e) => setUrl(e.currentTarget.value)} />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Client ID <span className="opacity-60">(optional)</span>
-              <input className="input input-sm w-full font-mono" value={clientId} onInput={(e) => setClientId(e.currentTarget.value)} />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Client secret <span className="opacity-60">(optional)</span>
-              <input
-                type="password"
-                autoComplete="off"
-                className="input input-sm w-full font-mono"
-                value={clientSecret}
-                onInput={(e) => setClientSecret(e.currentTarget.value)}
-              />
-              <div className="text-xs opacity-60">
-                Leave both blank for a server that registers mip itself. Google's servers need a client from your own Google Cloud project.
-              </div>
             </label>
           </>
         )}

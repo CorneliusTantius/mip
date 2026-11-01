@@ -84,8 +84,6 @@ export interface McpTool {
   name: string;
   remoteName: string;
   description: string;
-  // Whether the app offers the tool to agents and bots. A server's allowed list decides.
-  enabled: boolean;
 }
 
 // One MCP server from mcp.json. An error says why it is not connected. "sign-in" means the server waits for the user to sign in at signInUrl.
@@ -99,10 +97,9 @@ export interface McpServer {
   tools: McpTool[];
 }
 
-// What the add form sends. An OAuth server gives its address, and a client only when the server needs one. A manual one gives its headers,
-// or its command and environment.
+// What the add form sends. An OAuth server gives only its address. A manual one gives its headers, or its command and environment.
 export type NewMcpServer =
-  | { name: string; transport: "oauth"; url: string; clientId?: string; clientSecret?: string }
+  | { name: string; transport: "oauth"; url: string }
   | { name: string; transport: "http"; url: string; headers: Record<string, string> }
   | { name: string; transport: "stdio"; command: string; args: string[]; env: Record<string, string> };
 

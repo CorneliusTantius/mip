@@ -95,13 +95,12 @@ Shared pieces. Each is used by more than one feature.
 ## features/mcp/
 | file | exports | job |
 | --- | --- | --- |
-| `McpCard.tsx` | `McpCard` | The MCP servers from mcp.json: a summary line, each server with its state and error, the tools it offers, and when expanded, every tool with a box to offer or withhold it. Add server opens the add form. Remove takes a server out after a confirm, and a server that signs in with OAuth shows its sign-in link. Reload reconnects from the file. Its text is in divs, not paragraphs, since daisyUI grows every paragraph in an expanded card body. |
-| `useMcpServers.ts` | `useMcpServers` | Loads `GET /api/mcp`, and reconnects, adds, removes, signs in, and sets a server's offered tools through the MCP routes. Reload and sign-in show a failure on the card, while add and remove hand it to the dialog or the confirm box that asked. Re-reads every 1.5 s while a server is starting or waiting for sign-in. |
-| `AddMcpDialog.tsx` | `AddMcpDialog` | The add form. OAuth sign-in is the default, with a server address, an optional client ID and secret, and its button reads Add and sign in: it adds the server, then opens the server's sign-in page in a new tab. If the browser blocks that tab, the dialog offers the link as an Open sign-in page button. Manual entry takes a web address with headers, or a local command with its arguments and environment. A line the readers refuse is shown in the form. |
+| `McpCard.tsx` | `McpCard` | The MCP servers from mcp.json: a summary line, each server with its state and error, and its tools when expanded. Add server opens the add form. Remove takes a server out after a confirm, and a server that signs in with OAuth shows its sign-in link. Reload reconnects from the file. Its text is in divs, not paragraphs, since daisyUI grows every paragraph in an expanded card body. |
+| `useMcpServers.ts` | `useMcpServers` | Loads `GET /api/mcp`, and reconnects, adds, removes, and signs in through the MCP routes. Reload and sign-in show a failure on the card, while add and remove hand it to the dialog or the confirm box that asked. Re-reads every 1.5 s while a server is starting or waiting for sign-in. |
+| `AddMcpDialog.tsx` | `AddMcpDialog` | The add form. OAuth sign-in is the default, with a server address, and its button reads Add and sign in: it adds the server, then opens the server's sign-in page in a new tab. If the browser blocks that tab, the dialog offers the link as an Open sign-in page button. Manual entry takes a web address with headers, or a local command with its arguments and environment. A line the readers refuse is shown in the form. |
 | `mcpForm.ts` | `parseHeaders`, `parseEnv`, `parseArgs` | Readers for the form's text boxes. Each names the line that is wrong. Tested by `mcpForm.test.mjs`. |
 | `signInWindow.ts` | `openSignInTab`, `goToSignIn`, `isWebLink` | Opens the sign-in tab straight from the click, since a browser blocks a tab opened after a request, and sends it to the server's link once the server answers. Only http and https links are used. Tested by `signInWindow.test.mjs`. |
 | `mcpSummary.ts` | `summaryLine` | The summary line, such as "1 connected, 2 failed, 2 tools". A server waiting for sign-in counts as "need sign-in". Tested by `mcpSummary.test.mjs`. |
-| `toolAllowList.ts` | `allowedAfter` | The list a server is saved with after one tool is offered or withheld. A list that offers every tool is saved as null, so a tool the server adds later is offered too. Tested by `toolAllowList.test.mjs`. |
 
 ## features/skills/
 | file | exports | job |
@@ -130,10 +129,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/email/
 | file | exports | job |
 | --- | --- | --- |
-| `EmailCard.tsx` | `EmailCard` | The Gmail connection, from the MCP servers. The inbox view is not built yet. |
-| `useGmailServer.ts` | `useGmailServer` | Reads `/api/mcp` and keeps the server named `gmail`. Re-reads every 1.5 s while it starts or waits for sign-in. |
-| `gmailStatus.ts` | `GMAIL_SERVER`, `gmailStatus` | Pure. Maps the loaded state of the Gmail server to a badge and a line of detail. |
-| `gmailStatus.test.mjs` | - | Checks each state. |
+| `EmailCard.tsx` | `EmailCard` | A shell showing "Not connected". No mail account is connected yet. |
 
 ## features/slack/ and features/whatsapp/
 - `SlackCard.tsx`: `SlackCard`, a shell showing "Not connected". No connection yet.
