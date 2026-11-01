@@ -23,6 +23,7 @@ Flat files, one per domain:
 - `personas.ts`: the built-in persona. Its prompt holds identity and style only. `DEFAULT_PERSONA_ID`, `personaPrompt`, and the create, edit, default, and remove functions.
 - `bots.ts`: bot create, edit, and remove, and the name rule. Model and thinking are checked against the provider's live catalog. A color is checked against the palette, and `nextBotColor` gives a new bot the first color no bot uses.
 - `providers.ts`: the provider registry (`claude-cli`, `pi`), `findProvider`, `listProviders`, and sign-in, answer, and sign-out.
+- `installation.ts`: `installationId`, this installation's device ID. Pi passes it to every sign-in, since OpenAI's ChatGPT sign-in needs one. It is made on first use and kept in `MIP_HOME/data/device-id`. Tested by `installation.test.mjs`.
 - `memory.ts`: shared notes. Write, read, search, list, graph, forget, and `recallFor` (the notes that match a message, added to the system prompt).
 - `repos.ts`: repository clones, pull all, copies into agents, and `repoNote`.
 

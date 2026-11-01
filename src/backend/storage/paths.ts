@@ -5,6 +5,8 @@ import { join } from "node:path";
 // Everything mip stores lives under one folder. Set MIP_HOME to move it.
 export const MIP_HOME = process.env.MIP_HOME ?? join(homedir(), ".mip");
 export const DATA_DIR = join(MIP_HOME, "data");
+// This installation's device ID, for providers that identify each install. It stays on this machine.
+export const DEVICE_ID_FILE = join(DATA_DIR, "device-id");
 export const SESSIONS_DIR = join(MIP_HOME, "sessions");
 // Master clones of repositories. Each agent gets its own copy in its workspace.
 export const REPOS_DIR = join(MIP_HOME, "repos");

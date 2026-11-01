@@ -42,6 +42,8 @@ Docs:
     node src/backend/app/sync/sync.test.mjs
     node src/backend/storage/db.test.mjs
     node src/backend/app/bots.test.mjs
+    node src/backend/app/installation.test.mjs
+    node src/backend/adapters/pi-signin.test.mjs
     node src/frontend/features/bots/mentions.test.mjs
 
 The backend tests need `npm run build:backend` first. The skill, tool, and sync tests use a temporary `MIP_HOME`.

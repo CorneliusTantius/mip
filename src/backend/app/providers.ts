@@ -4,11 +4,12 @@ import { PiProvider } from "../adapters/pi.js";
 import type { AgentProvider, SignInMethod } from "../adapters/contract.js";
 import { SESSIONS_DIR } from "../storage/paths.js";
 import { AppError, errorMessage } from "./errors.js";
+import { installationId } from "./installation.js";
 
 // The one place that decides which providers the app offers, and where each keeps its files.
 const providers: AgentProvider[] = [
   new ClaudeCliProvider({ configDir: join(SESSIONS_DIR, "claude") }),
-  new PiProvider({ sessionDir: join(SESSIONS_DIR, "pi") }),
+  new PiProvider({ sessionDir: join(SESSIONS_DIR, "pi"), installationId }),
 ];
 
 export function hasProvider(id: string): boolean {

@@ -9,6 +9,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/adapters/async-queue.ts | - | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts |
 | src/backend/adapters/claude-cli.ts | src/backend/adapters/async-queue.ts, src/backend/adapters/sign-in-session.ts, src/backend/adapters/contract.ts | src/backend/app/providers.ts |
 | src/backend/adapters/contract.ts | - | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts, src/backend/adapters/sign-in-session.ts, src/backend/app/providers.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/app/tools/bash.ts, src/backend/app/tools/files.ts, src/backend/app/tools/index.ts, src/backend/app/tools/memory.ts, src/backend/app/tools/result.ts, src/backend/app/tools/room.ts, src/backend/app/tools/search.ts, src/backend/app/tools/skills.ts, src/backend/http/routes/providers.ts |
+| src/backend/adapters/pi-signin.test.mjs | - | - |
 | src/backend/adapters/pi.ts | src/backend/adapters/async-queue.ts, src/backend/adapters/sign-in-session.ts, src/backend/adapters/contract.ts | src/backend/app/providers.ts |
 | src/backend/adapters/sign-in-session.ts | src/backend/adapters/contract.ts | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts |
 | src/backend/app/agents.ts | src/backend/storage/agents.ts, src/backend/storage/skills.ts, src/backend/app/errors.ts, src/backend/app/names.ts, src/backend/app/personas.ts, src/backend/app/providers.ts, src/backend/app/tools/workspace.ts, src/backend/app/runs.ts, src/backend/app/skills/registry.ts | src/backend/http/routes/agents.ts |
@@ -17,10 +18,12 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/config.ts | - | src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/http/server.ts |
 | src/backend/app/errors.ts | - | src/backend/app/agents.ts, src/backend/app/bots.ts, src/backend/app/memory.ts, src/backend/app/personas.ts, src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/room/room.ts, src/backend/app/room/rooms.ts, src/backend/app/runs.ts, src/backend/app/skills/create.ts, src/backend/app/skills/imports.ts, src/backend/app/skills/registry.ts, src/backend/app/sync/engine.ts, src/backend/app/sync/github.ts, src/backend/app/sync/repo.ts, src/backend/http/respond.ts, src/backend/http/routes/memory.ts, src/backend/http/server.ts |
 | src/backend/app/git.ts | - | src/backend/app/repos.ts, src/backend/app/sync/repo.ts, src/backend/app/system.ts |
+| src/backend/app/installation.test.mjs | - | - |
+| src/backend/app/installation.ts | src/backend/storage/paths.ts | src/backend/app/providers.ts |
 | src/backend/app/memory.ts | src/backend/storage/notes.ts, src/backend/app/errors.ts | src/backend/app/runs.ts, src/backend/app/tools/memory.ts, src/backend/http/routes/memory.ts |
 | src/backend/app/names.ts | - | src/backend/app/agents.ts |
 | src/backend/app/personas.ts | src/backend/storage/personas.ts, src/backend/storage/agents.ts, src/backend/app/errors.ts | src/backend/app/agents.ts, src/backend/app/runs.ts, src/backend/http/routes/personas.ts |
-| src/backend/app/providers.ts | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts, src/backend/adapters/contract.ts, src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/agents.ts, src/backend/app/bots.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/http/routes/providers.ts |
+| src/backend/app/providers.ts | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts, src/backend/adapters/contract.ts, src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/installation.ts | src/backend/app/agents.ts, src/backend/app/bots.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/http/routes/providers.ts |
 | src/backend/app/repos.ts | src/backend/storage/paths.ts, src/backend/storage/repos.ts, src/backend/storage/agents.ts, src/backend/app/errors.ts, src/backend/app/git.ts, src/backend/app/tools/workspace.ts | src/backend/app/runs.ts, src/backend/http/routes/repos.ts |
 | src/backend/app/room/engine.test.mjs | - | - |
 | src/backend/app/room/engine.ts | - | src/backend/app/room/room.ts |
@@ -82,7 +85,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/storage/db.test.mjs | - | - |
 | src/backend/storage/db.ts | src/backend/storage/bot-colors.ts, src/backend/storage/paths.ts | src/backend/storage/agents.ts, src/backend/storage/bots.ts, src/backend/storage/notes.ts, src/backend/storage/personas.ts, src/backend/storage/repos.ts, src/backend/storage/room.ts, src/backend/storage/rooms.ts, src/backend/storage/runs.ts, src/backend/storage/skills.ts, src/backend/storage/sync.ts |
 | src/backend/storage/notes.ts | src/backend/storage/db.ts | src/backend/app/memory.ts, src/backend/storage/sync.ts |
-| src/backend/storage/paths.ts | - | src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/skills/imports.ts, src/backend/app/skills/registry.ts, src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/system.ts, src/backend/app/tools/workspace.ts, src/backend/storage/db.ts |
+| src/backend/storage/paths.ts | - | src/backend/app/installation.ts, src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/skills/imports.ts, src/backend/app/skills/registry.ts, src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/system.ts, src/backend/app/tools/workspace.ts, src/backend/storage/db.ts |
 | src/backend/storage/personas.ts | src/backend/storage/db.ts | src/backend/app/personas.ts, src/backend/storage/sync.ts |
 | src/backend/storage/repos.ts | src/backend/storage/db.ts | src/backend/app/repos.ts |
 | src/backend/storage/room.ts | src/backend/storage/agents.ts, src/backend/storage/db.ts | src/backend/app/room/room.ts, src/backend/app/tools/room.ts |

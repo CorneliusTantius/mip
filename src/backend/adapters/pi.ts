@@ -108,6 +108,8 @@ function toPiTool(tool: ToolSpec, context: { workspace: string; agentId?: string
 export interface PiProviderOptions {
   // Where Pi's session files go.
   sessionDir: string;
+  // This installation's device ID. OpenAI's ChatGPT sign-in needs it, and it is read when a sign-in starts.
+  installationId: () => string;
 }
 
 export class PiProvider implements AgentProvider {
@@ -117,11 +119,13 @@ export class PiProvider implements AgentProvider {
   readonly capabilities = { streaming: true, tools: false, mcp: false, sessions: true, signIn: true };
 
   private readonly sessionDir: string;
+  private readonly installationId: () => string;
   private runtimePromise?: Promise<Runtime>;
   private signIns = new Map<string, { session: SignInSession; controller: AbortController }>();
 
   constructor(options: PiProviderOptions) {
     this.sessionDir = options.sessionDir;
+    this.installationId = options.installationId;
   }
 
   // Every model of the providers that are signed in. The first one is the default, the same one run falls back to.
@@ -182,7 +186,7 @@ export class PiProvider implements AgentProvider {
           signal: controller.signal,
           prompt: (prompt: PiPrompt) => session.ask(toSignInPrompt(prompt)),
           notify: (notice: PiNotice) => session.log(describeNotice(notice)),
-        }),
+        }, { getDeviceId: this.installationId }),
       )
       .then(() => session.finish())
       .catch((err: unknown) => session.finish(err instanceof Error ? err.message : String(err)));
