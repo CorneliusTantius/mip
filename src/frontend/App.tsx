@@ -45,8 +45,8 @@ export function App() {
           <BotsCard />
         </div>
 
-        {/* The messaging cards sit under the bots, three across from tablets up. */}
-        <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-3">
+        {/* The messaging cards sit under the bots, three across from tablets up. Each keeps its own height, so the email card can be taller. */}
+        <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-3 md:items-start">
           <EmailCard />
           <SlackCard />
           <WhatsAppCard />

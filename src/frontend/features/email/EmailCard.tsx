@@ -11,9 +11,10 @@ import { useMailAccounts, useMailbox } from "./useMail";
 
 // The email card: the mail accounts mip reads over IMAP. Each account lists the newest messages of its inbox, and a message opens in full.
 // Reading never marks a message as read. The list is read again on the account's poll interval while the card is open.
+// The card is 22.25 rem (356 px), twice the height of the other messaging cards' empty state. Its list fills the space below the header.
 export function EmailCard() {
   return (
-    <Card glow="frost">
+    <Card glow="frost" className="h-[22.25rem]">
       <EmailBody />
     </Card>
   );
@@ -57,7 +58,7 @@ function EmailBody() {
     <>
       <CardBody
         title="Email"
-        className={expanded ? "min-h-0 flex-1" : "gap-3"}
+        className="min-h-0 flex-1 gap-3"
         actions={
           <>
             <button className="btn btn-ghost btn-sm" onClick={() => setAdding(true)}>
@@ -94,7 +95,7 @@ function EmailBody() {
 
             <ErrorAlert message={inbox.error} />
 
-            <ul className={expanded ? "flex min-h-0 flex-1 flex-col overflow-y-auto" : "flex max-h-64 flex-col overflow-y-auto"}>
+            <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               {messages.map((message) => (
                 <li key={message.uid}>
                   <button
