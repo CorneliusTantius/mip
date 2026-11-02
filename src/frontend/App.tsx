@@ -19,7 +19,7 @@ import { Starfield } from "./ui/Starfield";
 const WIDTH = "mx-auto w-full max-w-5xl xl:max-w-none 2xl:max-w-[120rem]";
 const SIDES = "px-4 xl:px-4.75";
 // Medium cards: memory and repositories share a row from tablets up, and stack on phones.
-const MEDIUM = "col-span-12 h-[25rem] md:col-span-6";
+const MEDIUM = "col-span-12 h-[30rem] md:col-span-6";
 
 // The page: a header, then one scrolling grid of cards. Each card sits in a grid cell, and the cells keep their order.
 export function App() {
