@@ -9,6 +9,7 @@ import { RepositoriesCard } from "./features/repos/RepositoriesCard";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
 import { McpCard } from "./features/mcp/McpCard";
 import { PlaceholderCard } from "./features/upcoming/PlaceholderCard";
+import { SpendingCard } from "./features/spending/SpendingCard";
 import { SkillsCard } from "./features/skills/SkillsCard";
 import { ToolsCard } from "./features/tools/ToolsCard";
 import { Icon } from "./ui/Icon";
@@ -80,7 +81,7 @@ export function App() {
 
             {/* Below everything else. Two per row on tablets, three on desktops, so the cards stay wide enough to read. */}
             <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-h-52">
-              <PlaceholderCard title="Spending" summary="No spending tracked yet." glow="green" />
+              <SpendingCard />
               <ToolsCard />
               <SkillsCard />
               <McpCard />

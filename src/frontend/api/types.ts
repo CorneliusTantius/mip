@@ -364,3 +364,18 @@ export interface SlackMessage {
   replies: number;
   threadTs?: string;
 }
+
+// One spending entry: money in (income) or out (expense), in a category, for an amount.
+export interface SpendingEntry {
+  id: string;
+  kind: "income" | "expense";
+  category: string;
+  amount: number;
+  createdAt: number;
+}
+
+export interface NewSpendingEntry {
+  kind: "income" | "expense";
+  category: string;
+  amount: number;
+}

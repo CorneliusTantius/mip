@@ -158,6 +158,13 @@ The Slack app and the connected users, in `data/slack.json`. Tokens and the clie
 | POST | /api/slack/accounts/:id/conversations/:channel/messages | 201 | `{ts}`. Body `{text, threadTs?}`. Sends as the user (`chat.postMessage`); the card sends only when the user presses Send. Max 4,000 characters | 400 empty, too long, or a bad channel or thread; 404 no such account; 415 not JSON; 401 or 403 Slack refuses it |
 | GET | /api/slack/accounts/:id/conversations/:channel/threads/:ts | 200 | `{ts, time, user, author, text, replies, threadTs?}[]`, the parent then its replies, oldest first. Served from the cache for two minutes unless `?refresh=1` | 400 not a conversation or thread id; 404 no such account |
 
+## Spending — `routes/spending.ts`
+
+| Method | Path | Success | Body | Errors |
+|---|---|---|---|---|
+| GET | /api/spending | 200 | `{entries: {id, kind: "income" \| "expense", category, amount, createdAt}[]}`, newest first | |
+| POST | /api/spending | 201 | Body `{kind, category, amount}`. A category typed in another case keeps the existing spelling | 400 bad kind, empty or long category, or amount not above 0 |
+
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |
 | --- | --- | --- | --- | --- |

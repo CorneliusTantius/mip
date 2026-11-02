@@ -138,6 +138,14 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+  -- Money in and out, entered by hand. A category is any name typed in; the list of categories is the names already used.
+  CREATE TABLE IF NOT EXISTS spending_entries (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL,
+    category TEXT NOT NULL,
+    amount REAL NOT NULL,
+    created_at INTEGER NOT NULL
+  );
 `);
 
 // Every agent and bot can use every installed skill now, so the per-agent and per-bot skill lists are dropped.

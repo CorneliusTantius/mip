@@ -10,6 +10,7 @@ import { roomRoutes } from "./room.js";
 import { runRoutes } from "./runs.js";
 import { agentRoutes } from "./agents.js";
 import { skillRoutes } from "./skills.js";
+import { spendingRoutes } from "./spending.js";
 import { slackRoutes } from "./slack.js";
 import { syncRoutes } from "./sync.js";
 import { systemRoutes } from "./system.js";
@@ -32,5 +33,6 @@ export const routes: Route[] = [
   ...mcpServerRoutes,
   ...mailRoutes,
   ...slackRoutes,
+  ...spendingRoutes,
   ...systemRoutes,
 ];
