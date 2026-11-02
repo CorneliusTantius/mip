@@ -89,7 +89,13 @@ export function readTree(): Snapshot {
     spending: indexBy(readFolder<SpendingRecord>("spending"), keyOf.spending),
     mailCache: indexBy(readFolder<MailCacheRecord>("mail-cache"), keyOf.mailCache),
     slackCache: indexBy(readFolder<SlackCacheRecord>("slack-cache"), keyOf.slackCache),
-    rooms: indexBy(existsSync(join(REPO_DIR, ROOMS_FILE)) ? readJson<RoomRecord[]>(ROOMS_FILE) : [], keyOf.room),
+    // A room file from before masters has no master and no collapse setting, so both take their defaults.
+    rooms: indexBy(
+      existsSync(join(REPO_DIR, ROOMS_FILE))
+        ? readJson<Partial<RoomRecord>[]>(ROOMS_FILE).map((room) => ({ masterBot: null, collapseOthers: false, ...room }) as RoomRecord)
+        : [],
+      keyOf.room,
+    ),
     // A message written before rooms has no room, so it belongs to Main.
     room: indexBy(
       existsSync(join(REPO_DIR, ROOM_FILE))

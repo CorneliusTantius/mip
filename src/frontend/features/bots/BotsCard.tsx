@@ -70,6 +70,8 @@ export function BotsCard() {
         <RoomTranscript
           messages={room.messages}
           bots={rooms.bots}
+          masterBotId={active?.masterBotId}
+          collapseOthers={active?.collapseOthers}
           onOpenBot={setProfile}
           emptyText={
             !active

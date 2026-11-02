@@ -9,6 +9,10 @@ export interface Room {
   name: string;
   // The members, by bot id.
   botIds: string[];
+  // The room master: one of the members, by bot id, or null for none.
+  masterBotId: string | null;
+  // When on, the messages of bots other than the master are shown folded, so the transcript is shorter.
+  collapseOthers: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -40,13 +44,26 @@ export function roomCount(): number {
 }
 
 export function insertRoom(room: Room): void {
-  db.prepare("INSERT INTO rooms (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)").run(room.id, room.name, room.createdAt, room.updatedAt);
+  db.prepare("INSERT INTO rooms (id, name, master_bot_id, collapse_others, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+    room.id,
+    room.name,
+    room.masterBotId,
+    room.collapseOthers ? 1 : 0,
+    room.createdAt,
+    room.updatedAt,
+  );
   setRoomBots(room.id, room.botIds);
 }
 
 // Renames a room and sets its members. The change time moves, so the change reaches GitHub on the next sync.
 export function updateRoom(room: Room): void {
-  db.prepare("UPDATE rooms SET name = ?, updated_at = ? WHERE id = ?").run(room.name, room.updatedAt, room.id);
+  db.prepare("UPDATE rooms SET name = ?, master_bot_id = ?, collapse_others = ?, updated_at = ? WHERE id = ?").run(
+    room.name,
+    room.masterBotId,
+    room.collapseOthers ? 1 : 0,
+    room.updatedAt,
+    room.id,
+  );
   setRoomBots(room.id, room.botIds);
 }
 
@@ -64,5 +81,13 @@ function setRoomBots(roomId: string, botIds: string[]): void {
 }
 
 function toRoom(row: Row, botIds: string[]): Room {
-  return { id: row.id, name: row.name, botIds, createdAt: row.created_at, updatedAt: row.updated_at };
+  return {
+    id: row.id,
+    name: row.name,
+    botIds,
+    masterBotId: row.master_bot_id ?? null,
+    collapseOthers: row.collapse_others === 1,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }

@@ -166,6 +166,10 @@ export interface Room {
   id: string;
   name: string;
   botIds: string[];
+  // The room master, by bot id, or null for none.
+  masterBotId: string | null;
+  // Whether the messages of bots other than the master are folded.
+  collapseOthers: boolean;
 }
 
 export interface RoomMessage {

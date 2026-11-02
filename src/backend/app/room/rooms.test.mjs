@@ -81,6 +81,28 @@ try {
   assert.equal(thrown(() => rooms.removeRoom("main")).status, 409);
   assert.deepEqual(rooms.allRooms().map((r) => r.id), ["main"]);
 
+  // The room master is one of the room's bots, or none. A room has none to start with, and the collapse setting is off.
+  bots.insertBot({ id: "b-thorin", name: "Thorin", persona: "A blunt reviewer.", providerId: "claude-cli", model: null, thinking: null, color: "orange" });
+  const plain = rooms.createRoom({ name: "Masters", botIds: ["b-freya", "b-thorin"] });
+  assert.equal(plain.masterBotId, null);
+  assert.equal(plain.collapseOthers, false);
+
+  // Naming a master sets it, with the collapse setting, and the rest of the room is kept.
+  const set = rooms.editRoom(plain.id, { masterBotId: "b-freya", collapseOthers: true });
+  assert.equal(set.masterBotId, "b-freya");
+  assert.equal(set.collapseOthers, true);
+  assert.deepEqual(set.botIds.sort(), ["b-freya", "b-thorin"]);
+
+  // A master who is not in the room is refused when named, and cleared when the bot leaves the room.
+  assert.equal(thrown(() => rooms.editRoom(plain.id, { masterBotId: "b-nobody" })).status, 400);
+  const left = rooms.editRoom(plain.id, { botIds: ["b-thorin"] });
+  assert.equal(left.masterBotId, null, "a master who leaves the room is cleared");
+  assert.equal(left.collapseOthers, true, "the collapse setting stays");
+
+  // Clearing the master on purpose works.
+  rooms.editRoom(plain.id, { botIds: ["b-freya", "b-thorin"], masterBotId: "b-freya" });
+  assert.equal(rooms.editRoom(plain.id, { masterBotId: null }).masterBotId, null);
+
   console.log("room tests passed");
 } finally {
   rmSync(root, { recursive: true, force: true });

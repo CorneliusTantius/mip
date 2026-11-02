@@ -65,6 +65,9 @@ export interface RoomRecord {
   id: string;
   name: string;
   bots: string[];
+  // The master's bot name, or null for none. A room made before masters has none.
+  masterBot: string | null;
+  collapseOthers: boolean;
   updatedAt: number;
 }
 

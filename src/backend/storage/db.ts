@@ -152,6 +152,10 @@ db.exec(`
 // Every agent and bot can use every installed skill now, so the per-agent and per-bot skill lists are dropped.
 db.exec("DROP TABLE IF EXISTS skill_enablements; DROP TABLE IF EXISTS bot_skill_enablements;");
 
+// Rooms made before the room master and the collapse setting have neither. The master is one bot in the room, or none.
+if (!hasColumn("rooms", "master_bot_id")) db.exec("ALTER TABLE rooms ADD COLUMN master_bot_id TEXT");
+if (!hasColumn("rooms", "collapse_others")) db.exec("ALTER TABLE rooms ADD COLUMN collapse_others INTEGER NOT NULL DEFAULT 0");
+
 // Spending entries made before the description existed have none.
 if (!hasColumn("spending_entries", "description")) db.exec("ALTER TABLE spending_entries ADD COLUMN description TEXT NOT NULL DEFAULT ''");
 

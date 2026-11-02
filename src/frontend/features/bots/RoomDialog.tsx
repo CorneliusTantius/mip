@@ -10,6 +10,9 @@ import { Modal } from "../../ui/Modal";
 export function RoomDialog({ open, room, bots, onClose }: { open: boolean; room?: Room; bots: Bot[]; onClose: (changed: boolean) => void }) {
   const [name, setName] = useState("");
   const [botIds, setBotIds] = useState<string[]>([]);
+  // The master's bot id, or an empty string for none.
+  const [masterBotId, setMasterBotId] = useState("");
+  const [collapseOthers, setCollapseOthers] = useState(false);
   const [error, setError] = useState<string>();
   const [deleting, setDeleting] = useState(false);
 
@@ -18,10 +21,14 @@ export function RoomDialog({ open, room, bots, onClose }: { open: boolean; room?
     if (!open) return;
     setName(room?.name ?? "");
     setBotIds(room?.botIds ?? []);
+    setMasterBotId(room?.masterBotId ?? "");
+    setCollapseOthers(room?.collapseOthers ?? false);
     setError(undefined);
   }, [open, room?.id]);
 
+  // A bot that leaves the room cannot stay its master.
   function toggle(botId: string) {
+    if (botIds.includes(botId) && botId === masterBotId) setMasterBotId("");
     setBotIds((ids) => (ids.includes(botId) ? ids.filter((id) => id !== botId) : [...ids, botId]));
   }
 
@@ -29,8 +36,9 @@ export function RoomDialog({ open, room, bots, onClose }: { open: boolean; room?
     e.preventDefault();
     setError(undefined);
     try {
-      if (room) await api.put(`/api/rooms/${room.id}`, { name, botIds });
-      else await api.post("/api/rooms", { name, botIds });
+      const fields = { name, botIds, masterBotId: masterBotId || null, collapseOthers };
+      if (room) await api.put(`/api/rooms/${room.id}`, fields);
+      else await api.post("/api/rooms", fields);
     } catch (err) {
       return setError(errorText(err));
     }
@@ -75,6 +83,26 @@ export function RoomDialog({ open, room, bots, onClose }: { open: boolean; room?
               </div>
             )}
           </fieldset>
+
+          <fieldset className="fieldset">
+            <legend className="fieldset-legend">Room master</legend>
+            <select className="select w-full" value={masterBotId} onChange={(e) => setMasterBotId(e.currentTarget.value)}>
+              <option value="">None</option>
+              {bots
+                .filter((bot) => botIds.includes(bot.id))
+                .map((bot) => (
+                  <option key={bot.id} value={bot.id}>
+                    {bot.name}
+                  </option>
+                ))}
+            </select>
+            <p className="text-xs opacity-60">The master answers first when no bot is mentioned.</p>
+          </fieldset>
+
+          <label className="label cursor-pointer gap-3 text-base-content">
+            <input type="checkbox" className="checkbox checkbox-sm" checked={collapseOthers} onChange={(e) => setCollapseOthers(e.currentTarget.checked)} />
+            Collapse the other bots&apos; messages
+          </label>
 
           <ErrorAlert message={error} />
 

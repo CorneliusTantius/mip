@@ -61,6 +61,9 @@ export interface RoomRow {
   id: string;
   name: string;
   bots: string[];
+  // The master's bot name, or null for none.
+  masterBot: string | null;
+  collapseOthers: boolean;
   updatedAt: number;
 }
 
@@ -240,10 +243,14 @@ export function readRoomRows(): RoomRow[] {
   for (const row of db.prepare("SELECT room_bots.room_id, bots.name FROM room_bots JOIN bots ON bots.id = room_bots.bot_id").all() as Row[]) {
     members.set(row.room_id, [...(members.get(row.room_id) ?? []), row.name]);
   }
-  return (db.prepare("SELECT id, name, updated_at FROM rooms").all() as Row[]).map((row) => ({
+  return (
+    db.prepare("SELECT rooms.id, rooms.name, rooms.updated_at, rooms.collapse_others, bots.name AS master FROM rooms LEFT JOIN bots ON bots.id = rooms.master_bot_id").all() as Row[]
+  ).map((row) => ({
     id: row.id,
     name: row.name,
     bots: (members.get(row.id) ?? []).sort(),
+    masterBot: row.master ?? null,
+    collapseOthers: row.collapse_others === 1,
     updatedAt: row.updated_at,
   }));
 }
@@ -252,10 +259,18 @@ export function readRoomRows(): RoomRow[] {
 // A name another room has gets a number, so a room from another machine never fails the sync.
 export function writeRoomRow(room: RoomRow): void {
   const name = uniqueRoomName(room.name, room.id);
+  const master = room.masterBot === null ? null : (db.prepare("SELECT id FROM bots WHERE name = ? COLLATE NOCASE").get(room.masterBot) as Row | undefined)?.id ?? null;
   if (db.prepare("SELECT id FROM rooms WHERE id = ?").get(room.id)) {
-    db.prepare("UPDATE rooms SET name = ?, updated_at = ? WHERE id = ?").run(name, room.updatedAt, room.id);
+    db.prepare("UPDATE rooms SET name = ?, master_bot_id = ?, collapse_others = ?, updated_at = ? WHERE id = ?").run(name, master, room.collapseOthers ? 1 : 0, room.updatedAt, room.id);
   } else {
-    db.prepare("INSERT INTO rooms (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)").run(room.id, name, room.updatedAt, room.updatedAt);
+    db.prepare("INSERT INTO rooms (id, name, master_bot_id, collapse_others, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+      room.id,
+      name,
+      master,
+      room.collapseOthers ? 1 : 0,
+      room.updatedAt,
+      room.updatedAt,
+    );
   }
   db.prepare("DELETE FROM room_bots WHERE room_id = ?").run(room.id);
   for (const botName of room.bots) {

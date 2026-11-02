@@ -41,6 +41,9 @@ export function postToRoom(input: unknown): RoomMessage {
 
   const message = addRoomMessage({ roomId: room.id, kind: "user", botId: null, authorName: "You", text });
   const members = listBots().filter((bot) => room.botIds.includes(bot.id));
+  // With no @mention, the room master speaks first. The others keep their order.
+  const master = members.find((bot) => bot.id === room.masterBotId);
+  const ordered = master ? [master, ...members.filter((bot) => bot !== master)] : members;
   if (members.length === 0) {
     addRoomMessage({ roomId: room.id, kind: "system", botId: null, authorName: "System", text: "No bots in this room yet. Add some with Members." });
     return message;
@@ -50,7 +53,7 @@ export function postToRoom(input: unknown): RoomMessage {
   talking.set(room.id, { speaking: null });
   converseRoom<Bot, ToolCall[]>({
     bots: members,
-    queue: named.length > 0 ? named : members,
+    queue: named.length > 0 ? named : ordered,
     maxTurns: MAX_TURNS,
     runTurn: (bot) => runTurn(room, bot, members),
     say: (event) => {
