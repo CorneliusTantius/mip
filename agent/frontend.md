@@ -139,7 +139,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/slack/
 | file | exports | job |
 | --- | --- | --- |
-| `SlackCard.tsx` | `SlackCard` | The Slack card. Pills for the connected accounts, a dropdown of the conversations, the newest 30 messages, and Refresh. It reads as the chosen user. Its text steps up when expanded. |
+| `SlackCard.tsx` | `SlackCard` | The Slack card. With no account yet, a Sign in with Slack button starts the OAuth sign-in and re-reads the accounts for two minutes. With accounts, pills for them, a dropdown of the conversations, the newest 30 messages, and Refresh. It reads as the chosen user. Its text steps up when expanded. |
 | `useSlack.ts` | `useSlack`, `useConversations`, `useMessages` | The connection (load, save the app, start a connect, paste a token, disconnect), the conversations of an account, and one conversation's messages. Messages are read on choice and on Refresh, not on a timer, because Slack limits history reads. |
 
 ## features/whatsapp/

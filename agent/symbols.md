@@ -588,7 +588,7 @@
 | src/frontend/features/skills/ImportSkillDialog.tsx | 8 | function | ImportSkillDialog |
 | src/frontend/features/skills/SkillsCard.tsx | 12 | function | SkillsCard |
 | src/frontend/features/skills/useSkills.ts | 6 | function | useSkills |
-| src/frontend/features/slack/SlackCard.tsx | 10 | function | SlackCard |
+| src/frontend/features/slack/SlackCard.tsx | 17 | function | SlackCard |
 | src/frontend/features/slack/useSlack.ts | 7 | function | useSlack |
 | src/frontend/features/slack/useSlack.ts | 50 | function | useConversations |
 | src/frontend/features/slack/useSlack.ts | 74 | function | useMessages |

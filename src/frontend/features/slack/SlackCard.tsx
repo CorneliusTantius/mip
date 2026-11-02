@@ -1,12 +1,19 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { errorText } from "../../api/client";
 import type { SlackConversation } from "../../api/types";
 import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { MESSAGING_CARD_HEIGHT } from "../../ui/SourceCard";
+import { usePolling } from "../../ui/hooks";
 import { useConversations, useMessages, useSlack } from "./useSlack";
 
+// How long, after "Sign in with Slack", the account list is re-read while the browser finishes the sign-in on Slack's page.
+const WAIT_MS = 120_000;
+const POLL_MS = 3000;
+
 // The Slack card: the conversations of a connected Slack account, and the newest messages of the one chosen. It reads as the connected user,
-// so the messages are the ones that user can see. Connecting and the app's settings are in Settings → Slack.
+// so the messages are the ones that user can see. Signing in is a button on the card. The Slack app's client ID and secret are set in
+// Settings → Slack, once.
 export function SlackCard() {
   return (
     <Card glow="violet" className={MESSAGING_CARD_HEIGHT}>
@@ -27,6 +34,26 @@ function SlackBody() {
   const conversation = conversations.list.find((candidate) => candidate.id === chosenId) ?? conversations.list[0];
   const messages = useMessages(account?.id, conversation?.id);
   const text = expanded ? "text-base" : "text-sm";
+  const [waiting, setWaiting] = useState(false);
+  const [signInError, setSignInError] = useState<string>();
+
+  // While the sign-in is open in another tab, the account list is re-read, so the card fills in without a reload.
+  usePolling(() => void slack.reload(), POLL_MS, waiting);
+  useEffect(() => {
+    if (accounts.length > 0) setWaiting(false);
+  }, [accounts.length]);
+
+  async function signIn() {
+    setSignInError(undefined);
+    try {
+      const url = await slack.startConnect();
+      window.open(url, "_blank", "noopener");
+      setWaiting(true);
+      window.setTimeout(() => setWaiting(false), WAIT_MS);
+    } catch (err) {
+      setSignInError(errorText(err));
+    }
+  }
 
   return (
     <CardBody
@@ -49,7 +76,14 @@ function SlackBody() {
         <div className="py-4 text-center text-sm opacity-60">Set up the Slack app in Settings → Slack.</div>
       )}
       {slack.state?.app && accounts.length === 0 && (
-        <div className="py-4 text-center text-sm opacity-60">No Slack account is connected. Connect one in Settings → Slack.</div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+          <p className={`opacity-70 ${text}`}>Sign in with your Slack account to read its conversations.</p>
+          <button className="btn btn-primary btn-sm" onClick={() => void signIn()}>
+            Sign in with Slack
+          </button>
+          {waiting && <span className="text-xs opacity-60">Waiting for the approval in the other tab…</span>}
+          <ErrorAlert message={signInError} />
+        </div>
       )}
 
       {accounts.length > 0 && (
