@@ -594,7 +594,7 @@
 | src/frontend/features/slack/useSlack.ts | 74 | function | useMessages |
 | src/frontend/features/tools/ToolsCard.tsx | 14 | function | ToolsCard |
 | src/frontend/features/upcoming/PlaceholderCard.tsx | 6 | function | PlaceholderCard |
-| src/frontend/features/whatsapp/WhatsAppCard.tsx | 4 | function | WhatsAppCard |
+| src/frontend/features/whatsapp/WhatsAppCard.tsx | 6 | function | WhatsAppCard |
 | src/frontend/ui/Card.tsx | 6 | type | Glow |
 | src/frontend/ui/Card.tsx | 44 | function | Card |
 | src/frontend/ui/Card.tsx | 115 | function | useCardExpansion |
@@ -610,9 +610,7 @@
 | src/frontend/ui/OptionDropdown.tsx | 13 | function | OptionDropdown |
 | src/frontend/ui/RunScopePills.tsx | 4 | type | RunScope |
 | src/frontend/ui/RunScopePills.tsx | 13 | function | RunScopePills |
-| src/frontend/ui/SourceCard.tsx | 4 | type | SourceTone |
-| src/frontend/ui/SourceCard.tsx | 15 | const | MESSAGING_CARD_HEIGHT |
-| src/frontend/ui/SourceCard.tsx | 19 | function | SourceCard |
+| src/frontend/ui/SourceCard.tsx | 2 | const | MESSAGING_CARD_HEIGHT |
 | src/frontend/ui/Starfield.tsx | 17 | function | Starfield |
 | src/frontend/ui/ToolCallDetails.tsx | 5 | function | ToolCallDetails |
 | src/frontend/ui/ToolCallsDialog.tsx | 8 | function | ToolCallsButton |

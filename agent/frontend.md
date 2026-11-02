@@ -143,10 +143,10 @@ Shared pieces. Each is used by more than one feature.
 | `useSlack.ts` | `useSlack`, `useConversations`, `useMessages` | The connection (load, save the app, start a connect, paste a token, disconnect), the conversations of an account, and one conversation's messages. Messages are read on choice and on Refresh, not on a timer, because Slack limits history reads. |
 
 ## features/whatsapp/
-- `WhatsAppCard.tsx`: `WhatsAppCard`, a shell showing "Not connected". No connection yet.
+- `WhatsAppCard.tsx`: `WhatsAppCard`, the same shell as the mail and Slack cards (`MESSAGING_CARD_HEIGHT`, `CardBody`, `ExpandButton`), with a "WhatsApp is not connected yet." line. No connection yet.
 
 ## ui/SourceCard.tsx
-- `SourceCard`: a `Card` with a title, a status badge in one of five tones (`SourceTone`), a line of detail, and a note on what comes next. It expands like the other cards, and its text steps up one size when expanded. The messaging cards use it.
+- `MESSAGING_CARD_HEIGHT`: the height every messaging card shares, 22.25 rem. The file used to hold a placeholder card component, which is gone.
 
 ## features/upcoming/
 - `PlaceholderCard.tsx`: `PlaceholderCard`, for Tasks and Activity. No data yet. Its Open button shows a dialog with the placeholder note.
