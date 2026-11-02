@@ -41,18 +41,19 @@ export function useMailAccounts() {
 const PAGE = 25;
 
 // The newest messages of one account's mailbox, re-read every pollSeconds while the account is shown. checkedAt is when the last read
-// finished, so the card can say how fresh its list is. Each account starts with a page; more() adds one, and hasMore says whether the
-// mailbox may have more to show.
+// finished, so the card can say how fresh its list is. Without a count the server returns everything it has kept, so a reload shows what
+// was loaded before. more() asks for a page more than is shown; hasMore says whether the mailbox has older messages.
 export function useMailbox(accountId: string | undefined, pollSeconds: number) {
   const [mailbox, setMailbox] = useState<MailboxReply & { checkedAt: Date }>();
   const [error, setError] = useState<string>();
-  const [want, setWant] = useState({ accountId, count: PAGE });
-  const count = want.accountId === accountId ? want.count : PAGE;
+  const [want, setWant] = useState<{ accountId?: string; count?: number }>({});
+  const count = want.accountId === accountId ? want.count : undefined;
 
   async function load() {
     if (!accountId) return;
     try {
-      const reply = await api.get<MailboxReply>(`/api/mail/accounts/${encodeURIComponent(accountId)}/messages?count=${count}`);
+      const query = count ? `?count=${count}` : "";
+      const reply = await api.get<MailboxReply>(`/api/mail/accounts/${encodeURIComponent(accountId)}/messages${query}`);
       setMailbox({ ...reply, checkedAt: new Date() });
       setError(undefined);
     } catch (err) {
@@ -74,7 +75,7 @@ export function useMailbox(accountId: string | undefined, pollSeconds: number) {
     mailbox,
     error,
     reload: load,
-    more: () => setWant({ accountId, count: count + PAGE }),
-    hasMore: !!mailbox && mailbox.messages.length >= count,
+    more: () => setWant({ accountId, count: (mailbox?.messages.length ?? PAGE) + PAGE }),
+    hasMore: !!mailbox && !mailbox.complete,
   };
 }

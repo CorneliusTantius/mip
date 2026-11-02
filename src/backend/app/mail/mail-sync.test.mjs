@@ -53,7 +53,14 @@ try {
   assert.ok(!cache.readMailCache()[added.id].messages.some((m) => m.uid === 15), "a removed message is dropped from the cache");
 
   // 5. Load more past what was kept reads the rest down to the start of the mailbox, and no further.
-  assert.deepEqual(uids(await mail.listMailMessages(added.id, 10)), [16, 14, 13, 12, 11]);
+  const loaded = await mail.listMailMessages(added.id, 10);
+  assert.deepEqual(uids(loaded), [16, 14, 13, 12, 11]);
+  assert.equal(loaded.complete, true, "the start of the mailbox is reached");
+
+  // 6. A list with no count returns everything kept, so a reload after Load more shows the same messages, not a page.
+  const reloaded = await mail.listMailMessages(added.id);
+  assert.deepEqual(uids(reloaded), [16, 14, 13, 12, 11], "a reload keeps what was loaded");
+  assert.equal(reloaded.complete, true);
 
   console.log("mail sync tests passed");
 } finally {

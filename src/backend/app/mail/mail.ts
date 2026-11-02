@@ -91,13 +91,18 @@ export async function testMailAccount(id: string): Promise<{ messages: number; u
 }
 
 // The newest messages in an account's mailbox, newest first. The headers are kept, so a call fetches only what is new since the last one, and
-// older ones only when count asks for more than is kept.
-export async function listMailMessages(id: string, count = LIST_LIMIT): Promise<{ mailbox: string; messages: MailHeader[] }> {
+// older ones only when count asks for more than is kept. Without a count, the list is everything kept, and at least a page.
+// complete is true when the mailbox has no older messages to show.
+export async function listMailMessages(
+  id: string,
+  count?: number,
+): Promise<{ mailbox: string; messages: MailHeader[]; complete: boolean }> {
   const account = findAccount(id);
-  const box = await reading(account, () => syncMailbox(account, readMailCache()[id], count));
+  const cached = readMailCache()[id];
+  const want = count ?? Math.max(LIST_LIMIT, cached?.messages.length ?? 0);
+  const box = await reading(account, () => syncMailbox(account, cached, want));
   saveMailbox(id, box);
-  const messages = box.messages.slice(0, count);
-  return { mailbox: account.mailbox, messages };
+  return { mailbox: account.mailbox, messages: box.messages.slice(0, want), complete: box.messages.length < want };
 }
 
 // One message, with its text cut to the account's limit. A UID the mailbox does not have is a 404.

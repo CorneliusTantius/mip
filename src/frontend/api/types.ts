@@ -321,6 +321,8 @@ export interface MailMessage extends MailHeader {
 export interface MailboxReply {
   mailbox: string;
   messages: MailHeader[];
+  // True when the mailbox has no older messages to load.
+  complete: boolean;
 }
 
 // A connected Slack user, without its token. The same user in two workspaces is two accounts.
