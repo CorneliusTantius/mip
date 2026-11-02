@@ -83,20 +83,15 @@ function SlackBody() {
         <ErrorAlert message={slack.error} />
         {slack.state === undefined && !slack.error && <div className="text-sm opacity-60">Loading Slack…</div>}
         {slack.state && !slack.state.app && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-            <p className={`opacity-70 ${text}`}>Set up the Slack app once, with its client ID and secret.</p>
-            <button className="btn btn-primary btn-sm" onClick={() => setDialogOpen(true)}>
-              Set up Slack
-            </button>
-          </div>
+          <div className="py-4 text-center text-sm opacity-60">No Slack app yet. Add its client ID and secret under Accounts.</div>
         )}
         {slack.state?.app && accounts.length === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-            <p className={`opacity-70 ${text}`}>Sign in with your Slack account to read its conversations.</p>
+          <div className="flex flex-col items-center gap-2 py-4 text-center text-sm opacity-60">
+            <span>No Slack account yet. Sign in to read its conversations.</span>
             <button className="btn btn-primary btn-sm" onClick={() => void signInFromCard()}>
               Sign in with Slack
             </button>
-            {waiting && <span className="text-xs opacity-60">Waiting for the approval in the other tab…</span>}
+            {waiting && <span className="text-xs">Waiting for the approval in the other tab…</span>}
             <ErrorAlert message={signInError} />
           </div>
         )}
