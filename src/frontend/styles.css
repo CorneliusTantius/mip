@@ -252,7 +252,7 @@ details[open] > .dropdown-content { animation: mip-pop 0.2s ease-out backwards; 
   outline-offset: 2px;
 }
 
-/* An open dropdown list can run past the edge of a dialog box, so the box does not clip it while a list is open. */
-.modal-box:has(details[open]) {
+/* An open dropdown list can run past the edge of the box or scroll area it sits in, so that area does not clip it while the list is open. */
+:is(.overflow-auto, .overflow-y-auto, .overflow-hidden, .modal-box):has(details.dropdown[open]) {
   overflow: visible;
 }
