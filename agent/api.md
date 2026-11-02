@@ -142,6 +142,20 @@ The IMAP accounts in `data/mail.json`. Passwords are never returned. Reading con
 | GET | /api/mail/accounts/:id/messages | 200 | `{mailbox, messages: {uid, from, subject, date, seen}[]}`, the newest 25, newest first | 404 no such account; 502 the server could not be read |
 | GET | /api/mail/accounts/:id/messages/:uid | 200 | `{uid, from, subject, date, seen, to, text, truncated}`. The body is fetched with BODY.PEEK, so the message stays unread | 400 the uid is not a positive whole number; 404 no such message; 502 the server could not be read |
 
+## Slack — `routes/slack.ts`
+The Slack app and the connected users, in `data/slack.json`. Tokens and the client secret are never returned. Reads use the connected user's token, so they show what that user can see.
+
+| method | path | status | body / returns | errors |
+| --- | --- | --- | --- | --- |
+| GET | /api/slack | 200 | `{app: {clientId} \| null, redirectUri, accounts: {id, teamId, teamName, userId, userName}[], problems: {account, error}[]}` | |
+| PUT | /api/slack/app | 200 | the same shape. Body `{clientId, clientSecret}`; the client ID is `digits.digits` | 400 a bad client ID or a missing secret; 415 not JSON |
+| POST | /api/slack/connect | 200 | `{url}`, the Slack page to open. Its state is one-time and lasts ten minutes | 400 no app saved; 415 not JSON |
+| GET | /api/slack/oauth/callback | HTML | Slack's redirect lands here (not under `/api` JSON). Exchanges the code for the user's token and saves the account | 400 a refused sign-in, or an unknown or used state |
+| POST | /api/slack/token | 201 | the account, without its token. Body `{token}`, which must start with `xoxp-` | 400 not a user token; 401 Slack refuses it; 415 not JSON |
+| DELETE | /api/slack/accounts/:id | 200 | the same shape as GET | 404 no such account |
+| GET | /api/slack/accounts/:id/conversations | 200 | `{id, name, kind: "channel" \| "private" \| "group" \| "dm"}[]`, channels first | 404 no such account; 401 the connection is no longer accepted; 403 a missing scope; 429 rate limited |
+| GET | /api/slack/accounts/:id/conversations/:channel/messages | 200 | `{ts, time, author, text}[]`, the newest 30, newest first | 400 not a conversation id; 404 no such account or no access to the conversation; 429 rate limited |
+
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |
 | --- | --- | --- | --- | --- |

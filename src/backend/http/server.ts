@@ -5,6 +5,8 @@ import { OAUTH_CALLBACK_PATH, startMcpServers } from "../app/mcp/manager.js";
 import { importLegacyPiAuth } from "../app/pi/store.js";
 import { handleMcp } from "./mcp.js";
 import { handleOAuthCallback } from "./mcp-oauth.js";
+import { SLACK_CALLBACK_PATH } from "../app/slack/connect.js";
+import { handleSlackCallback } from "./slack-oauth.js";
 import { notFound, readJson, sendJson } from "./respond.js";
 import { matchRoute } from "./router.js";
 import { routes } from "./routes/index.js";
@@ -24,6 +26,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   // An MCP server's sign-in comes back here from the browser, with the code the page is handed.
   if (req.method === "GET" && url.pathname === OAUTH_CALLBACK_PATH) {
     return handleOAuthCallback(url, res);
+  }
+  // Slack's sign-in comes back here the same way.
+  if (req.method === "GET" && url.pathname === SLACK_CALLBACK_PATH) {
+    return handleSlackCallback(url, res);
   }
 
   const match = matchRoute(routes, req.method ?? "", url.pathname);

@@ -11,6 +11,8 @@ export const DEVICE_ID_FILE = join(DATA_DIR, "device-id");
 export const MCP_CONFIG_FILE = join(DATA_DIR, "mcp.json");
 // The mail accounts mip reads over IMAP. They hold app passwords, and sync carries them to the private dotmip repo.
 export const MAIL_CONFIG_FILE = join(DATA_DIR, "mail.json");
+// The Slack app's client ID and secret, and the connected Slack users with their user tokens. Sync carries them to the private dotmip repo.
+export const SLACK_CONFIG_FILE = join(DATA_DIR, "slack.json");
 export const SESSIONS_DIR = join(MIP_HOME, "sessions");
 // Master clones of repositories. Each agent gets its own copy in its workspace.
 export const REPOS_DIR = join(MIP_HOME, "repos");

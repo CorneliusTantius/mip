@@ -50,7 +50,7 @@ The Claude CLI runs without `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so i
 
 ## Sync to GitHub
 
-Settings → **Sync** keeps your agents, notes, personas, bots, MCP servers, mail accounts, and Pi's credentials, model catalogs, and settings in a private repo named `dotmip` on your GitHub account. MCP servers, mail accounts, and Pi credentials come with their tokens, passwords, and keys, so keep that repo private. Repository clones, agent files, and provider logins stay on this machine.
+Settings → **Sync** keeps your agents, notes, personas, bots, MCP servers, mail accounts, the Slack connection, and Pi's credentials, model catalogs, and settings in a private repo named `dotmip` on your GitHub account. MCP servers, mail accounts, the Slack app secret and user tokens, and Pi credentials come with their tokens, passwords, and keys, so keep that repo private. Repository clones, agent files, and provider logins stay on this machine.
 
 1. Sign in to the GitHub CLI once on this machine: `gh auth login`. Sync uses one of the accounts it is signed in to. If there is more than one, pick the account in Settings → Sync. mip never stores a token.
 2. Click **Sync now** in Settings → Sync. It creates `dotmip` if it does not exist, pulls changes, merges them with this machine, and pushes the result.
@@ -124,6 +124,17 @@ Memory is one set of notes shared by every agent. Notes live in SQLite with a fu
 mip reads your mail over IMAP, the standard protocol every provider offers. Add an account from the Email card with **Add account**: choose the provider, give the address and an app password, and press **Sign in and add**. mip signs in first, so a wrong address or password is refused and nothing is saved. Gmail needs 2-Step Verification before it makes an app password, and that app password is the one to use, not your Google password. The form has a **Get an app password** button that opens the provider's page for it. For another provider, choose **Other** and give its IMAP server, port, and whether it is encrypted.
 
 The card lists the newest 25 messages of each account's inbox, with unread ones marked, and a message opens in full. Reading does not mark a message as read. The list is read again every 60 seconds while the card is open, over one connection that stays open between reads and closes after five minutes without one. The app passwords are kept in `data/mail.json`, readable only by you, and sync carries them to your private dotmip repo. **Remove account** takes an account out. Nothing is sent, and agents cannot read mail yet.
+
+## Slack
+
+The Slack card reads a Slack workspace as you, through a Slack app you create for your own workspace. The app asks for user permissions only, so nothing posts as a bot. Set it up once in Settings → **Slack**:
+
+1. Create the app at api.slack.com/apps, with **Create New App → From scratch**.
+2. Under **OAuth & Permissions**, add the **Redirect URL** that Settings shows. It is `http://127.0.0.1:3000/api/slack/oauth/callback` by default.
+3. Under **Basic Information**, copy the Client ID and Client Secret into Settings, and press **Save app**.
+4. Press **Connect with Slack**. Approve in the tab that opens. You can also paste a user token (it starts with `xoxp-`) under **Connect with a user token instead**.
+
+The card lists your conversations and shows the newest 30 messages of the one you pick. Press **Refresh** to read again. It reads only; sending is not built yet. Slack limits how often history can be read for apps that are not on its Marketplace, so the card does not refresh on a timer. The app's client ID and secret, and each user token, are kept in `data/slack.json`, and sync carries them to your private dotmip repo.
 
 ## MCP servers
 
@@ -251,6 +262,7 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
   data/mip.db           SQLite: personas, agents, messages, runs, memory, repositories
   data/mcp.json         MCP servers to connect to, tokens included. Sync carries them to the dotmip repo
   data/mail.json        Mail accounts and their app passwords. Sync carries them to the dotmip repo
+  data/slack.json       The Slack app's secret and connected user tokens. Sync carries them to the dotmip repo
   repos/<name>/         Master clones from the Repositories card
   sessions/claude/      Claude CLI config, login, and transcripts
   sessions/pi/          Pi session files

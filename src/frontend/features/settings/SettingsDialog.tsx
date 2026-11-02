@@ -2,12 +2,13 @@ import { useState } from "preact/hooks";
 import { announce, PROVIDERS_CHANGED } from "../../api/events";
 import { Modal } from "../../ui/Modal";
 import { ProviderTab } from "./ProviderTab";
+import { SlackTab } from "./SlackTab";
 import { SyncTab } from "./SyncTab";
 import { UpdateTab } from "./UpdateTab";
 
-// Settings: the provider sign-ins, syncing data to GitHub, and updating mip. Personas are managed from the agent card. It opens from the gear in the header.
+// Settings: the provider sign-ins, Slack, syncing data to GitHub, and updating mip. Personas are managed from the agent card. It opens from the gear in the header.
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [tab, setTab] = useState<"provider" | "sync" | "update">("provider");
+  const [tab, setTab] = useState<"provider" | "slack" | "sync" | "update">("provider");
 
   // Closing Settings tells the rest of the app, so the agent's models follow a sign-in made here.
   function close() {
@@ -26,6 +27,11 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
             </button>
           </li>
           <li>
+            <button className={tab === "slack" ? "menu-active" : ""} onClick={() => setTab("slack")}>
+              Slack
+            </button>
+          </li>
+          <li>
             <button className={tab === "sync" ? "menu-active" : ""} onClick={() => setTab("sync")}>
               Sync
             </button>
@@ -38,6 +44,7 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
         </ul>
         <div key={tab} className="mip-fade min-h-0 min-w-0 flex-1 overflow-y-auto pr-1">
           {tab === "provider" && <ProviderTab open={open} />}
+          {tab === "slack" && <SlackTab />}
           {tab === "sync" && <SyncTab />}
           {tab === "update" && <UpdateTab />}
         </div>

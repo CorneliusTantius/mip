@@ -141,6 +141,7 @@ Use `api.get|post|put|patch|del` from `api/client.ts`. Add the response type to 
 - A rename of a word must skip the names of libraries. daisyUI's chat bubbles use the classes `chat`, `chat-start`, `chat-end`, `chat-header`, `chat-bubble`, and `chat-bubble-*`. The chat-to-agent rename once broke them, so the bubbles rendered as plain text. Check the class names of the library after a rename.
 - Expanded cards step their text up one size. Put that in `RunScopePills` and the card's own classes, not in one-off styles.
 - Mail accounts live in `data/mail.json`, mode 600. Sync carries them to the dotmip repo with their app passwords, so keep that repo private. A sync stops on a bad account, the same as on a bad MCP server. A read fetches a body with `BODY.PEEK`, so opening a message never marks it read. A saved account keeps one connection open between reads, closed after five minutes without a read. A connection the server drops is replaced, and a read that failed on it runs once more.
+- Slack connection: `data/slack.json` holds the app's client secret and each user's token, and sync carries it to the dotmip repo like mail. The API never returns a token or the secret. The card does not poll Slack's history, since Slack limits how often apps outside its Marketplace can read it. Sign-in states are one-time and held in memory for ten minutes.
 
 ## Git
 - Push every change to `origin main`, as the GitHub account CorneliusTantius. No attribution lines (no Co-Authored-By, no "Generated with").

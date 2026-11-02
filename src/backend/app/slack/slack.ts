@@ -1,0 +1,44 @@
+import { AppError } from "../errors.js";
+import { type SlackAccountView, type SlackConfigProblem, readSlackConfig, removeSlackAccount, saveSlackApp, viewOf } from "./config.js";
+import { slackRedirectUri } from "./connect.js";
+
+// The Slack connection as the card and Settings use it: the app's client ID (never its secret), the connected accounts, and any part of
+// slack.json that could not be read.
+
+export interface SlackReply {
+  app: { clientId: string } | null;
+  redirectUri: string;
+  accounts: SlackAccountView[];
+  problems: SlackConfigProblem[];
+}
+
+export function slackReply(): SlackReply {
+  const config = readSlackConfig();
+  return {
+    app: config.app ? { clientId: config.app.clientId } : null,
+    redirectUri: slackRedirectUri,
+    accounts: config.accounts.map(viewOf),
+    problems: config.problems,
+  };
+}
+
+// Saves the app's client ID and secret. A client ID is digits and a dot, and both values are required.
+export function saveSlackAppInput(input: unknown): SlackReply {
+  const body = isRecord(input) ? input : {};
+  const clientId = String(body.clientId ?? "").trim();
+  const clientSecret = String(body.clientSecret ?? "").trim();
+  if (!/^\d+\.\d+$/.test(clientId)) throw new AppError(400, "The client ID looks like 1234567890.1234567890. Copy it from the Slack app's Basic Information page.");
+  if (!clientSecret) throw new AppError(400, "Enter the client secret from the same page.");
+  saveSlackApp({ clientId, clientSecret });
+  return slackReply();
+}
+
+// Disconnects an account. Its token is removed from slack.json; nothing is revoked in Slack.
+export function deleteSlackAccount(id: string): SlackReply {
+  removeSlackAccount(id);
+  return slackReply();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}

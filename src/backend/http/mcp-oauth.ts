@@ -1,9 +1,10 @@
 import type { ServerResponse } from "node:http";
 import { AppError, errorMessage } from "../app/errors.js";
 import { completeSignIn } from "../app/mcp/manager.js";
+import { page } from "./page.js";
 
 // The page the browser lands on when the authorization server sends the user back. It finishes the sign-in that the MCP card started,
-// and tells the user the result. It is a page, not JSON, since the user is looking at it.
+// and tells the user the result.
 export async function handleOAuthCallback(url: URL, res: ServerResponse): Promise<void> {
   const refused = url.searchParams.get("error_description") ?? url.searchParams.get("error");
   const state = url.searchParams.get("state") ?? "";
@@ -16,16 +17,4 @@ export async function handleOAuthCallback(url: URL, res: ServerResponse): Promis
   } catch (err) {
     return page(res, err instanceof AppError ? err.status : 500, "Sign-in failed", errorMessage(err));
   }
-}
-
-function page(res: ServerResponse, status: number, title: string, message: string): void {
-  res.writeHead(status, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-  res.end(
-    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)}</title>` +
-      `<body style="font-family: system-ui, sans-serif; padding: 2rem"><h1>${escape(title)}</h1><p>${escape(message)}</p></body>`,
-  );
-}
-
-function escape(text: string): string {
-  return text.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }

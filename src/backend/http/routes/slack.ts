@@ -1,0 +1,27 @@
+import { deleteSlackAccount, saveSlackAppInput, slackReply } from "../../app/slack/slack.js";
+import { startConnect, connectWithToken } from "../../app/slack/connect.js";
+import { listConversations, listMessages } from "../../app/slack/read.js";
+import { created, ok, readJson, requireJson } from "../respond.js";
+import { del, get, post, put, type Route } from "../router.js";
+
+// Slack: the app's client ID and secret, connecting an account (through Slack's sign-in, or a pasted user token), disconnecting one, and
+// reading as a connected user. Every call that changes the connection, or reads Slack with it, needs JSON.
+export const slackRoutes: Route[] = [
+  get("/api/slack", () => ok(slackReply())),
+  put("/api/slack/app", async ({ req }) => {
+    requireJson(req);
+    return ok(saveSlackAppInput(await readJson(req)));
+  }),
+  post("/api/slack/connect", ({ req }) => {
+    requireJson(req);
+    return ok(startConnect());
+  }),
+  post("/api/slack/token", async ({ req }) => {
+    requireJson(req);
+    const body = await readJson(req);
+    return created(await connectWithToken(String(body.token ?? "")));
+  }),
+  del("/api/slack/accounts/:id", ({ params }) => ok(deleteSlackAccount(params.id))),
+  get("/api/slack/accounts/:id/conversations", async ({ params }) => ok(await listConversations(params.id))),
+  get("/api/slack/accounts/:id/conversations/:channel/messages", async ({ params }) => ok(await listMessages(params.id, params.channel))),
+];

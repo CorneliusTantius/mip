@@ -3,6 +3,7 @@ import type { Credential, ModelsStoreEntry } from "@earendil-works/pi-ai";
 import type { Ask } from "../../storage/agents.js";
 import type { MailAccount } from "../mail/accounts.js";
 import type { McpServerEntry } from "../mcp/config.js";
+import type { SlackAccount } from "../slack/config.js";
 
 // The data GitHub sync keeps, in the form the dotmip repo stores it. Records hold no local ids, so two machines can share them.
 // Each record has a change time, which decides the winner when both sides edited it. Pure: no database and no git.
@@ -80,6 +81,15 @@ export type McpServerRecord = McpServerEntry;
 // One mail account from mail.json, with its app password. It has no change time, so GitHub's copy wins when both sides changed it.
 export type MailRecord = MailAccount;
 
+// The Slack app's client ID and secret. There is one, so it is keyed "app". It has no change time, so GitHub's copy wins when both changed.
+export interface SlackAppRecord {
+  clientId: string;
+  clientSecret: string;
+}
+
+// A Slack account from slack.json, with the user's token. It has no change time, so GitHub's copy wins when both sides changed it.
+export type SlackRecord = SlackAccount;
+
 // Pi's credential for one provider, with the time it changed. The newer copy wins when both sides changed it.
 export interface PiCredentialRecord {
   providerId: string;
@@ -110,15 +120,45 @@ export interface Snapshot {
   room: Record<string, RoomMessageRecord>;
   mcp: Record<string, McpServerRecord>;
   mail: Record<string, MailRecord>;
+  slackApp: Record<string, SlackAppRecord>;
+  slack: Record<string, SlackRecord>;
   piCredentials: Record<string, PiCredentialRecord>;
   piModels: Record<string, PiModelRecord>;
   piFiles: Record<string, PiFileRecord>;
 }
 
-export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room", "mcp", "mail", "piCredentials", "piModels", "piFiles"] as const;
+export const PARTS = [
+  "personas",
+  "bots",
+  "notes",
+  "agents",
+  "rooms",
+  "room",
+  "mcp",
+  "mail",
+  "slackApp",
+  "slack",
+  "piCredentials",
+  "piModels",
+  "piFiles",
+] as const;
 
 export function emptySnapshot(): Snapshot {
-  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {}, mcp: {}, mail: {}, piCredentials: {}, piModels: {}, piFiles: {} };
+  return {
+    personas: {},
+    bots: {},
+    notes: {},
+    agents: {},
+    rooms: {},
+    room: {},
+    mcp: {},
+    mail: {},
+    slackApp: {},
+    slack: {},
+    piCredentials: {},
+    piModels: {},
+    piFiles: {},
+  };
 }
 
 export function isEmptySnapshot(snapshot: Snapshot): boolean {
@@ -143,6 +183,8 @@ export const keyOf = {
     `${message.room}:${message.createdAt}:${message.kind}:${message.authorName}:${digest(message.text)}`,
   mcp: (server: McpServerRecord) => server.name,
   mail: (account: MailRecord) => account.id,
+  slackApp: () => "app",
+  slack: (account: SlackRecord) => account.id,
   piCredential: (credential: PiCredentialRecord) => credential.providerId,
   piModel: (model: PiModelRecord) => model.providerId,
   piFile: (file: PiFileRecord) => file.name,
@@ -217,6 +259,19 @@ const mailKind: Kind<MailRecord> = {
   name: "mail account",
   label: (account) => account.label,
   combine: (local, remote) => [remote, `mail account "${local.label}" was changed on both sides; kept the copy on GitHub`],
+};
+
+// The Slack app and its accounts are kept from GitHub when both sides changed them, as for mail.
+const slackAppKind: Kind<SlackAppRecord> = {
+  name: "Slack app",
+  label: () => "app",
+  combine: (local, remote) => [remote, "the Slack app was changed on both sides; kept the copy on GitHub"],
+};
+
+const slackKind: Kind<SlackRecord> = {
+  name: "Slack account",
+  label: (account) => account.userName,
+  combine: (local, remote) => [remote, `Slack account "${local.userName}" was changed on both sides; kept the copy on GitHub`],
 };
 
 // How one part is merged: its name for the sync log, a label for a record, and how two edits of one record are combined.
@@ -302,6 +357,8 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     room: Object.fromEntries(Object.entries(messages).filter(([, message]) => rooms[message.room] !== undefined)),
     mcp: mergeKind(mcpKind, base.mcp, local.mcp, remote.mcp, notes),
     mail: mergeKind(mailKind, base.mail, local.mail, remote.mail, notes),
+    slackApp: mergeKind(slackAppKind, base.slackApp, local.slackApp, remote.slackApp, notes),
+    slack: mergeKind(slackKind, base.slack, local.slack, remote.slack, notes),
     piCredentials: mergeKind(piCredentialKind, base.piCredentials, local.piCredentials, remote.piCredentials, notes),
     piModels: mergeKind(piModelKind, base.piModels, local.piModels, remote.piModels, notes),
     piFiles: mergeKind(piFileKind, base.piFiles, local.piFiles, remote.piFiles, notes),

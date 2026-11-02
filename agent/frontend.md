@@ -118,7 +118,8 @@ Shared pieces. Each is used by more than one feature.
 ## features/settings/
 | file | exports | job |
 | --- | --- | --- |
-| `SettingsDialog.tsx` | `SettingsDialog` | Tabs: Provider, Sync, and Update. Personas are managed from the agent card. |
+| `SettingsDialog.tsx` | `SettingsDialog` | Tabs: Provider, Slack, Sync, and Update. Personas are managed from the agent card. |
+| `SlackTab.tsx` | `SlackTab` | The Slack app (client ID and secret, with the redirect address to list), Connect with Slack, a user-token fallback, and the connected accounts with Disconnect. Re-reads the list for two minutes after a connect starts. |
 | `ProviderTab.tsx` | `ProviderTab` | Provider and service selects, capability badges, the sign-in panel, and the connected list. Polls every 2 s while open. |
 | `SignInPanel.tsx` | `SignInPanel` | Sign-in buttons, output, and the answer box. A link in the output is an Open link button that opens a new tab. |
 | `outputLinks.ts` | `splitLinks` | Splits one line of sign-in output into text and links. Tested by `outputLinks.test.mjs`. |
@@ -135,8 +136,13 @@ Shared pieces. Each is used by more than one feature.
 | `MailMessageDialog.tsx` | `MailMessageDialog` | One message in full: subject, sender, recipients, date, and text. |
 | `mailFormat.ts` | `formatMailDate`, `displaySender` | Pure. A time for today's messages, a day for older ones, and a sender's name. Tested by `mailFormat.test.mjs`. |
 
-## features/slack/ and features/whatsapp/
-- `SlackCard.tsx`: `SlackCard`, a shell showing "Not connected". No connection yet.
+## features/slack/
+| file | exports | job |
+| --- | --- | --- |
+| `SlackCard.tsx` | `SlackCard` | The Slack card. Pills for the connected accounts, a dropdown of the conversations, the newest 30 messages, and Refresh. It reads as the chosen user. Its text steps up when expanded. |
+| `useSlack.ts` | `useSlack`, `useConversations`, `useMessages` | The connection (load, save the app, start a connect, paste a token, disconnect), the conversations of an account, and one conversation's messages. Messages are read on choice and on Refresh, not on a timer, because Slack limits history reads. |
+
+## features/whatsapp/
 - `WhatsAppCard.tsx`: `WhatsAppCard`, a shell showing "Not connected". No connection yet.
 
 ## ui/SourceCard.tsx

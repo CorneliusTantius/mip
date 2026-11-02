@@ -322,3 +322,37 @@ export interface MailboxReply {
   mailbox: string;
   messages: MailHeader[];
 }
+
+// A connected Slack user, without its token. The same user in two workspaces is two accounts.
+export interface SlackAccount {
+  id: string;
+  teamId: string;
+  teamName: string;
+  userId: string;
+  userName: string;
+}
+
+// The Slack connection: the app's client ID (its secret is never returned), the redirect address the Slack app must list, the connected
+// accounts, and any part of slack.json that could not be read.
+export interface SlackState {
+  app: { clientId: string } | null;
+  redirectUri: string;
+  accounts: SlackAccount[];
+  problems: { account: string; error: string }[];
+}
+
+export type SlackKind = "channel" | "private" | "group" | "dm";
+
+export interface SlackConversation {
+  id: string;
+  name: string;
+  kind: SlackKind;
+}
+
+// One message, newest first in a conversation. time is an ISO date.
+export interface SlackMessage {
+  ts: string;
+  time: string;
+  author: string;
+  text: string;
+}
