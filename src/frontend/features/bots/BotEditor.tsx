@@ -105,7 +105,7 @@ export function BotEditor({
               title={color}
               aria-label={color}
               aria-pressed={draft.color === color}
-              className={`bot-dot size-7 bot-${color} ${draft.color === color ? "ring-2 ring-base-content ring-offset-2 ring-offset-base-200" : ""}`}
+              className={`bot-dot size-7 bot-${color}`}
               onClick={() => setDraft({ ...draft, color })}
             />
           ))}

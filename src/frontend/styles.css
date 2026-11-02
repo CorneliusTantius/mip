@@ -213,6 +213,13 @@ details[open] > .dropdown-content { animation: mip-pop 0.2s ease-out backwards; 
   background-color: var(--bot, var(--color-neutral));
 }
 
+/* The chosen color in a color picker: a ring with a gap. daisyUI drops box-shadow on a focused button with !important, so the focused
+   state is matched here too, with !important and a higher specificity. */
+.bot-dot[aria-pressed="true"],
+.bot-dot[aria-pressed="true"]:focus {
+  box-shadow: 0 0 0 2px var(--color-base-200), 0 0 0 4px var(--color-base-content) !important;
+}
+
 .bot-bubble {
   background-color: color-mix(in oklab, var(--bot, var(--color-neutral)) 24%, var(--color-neutral));
 }
