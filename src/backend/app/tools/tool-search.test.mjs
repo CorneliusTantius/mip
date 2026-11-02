@@ -18,7 +18,7 @@ try {
 
   // An agent run is offered the basic tools and the two search tools. Memory and skill_file are deferred, found with tool_search.
   assert.deepEqual(names(AGENT_TOOLS), ["bash", "read", "edit", "write", "skill_search", "skill_read", "ask_user", "tool_search", "tool_call"]);
-  assert.deepEqual(names(AGENT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file"]);
+  assert.deepEqual(names(AGENT_DEFERRED), ["memory_search", "memory_read", "memory_edit", "skill_file", "spending_upsert"]);
   // A bot is offered the memory tools, the skill tools, the room search, and the search tools directly. Its deferred tools are the MCP tools, none here.
   assert.deepEqual(names(BOT_TOOLS), [
     "memory_search",

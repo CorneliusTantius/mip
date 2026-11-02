@@ -11,23 +11,23 @@ const root = mkdtempSync(join(tmpdir(), "mip-spending-"));
 process.env.MIP_HOME = join(root, "mip-home");
 
 try {
-  const { addSpendingEntry, allSpending } = await import(`${DIST}app/spending.js`);
-  const rejects = (input, message) => assert.throws(() => addSpendingEntry(input), (err) => err.status === 400 && err.message === message);
+  const { saveSpendingEntry, allSpending } = await import(`${DIST}app/spending.js`);
+  const rejects = (input, message) => assert.throws(() => saveSpendingEntry(input), (err) => err.status === 400 && err.message === message);
 
   // Money in and out, each with a category and an amount.
-  const salary = addSpendingEntry({ kind: "income", category: "Salary", amount: 5000000 });
+  const salary = saveSpendingEntry({ kind: "income", category: "Salary", amount: 5000000 });
   assert.equal(salary.kind, "income");
   assert.equal(salary.amount, 5000000);
 
   // A category typed in another case keeps the spelling already used, so the totals do not split.
-  addSpendingEntry({ kind: "expense", category: "Food", amount: 25000 });
-  const lower = addSpendingEntry({ kind: "expense", category: " food ", amount: 15000 });
+  saveSpendingEntry({ kind: "expense", category: "Food", amount: 25000 });
+  const lower = saveSpendingEntry({ kind: "expense", category: " food ", amount: 15000 });
   assert.equal(lower.category, "Food");
 
   // The description is optional: it is trimmed, and an entry without one keeps an empty description.
-  const gas = addSpendingEntry({ kind: "expense", category: "Gas", amount: 1, description: "  full tank  " });
+  const gas = saveSpendingEntry({ kind: "expense", category: "Gas", amount: 1, description: "  full tank  " });
   assert.equal(gas.description, "full tank");
-  const plain = addSpendingEntry({ kind: "expense", category: "Gas", amount: 2 });
+  const plain = saveSpendingEntry({ kind: "expense", category: "Gas", amount: 2 });
   assert.equal(plain.description, "");
 
   // Refused: a kind other than income or expense, a missing or long category, and an amount that is not a number above 0.

@@ -13,7 +13,7 @@ import { roomSearchTool } from "./room.js";
 import { toolCallTool, toolSearchTool } from "./search.js";
 import { skillFileTool, skillReadTool, skillSearchTool } from "./skills.js";
 import { SOCIAL_TOOLS } from "./social.js";
-import { spendingListTool } from "./financial.js";
+import { spendingListTool, spendingUpsertTool } from "./financial.js";
 import { errorMessage } from "../errors.js";
 import { activeRunId, startRun } from "../runs.js";
 import { fail, ok } from "./result.js";
@@ -122,13 +122,15 @@ const agentAsk = guarded(agentAskTool);
 const SOCIAL_DEFERRED = SOCIAL_TOOLS.map(guarded);
 // The spending entries, read-only. Bots defer it, so they find it with tool_search.
 const FINANCIAL_DEFERRED = [spendingListTool].map(guarded);
+// Agents defer the one tool that writes a spending entry, so they find it with tool_search.
+const AGENT_FINANCIAL = [spendingUpsertTool].map(guarded);
 
 // The one registry of tool definitions. Each kind of run takes its lists from here, so a definition exists in one place.
-export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS, roomSearch, agentsList, agentAsk, ...SOCIAL_DEFERRED, ...FINANCIAL_DEFERRED];
+export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS, roomSearch, agentsList, agentAsk, ...SOCIAL_DEFERRED, ...FINANCIAL_DEFERRED, ...AGENT_FINANCIAL];
 
 // Agents (the agents) are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
 export const AGENT_TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...SEARCH_TOOLS];
-export const AGENT_DEFERRED: ToolSpec[] = DEFERRED_TOOLS;
+export const AGENT_DEFERRED: ToolSpec[] = [...DEFERRED_TOOLS, ...AGENT_FINANCIAL];
 // The deferred tools of one agent run: mip's own, and the tools of the MCP servers that are connected right now.
 // A run takes this list when it starts, so tools that connect later are seen by the next run.
 export function agentDeferredTools(): ToolSpec[] {
@@ -192,7 +194,7 @@ export function describeTools() {
     guide: tool.guide,
     inputSchema: tool.inputSchema,
     load:
-      DEFERRED_TOOLS.includes(tool) || external.includes(tool) || SOCIAL_DEFERRED.includes(tool) || FINANCIAL_DEFERRED.includes(tool)
+      DEFERRED_TOOLS.includes(tool) || external.includes(tool) || SOCIAL_DEFERRED.includes(tool) || FINANCIAL_DEFERRED.includes(tool) || AGENT_FINANCIAL.includes(tool)
         ? "deferred"
         : SEARCH_TOOLS.includes(tool)
           ? "search"

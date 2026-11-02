@@ -32,6 +32,11 @@ function toEntry(row: Row): SpendingEntry {
   return { id: row.id, kind: row.kind, category: row.category, amount: row.amount, description: row.description, createdAt: row.created_at };
 }
 
+export function getSpendingEntry(id: string): SpendingEntry | undefined {
+  const row = db.prepare("SELECT * FROM spending_entries WHERE id = ?").get(id) as Row | undefined;
+  return row ? toEntry(row) : undefined;
+}
+
 // Removes an entry. Sync does this when the copy on GitHub no longer has it.
 export function removeSpendingEntry(id: string): boolean {
   return db.prepare("DELETE FROM spending_entries WHERE id = ?").run(id).changes > 0;
