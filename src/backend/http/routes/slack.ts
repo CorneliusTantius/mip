@@ -22,6 +22,11 @@ export const slackRoutes: Route[] = [
     return created(await connectWithToken(String(body.token ?? "")));
   }),
   del("/api/slack/accounts/:id", ({ params }) => ok(deleteSlackAccount(params.id))),
-  get("/api/slack/accounts/:id/conversations", async ({ params }) => ok(await listConversations(params.id))),
-  get("/api/slack/accounts/:id/conversations/:channel/messages", async ({ params }) => ok(await listMessages(params.id, params.channel))),
+  // ?refresh=1 asks Slack again instead of using the cached answer.
+  get("/api/slack/accounts/:id/conversations", async ({ params, url }) =>
+    ok(await listConversations(params.id, url.searchParams.get("refresh") === "1")),
+  ),
+  get("/api/slack/accounts/:id/conversations/:channel/messages", async ({ params, url }) =>
+    ok(await listMessages(params.id, params.channel, url.searchParams.get("refresh") === "1")),
+  ),
 ];

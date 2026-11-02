@@ -13,6 +13,8 @@ export const MCP_CONFIG_FILE = join(DATA_DIR, "mcp.json");
 export const MAIL_CONFIG_FILE = join(DATA_DIR, "mail.json");
 // The Slack app's client ID and secret, and the connected Slack users with their user tokens. Sync carries them to the private dotmip repo.
 export const SLACK_CONFIG_FILE = join(DATA_DIR, "slack.json");
+// Conversations, messages, and names read from Slack, kept so a reload does not call Slack again. Sync does not carry it.
+export const SLACK_CACHE_FILE = join(DATA_DIR, "slack-cache.json");
 export const SESSIONS_DIR = join(MIP_HOME, "sessions");
 // Master clones of repositories. Each agent gets its own copy in its workspace.
 export const REPOS_DIR = join(MIP_HOME, "repos");

@@ -153,8 +153,8 @@ The Slack app and the connected users, in `data/slack.json`. Tokens and the clie
 | GET | /api/slack/oauth/callback | HTML | Slack's redirect lands here (not under `/api` JSON). Exchanges the code for the user's token and saves the account | 400 a refused sign-in, or an unknown or used state |
 | POST | /api/slack/token | 201 | the account, without its token. Body `{token}`, which must start with `xoxp-` | 400 not a user token; 401 Slack refuses it; 415 not JSON |
 | DELETE | /api/slack/accounts/:id | 200 | the same shape as GET | 404 no such account |
-| GET | /api/slack/accounts/:id/conversations | 200 | `{id, name, kind: "channel" \| "private" \| "group" \| "dm"}[]`, channels first | 404 no such account; 401 the connection is no longer accepted; 403 a missing scope; 429 rate limited |
-| GET | /api/slack/accounts/:id/conversations/:channel/messages | 200 | `{ts, time, author, text}[]`, the newest 30, newest first | 400 not a conversation id; 404 no such account or no access to the conversation; 429 rate limited |
+| GET | /api/slack/accounts/:id/conversations | 200 | `{id, name, kind: "channel" \| "private" \| "group" \| "dm"}[]`, channels first. Served from the cache unless `?refresh=1` | 404 no such account; 401 the connection is no longer accepted; 403 a missing scope; 429 rate limited |
+| GET | /api/slack/accounts/:id/conversations/:channel/messages | 200 | `{ts, time, author, text}[]`, the newest 30, newest first. Served from the cache for two minutes unless `?refresh=1` | 400 not a conversation id; 404 no such account or no access to the conversation; 429 rate limited |
 
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |

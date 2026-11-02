@@ -135,7 +135,7 @@ The Slack card reads a Slack workspace as you, through a Slack app you create fo
 3. Under **Basic Information**, copy the Client ID and Client Secret into the dialog, and press **Save app**.
 4. Press **Sign in with Slack**. Approve in the tab that opens. You can also paste a user token (it starts with `xoxp-`) under **Connect with a user token instead**.
 
-The card lists your conversations and shows the newest 30 messages of the one you pick. Press **Refresh** to read again. It reads only; sending is not built yet. Slack limits how often history can be read for apps that are not on its Marketplace, so the card does not refresh on a timer. The app's client ID and secret, and each user token, are kept in `data/slack.json`, and sync carries them to your private dotmip repo.
+The card lists your conversations and shows the newest 30 messages of the one you pick. A reload shows the kept answers, and **Refresh** asks Slack again. It reads only; sending is not built yet. Slack limits how often history can be read for apps that are not on its Marketplace, so the card does not refresh on a timer. The app's client ID and secret, and each user token, are kept in `data/slack.json`, and sync carries them to your private dotmip repo.
 
 ## MCP servers
 
@@ -264,6 +264,7 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
   data/mcp.json         MCP servers to connect to, tokens included. Sync carries them to the dotmip repo
   data/mail.json        Mail accounts and their app passwords. Sync carries them to the dotmip repo
   data/slack.json       The Slack app's secret and connected user tokens. Sync carries them to the dotmip repo
+  data/slack-cache.json Slack conversations, messages, and names, kept so a reload does not call Slack. Not synced
   repos/<name>/         Master clones from the Repositories card
   sessions/claude/      Claude CLI config, login, and transcripts
   sessions/pi/          Pi session files

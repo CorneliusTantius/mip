@@ -1,4 +1,5 @@
 import { AppError } from "../errors.js";
+import { forgetCache } from "./cache.js";
 import { type SlackAccountView, type SlackConfigProblem, readSlackConfig, removeSlackAccount, saveSlackApp, viewOf } from "./config.js";
 import { SLACK_USER_SCOPES, slackRedirectUri } from "./connect.js";
 
@@ -61,6 +62,7 @@ export function saveSlackAppInput(input: unknown): SlackReply {
 // Disconnects an account. Its token is removed from slack.json; nothing is revoked in Slack.
 export function deleteSlackAccount(id: string): SlackReply {
   removeSlackAccount(id);
+  forgetCache([`conversations:${id}`, `messages:${id}:`]);
   return slackReply();
 }
 

@@ -1,10 +1,11 @@
 import { AppError } from "../errors.js";
+import { cached } from "./cache.js";
 import { slackCall } from "./api.js";
 import { type SlackAccount, readSlackConfig } from "./config.js";
-import { userNameOf } from "./connect.js";
 
-// Reading as a connected user: the conversations the user is in, and the newest messages of one. Names of people are looked up once per
-// request. Slack limits how often history can be read for apps outside its Marketplace, so a refused read says so.
+// Reading as a connected user: the conversations the user is in, and the newest messages of one. Answers are cached, so a reload does not call
+// Slack again. Force refreshes a read. Names come from one users.list pass per workspace, not a call per person. Slack limits how often
+// history can be read for apps outside its Marketplace, so a refused read says so.
 
 export type SlackKind = "channel" | "private" | "group" | "dm";
 
@@ -22,55 +23,84 @@ export interface SlackMessage {
 }
 
 const CHANNEL_ID = /^[A-Z0-9]{1,32}$/;
-// The most conversations listed, and the most messages read, per call.
 const MAX_CONVERSATIONS = 200;
 const MESSAGES_PER_READ = 30;
+// Pages of users.list read for names, 200 people each. Past this, the rest show as ids.
+// shortcut: 50 pages of 200 people, so a bigger workspace shows some names as ids; raise it when that matters.
+const MAX_USER_PAGES = 50;
+const CONVERSATIONS_TTL = 10 * 60_000;
+const MESSAGES_TTL = 2 * 60_000;
+const NAMES_TTL = 24 * 60 * 60_000;
 
 // The conversations of an account, channels first, then direct messages.
-export async function listConversations(accountId: string): Promise<SlackConversation[]> {
+export function listConversations(accountId: string, force = false): Promise<SlackConversation[]> {
   const account = accountOf(accountId);
-  const reply = await slackCall<{
-    channels: { id: string; name?: string; is_channel?: boolean; is_group?: boolean; is_im?: boolean; is_mpim?: boolean; user?: string }[];
-  }>("users.conversations", account.token, {
-    types: "public_channel,private_channel,mpim,im",
-    exclude_archived: true,
-    limit: MAX_CONVERSATIONS,
-  });
-  const names = new Map<string, string>();
-  const conversations: SlackConversation[] = [];
-  for (const channel of reply.channels) {
-    if (channel.is_im) {
-      const user = channel.user ?? channel.id;
-      if (!names.has(user)) names.set(user, await userNameOf(account.token, user));
-      conversations.push({ id: channel.id, name: names.get(user) ?? user, kind: "dm" });
-    } else if (channel.is_mpim) {
-      conversations.push({ id: channel.id, name: channel.name ?? channel.id, kind: "group" });
-    } else {
-      conversations.push({ id: channel.id, name: channel.name ?? channel.id, kind: channel.is_group ? "private" : "channel" });
-    }
-  }
-  return conversations.sort((a, b) => rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name));
+  return cached(
+    `conversations:${account.id}`,
+    CONVERSATIONS_TTL,
+    async () => {
+      const reply = await slackCall<{
+        channels: { id: string; name?: string; is_group?: boolean; is_im?: boolean; is_mpim?: boolean; user?: string }[];
+      }>("users.conversations", account.token, {
+        types: "public_channel,private_channel,mpim,im",
+        exclude_archived: true,
+        limit: MAX_CONVERSATIONS,
+      });
+      const names = await namesOf(account);
+      const conversations = reply.channels.map((channel): SlackConversation => {
+        if (channel.is_im) return { id: channel.id, name: names[channel.user ?? ""] ?? channel.user ?? channel.id, kind: "dm" };
+        if (channel.is_mpim) return { id: channel.id, name: channel.name ?? channel.id, kind: "group" };
+        return { id: channel.id, name: channel.name ?? channel.id, kind: channel.is_group ? "private" : "channel" };
+      });
+      return conversations.sort((a, b) => rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name));
+    },
+    force,
+  );
 }
 
 // The newest messages of one conversation, newest first. A message's author is the person's name, or the bot's id for a bot message.
-export async function listMessages(accountId: string, channel: string): Promise<SlackMessage[]> {
+export function listMessages(accountId: string, channel: string, force = false): Promise<SlackMessage[]> {
   const account = accountOf(accountId);
   if (!CHANNEL_ID.test(channel)) throw new AppError(400, "That is not a conversation id.");
-  const reply = await slackCall<{
-    messages: { ts: string; user?: string; bot_id?: string; username?: string; text?: string }[];
-  }>("conversations.history", account.token, { channel, limit: MESSAGES_PER_READ });
+  return cached(
+    `messages:${account.id}:${channel}`,
+    MESSAGES_TTL,
+    async () => {
+      const reply = await slackCall<{
+        messages: { ts: string; user?: string; bot_id?: string; username?: string; text?: string }[];
+      }>("conversations.history", account.token, { channel, limit: MESSAGES_PER_READ });
+      const names = await namesOf(account);
+      return reply.messages.map((message) => ({
+        ts: message.ts,
+        time: timeOf(message.ts),
+        author: message.user ? (names[message.user] ?? message.user) : (message.username ?? message.bot_id ?? "Unknown"),
+        text: message.text ?? "",
+      }));
+    },
+    force,
+  );
+}
 
-  const names = new Map<string, string>();
-  const messages: SlackMessage[] = [];
-  for (const message of reply.messages) {
-    let author = message.username ?? message.bot_id ?? "Unknown";
-    if (message.user) {
-      if (!names.has(message.user)) names.set(message.user, await userNameOf(account.token, message.user));
-      author = names.get(message.user) ?? message.user;
+// The display names of a workspace's people, by user id, from users.list. Cached for a day.
+function namesOf(account: SlackAccount): Promise<Record<string, string>> {
+  return cached(`users:${account.teamId}`, NAMES_TTL, () => allNames(account.token));
+}
+
+async function allNames(token: string): Promise<Record<string, string>> {
+  const names: Record<string, string> = {};
+  let cursor: string | undefined;
+  for (let page = 0; page < MAX_USER_PAGES; page++) {
+    const reply = await slackCall<{
+      members: { id: string; name?: string; real_name?: string; profile?: { display_name?: string } }[];
+      response_metadata?: { next_cursor?: string };
+    }>("users.list", token, { limit: 200, cursor });
+    for (const member of reply.members) {
+      names[member.id] = member.profile?.display_name || member.real_name || member.name || member.id;
     }
-    messages.push({ ts: message.ts, time: timeOf(message.ts), author, text: message.text ?? "" });
+    cursor = reply.response_metadata?.next_cursor || undefined;
+    if (!cursor) break;
   }
-  return messages;
+  return names;
 }
 
 function accountOf(id: string): SlackAccount {

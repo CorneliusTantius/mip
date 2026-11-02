@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
 import type { SlackConversation, SlackMessage, SlackState } from "../../api/types";
 
@@ -47,18 +47,27 @@ export function useSlack() {
   return { state, error, reload: load, saveApp, startConnect, connectWithToken, remove };
 }
 
-// The conversations of one account. Slack limits how often a read is allowed, so this loads once per account and waits for Refresh.
+// The conversations of one account. The server keeps its answer, so a reload is quick. Refresh asks Slack again.
 export function useConversations(accountId: string | undefined) {
   const [list, setList] = useState<SlackConversation[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const latest = useRef(0);
 
-  async function load() {
+  async function load(force = false) {
     if (!accountId) return;
+    const request = ++latest.current;
+    setLoading(true);
     try {
-      setList(await api.get<SlackConversation[]>(`/api/slack/accounts/${encodeURIComponent(accountId)}/conversations`));
+      const path = `/api/slack/accounts/${encodeURIComponent(accountId)}/conversations${force ? "?refresh=1" : ""}`;
+      const reply = await api.get<SlackConversation[]>(path);
+      if (request !== latest.current) return;
+      setList(reply);
       setError(undefined);
     } catch (err) {
-      setError(errorText(err));
+      if (request === latest.current) setError(errorText(err));
+    } finally {
+      if (request === latest.current) setLoading(false);
     }
   }
 
@@ -67,33 +76,37 @@ export function useConversations(accountId: string | undefined) {
     void load();
   }, [accountId]);
 
-  return { list, error, reload: load };
+  return { list, loading, error, reload: () => load(true) };
 }
 
-// The newest messages of one conversation. Read when the conversation is chosen, and again on Refresh, not on a timer, since Slack limits
-// how often history can be read.
+// The newest messages of one conversation. The server keeps its answer for a couple of minutes, and Refresh asks Slack again.
 export function useMessages(accountId: string | undefined, channelId: string | undefined) {
   const [list, setList] = useState<SlackMessage[]>([]);
-  const [checkedAt, setCheckedAt] = useState<Date>();
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const latest = useRef(0);
 
-  async function load() {
+  async function load(force = false) {
     if (!accountId || !channelId) return;
+    const request = ++latest.current;
+    setLoading(true);
     try {
       const path = `/api/slack/accounts/${encodeURIComponent(accountId)}/conversations/${encodeURIComponent(channelId)}/messages`;
-      setList(await api.get<SlackMessage[]>(path));
-      setCheckedAt(new Date());
+      const reply = await api.get<SlackMessage[]>(`${path}${force ? "?refresh=1" : ""}`);
+      if (request !== latest.current) return;
+      setList(reply);
       setError(undefined);
     } catch (err) {
-      setError(errorText(err));
+      if (request === latest.current) setError(errorText(err));
+    } finally {
+      if (request === latest.current) setLoading(false);
     }
   }
 
   useEffect(() => {
     setList([]);
-    setCheckedAt(undefined);
     void load();
   }, [accountId, channelId]);
 
-  return { list, checkedAt, error, reload: load };
+  return { list, loading, error, reload: () => load(true) };
 }

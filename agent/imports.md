@@ -54,11 +54,13 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/skills/registry.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/skills/format.ts | src/backend/app/runs.ts, src/backend/app/skills/create.ts, src/backend/app/skills/imports.ts, src/backend/app/tools/skills.ts, src/backend/http/routes/skills.ts |
 | src/backend/app/skills/skills.test.mjs | - | - |
 | src/backend/app/slack/api.ts | src/backend/app/errors.ts | src/backend/app/slack/connect.ts, src/backend/app/slack/read.ts |
+| src/backend/app/slack/cache.test.mjs | - | - |
+| src/backend/app/slack/cache.ts | src/backend/storage/paths.ts | src/backend/app/slack/read.ts, src/backend/app/slack/slack.ts |
 | src/backend/app/slack/config.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/slack/connect.ts, src/backend/app/slack/read.ts, src/backend/app/slack/slack.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/snapshot.ts |
-| src/backend/app/slack/connect.ts | src/backend/app/config.ts, src/backend/app/errors.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts | src/backend/app/slack/read.ts, src/backend/app/slack/slack.ts, src/backend/http/routes/slack.ts, src/backend/http/server.ts, src/backend/http/slack-oauth.ts |
-| src/backend/app/slack/read.ts | src/backend/app/errors.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts, src/backend/app/slack/connect.ts | src/backend/http/routes/slack.ts |
+| src/backend/app/slack/connect.ts | src/backend/app/config.ts, src/backend/app/errors.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts | src/backend/app/slack/slack.ts, src/backend/http/routes/slack.ts, src/backend/http/server.ts, src/backend/http/slack-oauth.ts |
+| src/backend/app/slack/read.ts | src/backend/app/errors.ts, src/backend/app/slack/cache.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts | src/backend/http/routes/slack.ts |
 | src/backend/app/slack/slack.test.mjs | - | - |
-| src/backend/app/slack/slack.ts | src/backend/app/errors.ts, src/backend/app/slack/config.ts, src/backend/app/slack/connect.ts | src/backend/http/routes/slack.ts |
+| src/backend/app/slack/slack.ts | src/backend/app/errors.ts, src/backend/app/slack/cache.ts, src/backend/app/slack/config.ts, src/backend/app/slack/connect.ts | src/backend/http/routes/slack.ts |
 | src/backend/app/sync/engine.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/sync/github.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts | src/backend/http/routes/sync.ts |
 | src/backend/app/sync/github.test.mjs | - | - |
 | src/backend/app/sync/github.ts | src/backend/app/errors.ts | src/backend/app/sync/engine.ts |
@@ -116,7 +118,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/storage/db.test.mjs | - | - |
 | src/backend/storage/db.ts | src/backend/storage/bot-colors.ts, src/backend/storage/paths.ts | src/backend/storage/agents.ts, src/backend/storage/bots.ts, src/backend/storage/notes.ts, src/backend/storage/personas.ts, src/backend/storage/pi.ts, src/backend/storage/repos.ts, src/backend/storage/room.ts, src/backend/storage/rooms.ts, src/backend/storage/runs.ts, src/backend/storage/sync.ts |
 | src/backend/storage/notes.ts | src/backend/storage/db.ts | src/backend/app/memory.ts, src/backend/storage/sync.ts |
-| src/backend/storage/paths.ts | - | src/backend/app/installation.ts, src/backend/app/mail/accounts.ts, src/backend/app/mcp/config.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/skills/imports.ts, src/backend/app/skills/registry.ts, src/backend/app/slack/config.ts, src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/system.ts, src/backend/app/tools/workspace.ts, src/backend/storage/db.ts, src/backend/storage/pi.ts |
+| src/backend/storage/paths.ts | - | src/backend/app/installation.ts, src/backend/app/mail/accounts.ts, src/backend/app/mcp/config.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/repos.ts, src/backend/app/skills/imports.ts, src/backend/app/skills/registry.ts, src/backend/app/slack/cache.ts, src/backend/app/slack/config.ts, src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/system.ts, src/backend/app/tools/workspace.ts, src/backend/storage/db.ts, src/backend/storage/pi.ts |
 | src/backend/storage/personas.ts | src/backend/storage/db.ts | src/backend/app/personas.ts, src/backend/storage/sync.ts |
 | src/backend/storage/pi.ts | src/backend/storage/db.ts, src/backend/storage/paths.ts | src/backend/app/pi/store.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts |
 | src/backend/storage/repos.ts | src/backend/storage/db.ts | src/backend/app/repos.ts |

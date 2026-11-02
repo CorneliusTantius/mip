@@ -71,8 +71,12 @@ function SlackBody() {
             <button className="btn btn-ghost btn-sm" onClick={() => setDialogOpen(true)}>
               Accounts
             </button>
-            {conversation && (
-              <button className="btn btn-ghost btn-sm" onClick={() => void messages.reload()}>
+            {account && (
+              <button
+                className="btn btn-ghost btn-sm"
+                disabled={conversations.loading || messages.loading}
+                onClick={() => void Promise.all([conversations.reload(), messages.reload()])}
+              >
                 Refresh
               </button>
             )}
@@ -111,6 +115,9 @@ function SlackBody() {
             </div>
 
             <ErrorAlert message={conversations.error} />
+            {conversations.list.length === 0 && conversations.loading && (
+              <div className="py-2 text-center text-sm opacity-60">Loading conversations…</div>
+            )}
             {conversations.list.length > 0 && (
               <select
                 className={`select w-full ${expanded ? "select-sm" : "select-xs"}`}
@@ -127,10 +134,10 @@ function SlackBody() {
             )}
 
             <ErrorAlert message={messages.error} />
-            <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <ul className="flex min-h-0 flex-1 flex-col divide-y divide-base-300/40 overflow-y-auto">
               {messages.list.map((message) => (
-                <li key={message.ts} className={`flex flex-col px-2 py-1.5 ${text}`}>
-                  <span className="flex min-w-0 justify-between gap-2">
+                <li key={message.ts} className={`flex flex-col gap-0.5 py-1.5 ${text}`}>
+                  <span className="flex min-w-0 items-baseline justify-between gap-2">
                     <span className="truncate font-semibold">{message.author}</span>
                     <span className="shrink-0 text-xs opacity-60">{formatTime(message.time)}</span>
                   </span>
@@ -139,12 +146,10 @@ function SlackBody() {
               ))}
             </ul>
 
-            {conversation && messages.list.length === 0 && !messages.error && (
+            {messages.loading && messages.list.length === 0 && <div className="py-2 text-center text-sm opacity-60">Loading messages…</div>}
+            {conversation && !messages.loading && messages.list.length === 0 && !messages.error && (
               <div className="py-4 text-center text-sm opacity-60">No messages in this conversation.</div>
             )}
-            <div className="text-xs opacity-60">
-              {messages.checkedAt ? `Read at ${formatTime(messages.checkedAt.toISOString())}` : "Reading…"}
-            </div>
           </>
         )}
       </CardBody>
