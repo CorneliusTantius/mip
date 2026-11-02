@@ -49,6 +49,7 @@ Docs:
     node src/backend/app/bots.test.mjs
     node src/backend/app/slack/slack.test.mjs
     node src/backend/app/slack/cache.test.mjs
+    node src/frontend/features/slack/mrkdwn.test.mjs
     node src/backend/app/installation.test.mjs
     node src/backend/adapters/pi-signin.test.mjs
     node src/frontend/features/bots/mentions.test.mjs

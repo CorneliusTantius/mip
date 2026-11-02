@@ -74,11 +74,16 @@ export function listMessages(accountId: string, channel: string, force = false):
         ts: message.ts,
         time: timeOf(message.ts),
         author: message.user ? (names[message.user] ?? message.user) : (message.username ?? message.bot_id ?? "Unknown"),
-        text: message.text ?? "",
+        text: resolveMentions(message.text ?? "", names),
       }));
     },
     force,
   );
+}
+
+// Slack writes a person as <@U123>, which becomes @name. The rest of Slack's markup is read by the client.
+export function resolveMentions(text: string, names: Record<string, string>): string {
+  return text.replace(/<@([UW][A-Z0-9]+)(?:\|[^>]*)?>/g, (_, id: string) => `@${names[id] ?? id}`);
 }
 
 // The display names of a workspace's people, by user id, from users.list. Cached for a day.

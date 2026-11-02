@@ -6,6 +6,7 @@ import { ErrorAlert } from "../../ui/ErrorAlert";
 import { usePolling } from "../../ui/hooks";
 import { MESSAGING_CARD_HEIGHT } from "../../ui/SourceCard";
 import { SlackDialog } from "./SlackDialog";
+import { SlackText } from "./SlackText";
 import { useConversations, useMessages, useSlack } from "./useSlack";
 
 // How long, after a sign-in starts, the account list is re-read while the browser finishes the sign-in on Slack's page.
@@ -141,7 +142,7 @@ function SlackBody() {
                     <span className="truncate font-semibold">{message.author}</span>
                     <span className="shrink-0 text-xs opacity-60">{formatTime(message.time)}</span>
                   </span>
-                  <span className="whitespace-pre-wrap break-words opacity-80">{message.text || "(no text)"}</span>
+                  <div className="opacity-80">{message.text ? <SlackText text={message.text} /> : "(no text)"}</div>
                 </li>
               ))}
             </ul>

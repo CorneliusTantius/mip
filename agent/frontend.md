@@ -141,6 +141,8 @@ Shared pieces. Each is used by more than one feature.
 | `SlackCard.tsx` | `SlackCard` | The Slack card. Accounts opens `SlackDialog`. With the app saved and no account, a Sign in with Slack button starts the OAuth sign-in and re-reads the accounts for two minutes. With accounts, pills for them, a dropdown of the conversations, the newest 30 messages, and Refresh. It reads as the chosen user. Its text steps up when expanded. |
 | `SlackDialog.tsx` | `SlackDialog` | The Slack setup and accounts, as a modal from the card: the app's client ID and secret, the redirect address to list, Sign in with Slack, a user-token fallback, and the connected accounts with Disconnect (a `ConfirmDialog` beside it). The card passes in the sign-in, so it keeps re-reading while the approval is open. |
 | `useSlack.ts` | `useSlack`, `useConversations`, `useMessages` | The connection (load, save the app, start a connect, paste a token, disconnect), the conversations of an account, and one conversation's messages. Messages are read on choice and on Refresh, not on a timer, because Slack limits history reads. |
+| `mrkdwn.ts` | `parseBlocks`, `parseInline` | Pure. Reads Slack's text format: quotes, code blocks, bold, italic, strike, code, http and mailto links, and mentions (`<!here>`, `<#C…|name>`). Escapes are undone after the markup is read. Tested by `mrkdwn.test.mjs`. |
+| `SlackText.tsx` | `SlackText` | Draws a message from `mrkdwn.ts` as elements, never as HTML. User mentions arrive already as `@name` from the server (`resolveMentions`). |
 
 ## features/whatsapp/
 - `WhatsAppCard.tsx`: `WhatsAppCard`, the same shell as the mail and Slack cards (`MESSAGING_CARD_HEIGHT`, `CardBody`, `ExpandButton`), with a "WhatsApp is not connected yet." line. No connection yet.

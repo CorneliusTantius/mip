@@ -206,6 +206,7 @@
 | src/backend/app/slack/read.ts | 18 | interface | SlackMessage |
 | src/backend/app/slack/read.ts | 36 | function | listConversations |
 | src/backend/app/slack/read.ts | 62 | function | listMessages |
+| src/backend/app/slack/read.ts | 85 | function | resolveMentions |
 | src/backend/app/slack/slack.ts | 9 | interface | SlackReply |
 | src/backend/app/slack/slack.ts | 20 | function | slackReply |
 | src/backend/app/slack/slack.ts | 52 | function | saveSlackAppInput |
@@ -590,8 +591,13 @@
 | src/frontend/features/skills/ImportSkillDialog.tsx | 8 | function | ImportSkillDialog |
 | src/frontend/features/skills/SkillsCard.tsx | 12 | function | SkillsCard |
 | src/frontend/features/skills/useSkills.ts | 6 | function | useSkills |
-| src/frontend/features/slack/SlackCard.tsx | 17 | function | SlackCard |
+| src/frontend/features/slack/SlackCard.tsx | 18 | function | SlackCard |
 | src/frontend/features/slack/SlackDialog.tsx | 12 | function | SlackDialog |
+| src/frontend/features/slack/SlackText.tsx | 5 | function | SlackText |
+| src/frontend/features/slack/mrkdwn.ts | 5 | type | Inline |
+| src/frontend/features/slack/mrkdwn.ts | 12 | type | Block |
+| src/frontend/features/slack/mrkdwn.ts | 25 | function | parseBlocks |
+| src/frontend/features/slack/mrkdwn.ts | 51 | function | parseInline |
 | src/frontend/features/slack/useSlack.ts | 7 | function | useSlack |
 | src/frontend/features/slack/useSlack.ts | 51 | function | useConversations |
 | src/frontend/features/slack/useSlack.ts | 83 | function | useMessages |
