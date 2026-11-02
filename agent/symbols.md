@@ -574,11 +574,10 @@
 | src/frontend/features/repos/RepoRow.tsx | 22 | function | RepoRow |
 | src/frontend/features/repos/RepositoriesCard.tsx | 16 | function | RepositoriesCard |
 | src/frontend/features/settings/ProviderTab.tsx | 14 | function | ProviderTab |
-| src/frontend/features/settings/SettingsDialog.tsx | 10 | function | SettingsDialog |
+| src/frontend/features/settings/SettingsDialog.tsx | 9 | function | SettingsDialog |
 | src/frontend/features/settings/SignInPanel.tsx | 10 | function | runSignInAction |
 | src/frontend/features/settings/SignInPanel.tsx | 15 | function | confirmSignOut |
 | src/frontend/features/settings/SignInPanel.tsx | 20 | function | SignInPanel |
-| src/frontend/features/settings/SlackTab.tsx | 15 | function | SlackTab |
 | src/frontend/features/settings/SyncTab.tsx | 6 | function | SyncTab |
 | src/frontend/features/settings/UpdateTab.tsx | 18 | function | UpdateTab |
 | src/frontend/features/settings/outputLinks.ts | 5 | type | OutputPiece |
@@ -589,6 +588,7 @@
 | src/frontend/features/skills/SkillsCard.tsx | 12 | function | SkillsCard |
 | src/frontend/features/skills/useSkills.ts | 6 | function | useSkills |
 | src/frontend/features/slack/SlackCard.tsx | 17 | function | SlackCard |
+| src/frontend/features/slack/SlackDialog.tsx | 12 | function | SlackDialog |
 | src/frontend/features/slack/useSlack.ts | 7 | function | useSlack |
 | src/frontend/features/slack/useSlack.ts | 50 | function | useConversations |
 | src/frontend/features/slack/useSlack.ts | 74 | function | useMessages |

@@ -38,7 +38,7 @@ function slackError(code: string | undefined): AppError {
     case "token_revoked":
     case "token_expired":
     case "account_inactive":
-      return new AppError(401, "Slack no longer accepts this connection. Connect the account again in Settings → Slack.");
+      return new AppError(401, "Slack no longer accepts this connection. Connect the account again from the Slack card's Accounts button.");
     case "missing_scope":
       return new AppError(403, "This connection lacks a Slack permission this needs. Connect the account again to grant it.");
     case "not_in_channel":

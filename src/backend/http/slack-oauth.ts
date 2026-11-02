@@ -3,7 +3,7 @@ import { AppError, errorMessage } from "../app/errors.js";
 import { completeConnect } from "../app/slack/connect.js";
 import { page } from "./page.js";
 
-// The page the browser lands on when Slack sends the user back. It finishes the connection that Settings started and says what happened.
+// The page the browser lands on when Slack sends the user back. It finishes the connection that the Slack card started and says what happened.
 export async function handleSlackCallback(url: URL, res: ServerResponse): Promise<void> {
   const refused = url.searchParams.get("error_description") ?? url.searchParams.get("error");
   const state = url.searchParams.get("state") ?? "";

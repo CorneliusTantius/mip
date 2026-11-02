@@ -2,7 +2,7 @@ import { AppError } from "../errors.js";
 import { type SlackAccountView, type SlackConfigProblem, readSlackConfig, removeSlackAccount, saveSlackApp, viewOf } from "./config.js";
 import { slackRedirectUri } from "./connect.js";
 
-// The Slack connection as the card and Settings use it: the app's client ID (never its secret), the connected accounts, and any part of
+// The Slack connection as the card and its dialog use it: the app's client ID (never its secret), the connected accounts, and any part of
 // slack.json that could not be read.
 
 export interface SlackReply {

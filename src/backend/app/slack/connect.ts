@@ -27,7 +27,7 @@ export const SLACK_USER_SCOPES = [
   "search:read.mpim",
 ];
 
-// The address Slack must return to. It goes into the Slack app's Redirect URLs, so it is shown in Settings.
+// The address Slack must return to. It goes into the Slack app's Redirect URLs, so it is shown in the Slack card's Accounts dialog.
 export const slackRedirectUri = `http://${HOST}:${PORT}${SLACK_CALLBACK_PATH}`;
 
 const STATE_MINUTES = 10;
@@ -55,7 +55,7 @@ export function startConnect(): { url: string } {
 export async function completeConnect(state: string, code: string): Promise<SlackAccountView> {
   const expires = pending.get(state);
   pending.delete(state);
-  if (expires === undefined || expires < Date.now()) throw new AppError(400, "This sign-in expired or was already used. Start it again from Settings.");
+  if (expires === undefined || expires < Date.now()) throw new AppError(400, "This sign-in expired or was already used. Start it again from the Slack card.");
   const app = readSlackConfig().app;
   if (!app) throw new AppError(400, "The Slack app's client ID and secret are no longer saved.");
 

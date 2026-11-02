@@ -127,12 +127,12 @@ The card lists the newest 25 messages of each account's inbox, with unread ones 
 
 ## Slack
 
-The Slack card reads a Slack workspace as you, through a Slack app you create for your own workspace. The app asks for user permissions only, so nothing posts as a bot. Set it up once in Settings → **Slack**:
+The Slack card reads a Slack workspace as you, through a Slack app you create for your own workspace. The app asks for user permissions only, so nothing posts as a bot. Set it up once from the Slack card's **Accounts** button, the same place the mail card adds accounts:
 
 1. Create the app at api.slack.com/apps, with **Create New App → From scratch**.
-2. Under **OAuth & Permissions**, add the **Redirect URL** that Settings shows. It is `http://127.0.0.1:3000/api/slack/oauth/callback` by default.
-3. Under **Basic Information**, copy the Client ID and Client Secret into Settings, and press **Save app**.
-4. Press **Connect with Slack**. Approve in the tab that opens. You can also paste a user token (it starts with `xoxp-`) under **Connect with a user token instead**.
+2. Under **OAuth & Permissions**, add the **Redirect URL** that the dialog shows. It is `http://127.0.0.1:3000/api/slack/oauth/callback` by default.
+3. Under **Basic Information**, copy the Client ID and Client Secret into the dialog, and press **Save app**.
+4. Press **Sign in with Slack**. Approve in the tab that opens. You can also paste a user token (it starts with `xoxp-`) under **Connect with a user token instead**.
 
 The card lists your conversations and shows the newest 30 messages of the one you pick. Press **Refresh** to read again. It reads only; sending is not built yet. Slack limits how often history can be read for apps that are not on its Marketplace, so the card does not refresh on a timer. The app's client ID and secret, and each user token, are kept in `data/slack.json`, and sync carries them to your private dotmip repo.
 

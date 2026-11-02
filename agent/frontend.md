@@ -118,8 +118,7 @@ Shared pieces. Each is used by more than one feature.
 ## features/settings/
 | file | exports | job |
 | --- | --- | --- |
-| `SettingsDialog.tsx` | `SettingsDialog` | Tabs: Provider, Slack, Sync, and Update. Personas are managed from the agent card. |
-| `SlackTab.tsx` | `SlackTab` | The Slack app (client ID and secret, with the redirect address to list), Connect with Slack, a user-token fallback, and the connected accounts with Disconnect. Re-reads the list for two minutes after a connect starts. |
+| `SettingsDialog.tsx` | `SettingsDialog` | Tabs: Provider, Sync, and Update. Personas are managed from the agent card. |
 | `ProviderTab.tsx` | `ProviderTab` | Provider and service selects, capability badges, the sign-in panel, and the connected list. Polls every 2 s while open. |
 | `SignInPanel.tsx` | `SignInPanel` | Sign-in buttons, output, and the answer box. A link in the output is an Open link button that opens a new tab. |
 | `outputLinks.ts` | `splitLinks` | Splits one line of sign-in output into text and links. Tested by `outputLinks.test.mjs`. |
@@ -139,7 +138,8 @@ Shared pieces. Each is used by more than one feature.
 ## features/slack/
 | file | exports | job |
 | --- | --- | --- |
-| `SlackCard.tsx` | `SlackCard` | The Slack card. With no account yet, a Sign in with Slack button starts the OAuth sign-in and re-reads the accounts for two minutes. With accounts, pills for them, a dropdown of the conversations, the newest 30 messages, and Refresh. It reads as the chosen user. Its text steps up when expanded. |
+| `SlackCard.tsx` | `SlackCard` | The Slack card. Accounts opens `SlackDialog`. With the app saved and no account, a Sign in with Slack button starts the OAuth sign-in and re-reads the accounts for two minutes. With accounts, pills for them, a dropdown of the conversations, the newest 30 messages, and Refresh. It reads as the chosen user. Its text steps up when expanded. |
+| `SlackDialog.tsx` | `SlackDialog` | The Slack setup and accounts, as a modal from the card: the app's client ID and secret, the redirect address to list, Sign in with Slack, a user-token fallback, and the connected accounts with Disconnect (a `ConfirmDialog` beside it). The card passes in the sign-in, so it keeps re-reading while the approval is open. |
 | `useSlack.ts` | `useSlack`, `useConversations`, `useMessages` | The connection (load, save the app, start a connect, paste a token, disconnect), the conversations of an account, and one conversation's messages. Messages are read on choice and on Refresh, not on a timer, because Slack limits history reads. |
 
 ## features/whatsapp/
