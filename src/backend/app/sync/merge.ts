@@ -4,6 +4,7 @@ import type { Ask } from "../../storage/agents.js";
 import type { MailAccount } from "../mail/accounts.js";
 import type { CachedMailbox } from "../mail/cache.js";
 import type { McpServerEntry } from "../mcp/config.js";
+import type { SpendingEntry } from "../../storage/spending.js";
 import type { SlackAccount } from "../slack/config.js";
 
 // The data GitHub sync keeps, in the form the dotmip repo stores it. Records hold no local ids, so two machines can share them.
@@ -112,6 +113,9 @@ export interface PiFileRecord {
 }
 
 // The newest mail headers of one account, as the mail cache keeps them. The account's id is the key.
+// One spending entry, as the database keeps it. An entry is never edited, so a new one only adds to the others.
+export type SpendingRecord = SpendingEntry;
+
 export interface MailCacheRecord extends CachedMailbox {
   accountId: string;
 }
@@ -140,6 +144,7 @@ export interface Snapshot {
   piFiles: Record<string, PiFileRecord>;
   mailCache: Record<string, MailCacheRecord>;
   slackCache: Record<string, SlackCacheRecord>;
+  spending: Record<string, SpendingRecord>;
 }
 
 export const PARTS = [
@@ -158,6 +163,7 @@ export const PARTS = [
   "piFiles",
   "mailCache",
   "slackCache",
+  "spending",
 ] as const;
 
 export function emptySnapshot(): Snapshot {
@@ -177,6 +183,7 @@ export function emptySnapshot(): Snapshot {
     piFiles: {},
     mailCache: {},
     slackCache: {},
+    spending: {},
   };
 }
 
@@ -209,6 +216,7 @@ export const keyOf = {
   piFile: (file: PiFileRecord) => file.name,
   mailCache: (cache: MailCacheRecord) => cache.accountId,
   slackCache: (entry: SlackCacheRecord) => entry.key,
+  spending: (entry: SpendingRecord) => entry.id,
 };
 
 function digest(text: string): string {
@@ -309,6 +317,13 @@ const slackCacheKind: Kind<SlackCacheRecord> = {
   combine: (local, remote) => [newer(local, remote), ""],
 };
 
+// A spending entry is kept from both sides. Two edits of one entry, which the app does not make, keep GitHub's copy.
+const spendingKind: Kind<SpendingRecord> = {
+  name: "spending entry",
+  label: (entry) => `${entry.category} ${entry.amount}`,
+  combine: (local, remote) => [remote, `spending entry "${local.category}" was changed on both sides; kept the copy on GitHub`],
+};
+
 // How one part is merged: its name for the sync log, a label for a record, and how two edits of one record are combined.
 interface Kind<T> {
   name: string;
@@ -400,6 +415,7 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     piFiles: mergeKind(piFileKind, base.piFiles, local.piFiles, remote.piFiles, notes),
     mailCache: mergeKind(mailCacheKind, base.mailCache, local.mailCache, remote.mailCache, quiet),
     slackCache: mergeKind(slackCacheKind, base.slackCache, local.slackCache, remote.slackCache, quiet),
+    spending: mergeKind(spendingKind, base.spending, local.spending, remote.spending, notes),
   };
   return { merged, notes };
 }

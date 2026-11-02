@@ -16,8 +16,9 @@ export function listSpendingEntries(): SpendingEntry[] {
   return (db.prepare("SELECT * FROM spending_entries ORDER BY created_at DESC, rowid DESC").all() as Row[]).map(toEntry);
 }
 
+// Adds an entry, or replaces the one with its id when sync brings an edited copy.
 export function insertSpendingEntry(entry: SpendingEntry): void {
-  db.prepare("INSERT INTO spending_entries (id, kind, category, amount, description, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+  db.prepare("INSERT OR REPLACE INTO spending_entries (id, kind, category, amount, description, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
     entry.id,
     entry.kind,
     entry.category,
@@ -29,4 +30,9 @@ export function insertSpendingEntry(entry: SpendingEntry): void {
 
 function toEntry(row: Row): SpendingEntry {
   return { id: row.id, kind: row.kind, category: row.category, amount: row.amount, description: row.description, createdAt: row.created_at };
+}
+
+// Removes an entry. Sync does this when the copy on GitHub no longer has it.
+export function removeSpendingEntry(id: string): boolean {
+  return db.prepare("DELETE FROM spending_entries WHERE id = ?").run(id).changes > 0;
 }

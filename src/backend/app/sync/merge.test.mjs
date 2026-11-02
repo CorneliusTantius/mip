@@ -190,4 +190,16 @@ const withFiles = (...files) => ({ ...emptySnapshot(), piFiles: indexBy(files, k
   assert.deepEqual(Object.keys(dropped.merged.slackCache), [], "a Slack entry removed here is removed on GitHub too");
 }
 
+// Spending entries are kept from both sides. An entry added on one side is not a conflict, so the sync log stays quiet about it.
+{
+  const entry = (id, category, amount) => ({ id, kind: "expense", category, amount, description: "", createdAt: Number(id.slice(1)) });
+  const withSpending = (...entries) => ({ ...emptySnapshot(), spending: indexBy(entries, keyOf.spending) });
+  const base = withSpending(entry("e1", "Food", 10));
+  const local = withSpending(entry("e1", "Food", 10), entry("e2", "Gas", 20));
+  const remote = withSpending(entry("e1", "Food", 10), entry("e3", "Salary", 5000));
+  const { merged, notes } = mergeSnapshots(base, local, remote);
+  assert.deepEqual(Object.keys(merged.spending).sort(), ["e1", "e2", "e3"], "entries added on either side are kept");
+  assert.deepEqual(notes, [], "adding an entry on one side is not a conflict");
+}
+
 console.log("merge tests passed");

@@ -5,13 +5,13 @@ import { errorMessage } from "../errors.js";
 import { runGit } from "../git.js";
 import { MAIN_ROOM_ID } from "../../storage/rooms.js";
 import { PI_CONFIG_FILES } from "../../storage/pi.js";
-import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type MailCacheRecord, type SlackCacheRecord, type MailRecord, type McpServerRecord, type NoteRecord, type SlackAppRecord, type SlackRecord, type PersonaRecord, type PiCredentialRecord, type PiFileRecord, type PiModelRecord, type RoomMessageRecord, type RoomRecord, type Snapshot } from "./merge.js";
+import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type MailCacheRecord, type SlackCacheRecord, type SpendingRecord, type MailRecord, type McpServerRecord, type NoteRecord, type SlackAppRecord, type SlackRecord, type PersonaRecord, type PiCredentialRecord, type PiFileRecord, type PiModelRecord, type RoomMessageRecord, type RoomRecord, type Snapshot } from "./merge.js";
 
 // The local copy of the dotmip repo. Sync reads its files, writes the merged state, and commits and pushes. Edits made
 // here by hand are overwritten by the next sync.
 export const REPO_DIR = join(SYNC_DIR, "dotmip");
 // One folder per part. The rooms are one file, a list, and the room messages are one file, a list in order, since they are only ever added.
-const FOLDERS = ["personas", "bots", "notes", "agents", "mcp", "mail", "slack-app", "slack", "pi-credentials", "pi-models", "pi-files", "mail-cache", "slack-cache"] as const;
+const FOLDERS = ["personas", "bots", "notes", "agents", "mcp", "mail", "slack-app", "slack", "pi-credentials", "pi-models", "pi-files", "mail-cache", "slack-cache", "spending"] as const;
 // Folders that older versions wrote. They are removed on every sync, once the records have moved to their new folder.
 const LEGACY_FOLDERS = ["chats"] as const;
 const ROOMS_FILE = "rooms.json";
@@ -35,6 +35,7 @@ Data synced from mip. mip writes this repo; edits made here are overwritten by t
 - pi-files/: Pi's settings.json and models.json, one file each
 - mail-cache/: the newest mail headers of each account, one file each. Headers only, no bodies.
 - slack-cache/: Slack answers kept on each machine (channel lists, messages, unread counts), one file each. They hold other people's messages, so keep this repo private.
+- spending/: spending entries, one file each. They hold money data, so keep this repo private.
 
 Not stored here: provider logins, repository clones, and agent workspaces.
 `;
@@ -85,6 +86,7 @@ export function readTree(): Snapshot {
       readFolder<PiFileRecord>("pi-files").filter((file) => (PI_CONFIG_FILES as readonly string[]).includes(file.name)),
       keyOf.piFile,
     ),
+    spending: indexBy(readFolder<SpendingRecord>("spending"), keyOf.spending),
     mailCache: indexBy(readFolder<MailCacheRecord>("mail-cache"), keyOf.mailCache),
     slackCache: indexBy(readFolder<SlackCacheRecord>("slack-cache"), keyOf.slackCache),
     rooms: indexBy(existsSync(join(REPO_DIR, ROOMS_FILE)) ? readJson<RoomRecord[]>(ROOMS_FILE) : [], keyOf.room),
@@ -121,6 +123,7 @@ export function writeTree(snapshot: Snapshot): void {
   writeRecords("pi-files", snapshot.piFiles);
   writeRecords("mail-cache", snapshot.mailCache);
   writeRecords("slack-cache", snapshot.slackCache);
+  writeRecords("spending", snapshot.spending);
   writeJson(ROOMS_FILE, Object.keys(snapshot.rooms).sort().map((key) => snapshot.rooms[key]));
   writeJson(ROOM_FILE, Object.keys(snapshot.room).sort().map((key) => snapshot.room[key]));
   writeFileSync(join(REPO_DIR, "README.md"), README);

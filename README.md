@@ -260,7 +260,7 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
 
 ```
 ~/.mip/
-  data/mip.db           SQLite: personas, agents, messages, runs, memory, repositories
+  data/mip.db           SQLite: personas, agents, messages, runs, memory, repositories, spending entries. Sync carries spending to the dotmip repo
   data/mcp.json         MCP servers to connect to, tokens included. Sync carries them to the dotmip repo
   data/mail.json        Mail accounts and their app passwords. Sync carries them to the dotmip repo
   data/slack.json       The Slack app's secret and connected user tokens. Sync carries them to the dotmip repo

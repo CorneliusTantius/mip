@@ -6,6 +6,7 @@ import { mcpConfigText, parseMcpConfig, readMcpConfig, writeMcpConfigText } from
 import { dropSlackEntry, slackEntries, setSlackEntry } from "../slack/cache.js";
 import { readSlackConfig, writeSlackState } from "../slack/config.js";
 import { AppError } from "../errors.js";
+import { insertSpendingEntry, listSpendingEntries, removeSpendingEntry } from "../../storage/spending.js";
 import {
   indexBy,
   keyOf,
@@ -42,6 +43,7 @@ export function readLocal(): Snapshot {
     piFiles: indexBy(readPiFiles(), keyOf.piFile),
     mailCache: indexBy(readMailCacheForSync(), keyOf.mailCache),
     slackCache: indexBy(readSlackCacheForSync(), keyOf.slackCache),
+    spending: indexBy(listSpendingEntries(), keyOf.spending),
   };
 }
 
@@ -114,6 +116,7 @@ export function applySnapshot(local: Snapshot, target: Snapshot): void {
       return true;
     },
   );
+  applyPart(local.spending, target.spending, insertSpendingEntry, (entry) => removeSpendingEntry(entry.id));
   applyPart(
     local.slackCache,
     target.slackCache,
