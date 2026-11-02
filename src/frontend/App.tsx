@@ -80,7 +80,7 @@ export function App() {
             </div>
 
             {/* Below everything else. Two per row on tablets, three on desktops, so the cards stay wide enough to read. */}
-            <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-h-52">
+            <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-3 [&>*]:h-72">
               <SpendingCard />
               <ToolsCard />
               <SkillsCard />
