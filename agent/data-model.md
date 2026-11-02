@@ -44,7 +44,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `pi_credentials`, `pi_models` | `storage/pi.ts` | Pi's credential per provider (`credential` JSON, with `updated_at`), and its model catalog per provider. Both sync |
 | `pi_state` | `storage/pi.ts` | small app settings, such as the one-time Pi auth import |
 | `MIP_HOME/data/pi/` | `storage/paths.ts` (`PI_AGENT_DIR`) | Pi's agent folder: `settings.json` and `models.json`, which sync |
-| `MIP_HOME/data/mail.json` | `app/mail/accounts.ts` (read on each request, written with mode 600) | the mail accounts: named accounts with an IMAP server, a login, an app password, a mailbox, and watch settings. Never synced |
+| `MIP_HOME/data/mail.json` | `app/mail/accounts.ts` (read on each request, written with mode 600) | the mail accounts: named accounts with an IMAP server, a login, an app password, a mailbox, and watch settings. Synced to the private dotmip repo, under `mail/`, the same as MCP servers |
 | `MIP_HOME/data/mcp.json` | `app/mcp/config.ts` (read at startup and on reload) | the MCP servers: a `mcpServers` map of stdio commands or Streamable HTTP links. An OAuth server's entry holds its sign-in state and tokens, under `oauth`. Its tokens sync to the private dotmip repo, under `mcp/` |
 | `MIP_HOME/data/device-id` | `app/installation.ts` | this installation's UUID, for Pi's ChatGPT sign-in. Not synced, so each machine has its own |
 | `MIP_HOME/skills/<name>/` | `app/skills/imports.ts` (confirm) | an installed skill: `SKILL.md`, text files, and `.mip-source.json` (source path and hash). `skills/.staging/` holds imports not yet confirmed |

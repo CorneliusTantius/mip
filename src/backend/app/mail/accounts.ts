@@ -4,7 +4,8 @@ import { AppError, errorMessage } from "../errors.js";
 
 // The mail accounts mip reads over IMAP, kept in MIP_HOME/data/mail.json. The shape follows OpenClaw's IMAP plugin: an "accounts" map from
 // an id to one account, with its server, login, mailbox, and watch settings. The file holds app passwords, so it is readable only by this
-// user, and sync never carries it. An account the app cannot load is reported by name, and the app keeps it when it edits the file.
+// user. Sync carries the accounts, passwords included, to the private dotmip repo, as it does the MCP servers. An account the app cannot
+// load is reported by name, and the app keeps it when it edits the file.
 
 // The shortest time between two reads of a mailbox, and the default. A card re-reads its mailbox on this timer while it is open.
 const MIN_POLL_SECONDS = 15;
@@ -163,6 +164,21 @@ export function removeMailAccount(id: string): void {
   editMailFile((accounts) => {
     if (!Object.prototype.hasOwnProperty.call(accounts, id)) throw new AppError(404, `No mail account called "${id}".`);
     delete accounts[id];
+  });
+}
+
+// Replaces the accounts in mail.json with these, for a sync. The new entries are checked first, so an account that would not load leaves
+// the file as it was. The file's other fields are kept.
+export function writeMailAccounts(accounts: MailAccount[]): void {
+  const entries = Object.fromEntries(accounts.map((account) => [account.id, entryOf(account)]));
+  const { problems } = parseMailAccounts(JSON.stringify({ accounts: entries }));
+  if (problems.length > 0) {
+    const first = problems[0];
+    throw new AppError(409, `a synced mail account cannot be used: "${first.account}": ${first.error}. Nothing was changed.`);
+  }
+  editMailFile((listed) => {
+    for (const id of Object.keys(listed)) delete listed[id];
+    Object.assign(listed, entries);
   });
 }
 

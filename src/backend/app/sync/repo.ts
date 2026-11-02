@@ -5,13 +5,13 @@ import { errorMessage } from "../errors.js";
 import { runGit } from "../git.js";
 import { MAIN_ROOM_ID } from "../../storage/rooms.js";
 import { PI_CONFIG_FILES } from "../../storage/pi.js";
-import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type McpServerRecord, type NoteRecord, type PersonaRecord, type PiCredentialRecord, type PiFileRecord, type PiModelRecord, type RoomMessageRecord, type RoomRecord, type Snapshot } from "./merge.js";
+import { indexBy, keyOf, sortKeys, type BotRecord, type AgentRecord, type MailRecord, type McpServerRecord, type NoteRecord, type PersonaRecord, type PiCredentialRecord, type PiFileRecord, type PiModelRecord, type RoomMessageRecord, type RoomRecord, type Snapshot } from "./merge.js";
 
 // The local copy of the dotmip repo. Sync reads its files, writes the merged state, and commits and pushes. Edits made
 // here by hand are overwritten by the next sync.
 export const REPO_DIR = join(SYNC_DIR, "dotmip");
 // One folder per part. The rooms are one file, a list, and the room messages are one file, a list in order, since they are only ever added.
-const FOLDERS = ["personas", "bots", "notes", "agents", "mcp", "pi-credentials", "pi-models", "pi-files"] as const;
+const FOLDERS = ["personas", "bots", "notes", "agents", "mcp", "mail", "pi-credentials", "pi-models", "pi-files"] as const;
 // Folders that older versions wrote. They are removed on every sync, once the records have moved to their new folder.
 const LEGACY_FOLDERS = ["chats"] as const;
 const ROOMS_FILE = "rooms.json";
@@ -27,6 +27,7 @@ Data synced from mip. mip writes this repo; edits made here are overwritten by t
 - rooms.json: the bots' rooms, each with its name and its bots
 - room.json: the messages of every room, in order, each with the id of its room
 - mcp/: MCP servers, one file each. They hold their tokens and environment values, so keep this repo private.
+- mail/: mail accounts, one file each. They hold app passwords, so keep this repo private.
 - pi-credentials/: Pi's provider credentials, one file each. They hold keys and tokens, so keep this repo private.
 - pi-models/: Pi's model catalogs, one file each
 - pi-files/: Pi's settings.json and models.json, one file each
@@ -70,6 +71,7 @@ export function readTree(): Snapshot {
     notes: indexBy(readFolder<NoteRecord>("notes"), keyOf.note),
     agents: indexBy(readFolder<AgentRecord>(agentsFolder()), keyOf.agent),
     mcp: indexBy(readFolder<McpServerRecord>("mcp"), keyOf.mcp),
+    mail: indexBy(readFolder<MailRecord>("mail"), keyOf.mail),
     piCredentials: indexBy(readFolder<PiCredentialRecord>("pi-credentials"), keyOf.piCredential),
     piModels: indexBy(readFolder<PiModelRecord>("pi-models"), keyOf.piModel),
     // Only the Pi config files this app knows are read, so no other file can be written from the repo.
@@ -103,6 +105,7 @@ export function writeTree(snapshot: Snapshot): void {
   writeRecords("notes", snapshot.notes);
   writeRecords("agents", snapshot.agents);
   writeRecords("mcp", snapshot.mcp);
+  writeRecords("mail", snapshot.mail);
   writeRecords("pi-credentials", snapshot.piCredentials);
   writeRecords("pi-models", snapshot.piModels);
   writeRecords("pi-files", snapshot.piFiles);

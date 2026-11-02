@@ -9,7 +9,7 @@ export const DATA_DIR = join(MIP_HOME, "data");
 export const DEVICE_ID_FILE = join(DATA_DIR, "device-id");
 // The MCP servers mip connects to. It can hold tokens, so it stays on this machine and is never synced.
 export const MCP_CONFIG_FILE = join(DATA_DIR, "mcp.json");
-// The mail accounts mip reads over IMAP. They hold app passwords, so they stay on this machine and are never synced.
+// The mail accounts mip reads over IMAP. They hold app passwords, and sync carries them to the private dotmip repo.
 export const MAIL_CONFIG_FILE = join(DATA_DIR, "mail.json");
 export const SESSIONS_DIR = join(MIP_HOME, "sessions");
 // Master clones of repositories. Each agent gets its own copy in its workspace.

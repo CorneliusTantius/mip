@@ -21,7 +21,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/installation.test.mjs | - | - |
 | src/backend/app/installation.ts | src/backend/storage/paths.ts | src/backend/app/providers.ts |
 | src/backend/app/mail/accounts.test.mjs | - | - |
-| src/backend/app/mail/accounts.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts, src/backend/app/mail/sessions.ts |
+| src/backend/app/mail/accounts.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts, src/backend/app/mail/sessions.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/snapshot.ts |
 | src/backend/app/mail/fake-imap.test-support.mjs | - | src/backend/app/mail/mail.test.mjs |
 | src/backend/app/mail/imap.ts | src/backend/app/mail/accounts.ts, src/backend/app/mail/messages.ts, src/backend/app/mail/sessions.ts | src/backend/app/mail/mail.ts |
 | src/backend/app/mail/mail.test.mjs | src/backend/app/mail/fake-imap.test-support.mjs | - |
@@ -57,9 +57,9 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/sync/github.test.mjs | - | - |
 | src/backend/app/sync/github.ts | src/backend/app/errors.ts | src/backend/app/sync/engine.ts |
 | src/backend/app/sync/merge.test.mjs | - | - |
-| src/backend/app/sync/merge.ts | src/backend/storage/agents.ts, src/backend/app/mcp/config.ts | src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts |
+| src/backend/app/sync/merge.ts | src/backend/storage/agents.ts, src/backend/app/mail/accounts.ts, src/backend/app/mcp/config.ts | src/backend/app/sync/engine.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts |
 | src/backend/app/sync/repo.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/git.ts, src/backend/storage/rooms.ts, src/backend/storage/pi.ts, src/backend/app/sync/merge.ts | src/backend/app/sync/engine.ts |
-| src/backend/app/sync/snapshot.ts | src/backend/storage/pi.ts, src/backend/storage/sync.ts, src/backend/app/mcp/config.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts | src/backend/app/sync/engine.ts |
+| src/backend/app/sync/snapshot.ts | src/backend/storage/pi.ts, src/backend/storage/sync.ts, src/backend/app/mail/accounts.ts, src/backend/app/mcp/config.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts | src/backend/app/sync/engine.ts |
 | src/backend/app/sync/sync.test.mjs | - | - |
 | src/backend/app/system.ts | src/backend/storage/paths.ts, src/backend/app/git.ts | src/backend/http/routes/system.ts |
 | src/backend/app/tools/agents.test.mjs | - | - |

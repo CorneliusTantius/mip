@@ -100,7 +100,7 @@ export function AddMailAccountDialog({
             value={password}
             onInput={(e) => setPassword(e.currentTarget.value)}
           />
-          <div className="text-xs opacity-60">Spaces are removed. The password is stored on this machine only, and is never synced.</div>
+          <div className="text-xs opacity-60">Spaces are removed. The password is kept in mip's data and synced to your private dotmip repo.</div>
         </label>
 
         {preset?.passwordUrl && (

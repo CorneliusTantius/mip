@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Credential, ModelsStoreEntry } from "@earendil-works/pi-ai";
 import type { Ask } from "../../storage/agents.js";
+import type { MailAccount } from "../mail/accounts.js";
 import type { McpServerEntry } from "../mcp/config.js";
 
 // The data GitHub sync keeps, in the form the dotmip repo stores it. Records hold no local ids, so two machines can share them.
@@ -76,6 +77,9 @@ export interface RoomMessageRecord {
 // One MCP server from mcp.json, with its tokens and environment values. It has no change time (the file does not keep one).
 export type McpServerRecord = McpServerEntry;
 
+// One mail account from mail.json, with its app password. It has no change time, so GitHub's copy wins when both sides changed it.
+export type MailRecord = MailAccount;
+
 // Pi's credential for one provider, with the time it changed. The newer copy wins when both sides changed it.
 export interface PiCredentialRecord {
   providerId: string;
@@ -105,15 +109,16 @@ export interface Snapshot {
   rooms: Record<string, RoomRecord>;
   room: Record<string, RoomMessageRecord>;
   mcp: Record<string, McpServerRecord>;
+  mail: Record<string, MailRecord>;
   piCredentials: Record<string, PiCredentialRecord>;
   piModels: Record<string, PiModelRecord>;
   piFiles: Record<string, PiFileRecord>;
 }
 
-export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room", "mcp", "piCredentials", "piModels", "piFiles"] as const;
+export const PARTS = ["personas", "bots", "notes", "agents", "rooms", "room", "mcp", "mail", "piCredentials", "piModels", "piFiles"] as const;
 
 export function emptySnapshot(): Snapshot {
-  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {}, mcp: {}, piCredentials: {}, piModels: {}, piFiles: {} };
+  return { personas: {}, bots: {}, notes: {}, agents: {}, rooms: {}, room: {}, mcp: {}, mail: {}, piCredentials: {}, piModels: {}, piFiles: {} };
 }
 
 export function isEmptySnapshot(snapshot: Snapshot): boolean {
@@ -137,6 +142,7 @@ export const keyOf = {
   roomMessage: (message: RoomMessageRecord) =>
     `${message.room}:${message.createdAt}:${message.kind}:${message.authorName}:${digest(message.text)}`,
   mcp: (server: McpServerRecord) => server.name,
+  mail: (account: MailRecord) => account.id,
   piCredential: (credential: PiCredentialRecord) => credential.providerId,
   piModel: (model: PiModelRecord) => model.providerId,
   piFile: (file: PiFileRecord) => file.name,
@@ -204,6 +210,13 @@ const mcpKind: Kind<McpServerRecord> = {
   name: "MCP server",
   label: (server) => server.name,
   combine: (local, remote) => [remote, `MCP server "${local.name}" was changed on both sides; kept the copy on GitHub`],
+};
+
+// A mail account has no change time either, so when both sides changed it, GitHub's copy is kept. The sync log says so.
+const mailKind: Kind<MailRecord> = {
+  name: "mail account",
+  label: (account) => account.label,
+  combine: (local, remote) => [remote, `mail account "${local.label}" was changed on both sides; kept the copy on GitHub`],
 };
 
 // How one part is merged: its name for the sync log, a label for a record, and how two edits of one record are combined.
@@ -288,6 +301,7 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     rooms,
     room: Object.fromEntries(Object.entries(messages).filter(([, message]) => rooms[message.room] !== undefined)),
     mcp: mergeKind(mcpKind, base.mcp, local.mcp, remote.mcp, notes),
+    mail: mergeKind(mailKind, base.mail, local.mail, remote.mail, notes),
     piCredentials: mergeKind(piCredentialKind, base.piCredentials, local.piCredentials, remote.piCredentials, notes),
     piModels: mergeKind(piModelKind, base.piModels, local.piModels, remote.piModels, notes),
     piFiles: mergeKind(piFileKind, base.piFiles, local.piFiles, remote.piFiles, notes),

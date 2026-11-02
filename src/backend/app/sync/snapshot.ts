@@ -1,10 +1,12 @@
 import * as pi from "../../storage/pi.js";
 import * as store from "../../storage/sync.js";
+import { readMailAccounts, writeMailAccounts } from "../mail/accounts.js";
 import { mcpConfigText, parseMcpConfig, readMcpConfig, writeMcpConfigText } from "../mcp/config.js";
 import { AppError } from "../errors.js";
-import { indexBy, keyOf, sameRecord, type AgentRecord, type McpServerRecord, type PiFileRecord, type Snapshot } from "./merge.js";
+import { indexBy, keyOf, sameRecord, type AgentRecord, type MailRecord, type McpServerRecord, type PiFileRecord, type Snapshot } from "./merge.js";
 
-// Reads this machine's data as a snapshot, in the shape the dotmip repo stores: the database, and the MCP servers in mcp.json.
+// Reads this machine's data as a snapshot, in the shape the dotmip repo stores: the database, the MCP servers in mcp.json, and the mail
+// accounts in mail.json.
 export function readLocal(): Snapshot {
   return {
     personas: indexBy(store.readPersonaRows(), keyOf.persona),
@@ -17,6 +19,7 @@ export function readLocal(): Snapshot {
     rooms: indexBy(store.readRoomRows(), keyOf.room),
     room: indexBy(store.readRoomMessageRows(), keyOf.roomMessage),
     mcp: indexBy(readMcpServers(), keyOf.mcp),
+    mail: indexBy(readMailForSync(), keyOf.mail),
     piCredentials: indexBy(pi.readPiCredentialRows(), keyOf.piCredential),
     piModels: indexBy(pi.readPiModelRows(), keyOf.piModel),
     piFiles: indexBy(readPiFiles(), keyOf.piFile),
@@ -41,10 +44,21 @@ function readMcpServers(): McpServerRecord[] {
   return servers;
 }
 
-// Changes the database and mcp.json so they match target. Only records that differ from local are written. A removal the database refuses
+// The accounts in mail.json, app passwords included. A file with a problem stops the sync, for the same reason as mcp.json.
+function readMailForSync(): MailRecord[] {
+  const { accounts, problems } = readMailAccounts();
+  if (problems.length > 0) {
+    const first = problems[0];
+    throw new AppError(409, `mail.json has a problem with "${first.account}": ${first.error}. Fix it, then sync again. Nothing was changed.`);
+  }
+  return accounts;
+}
+
+// Changes the database, mcp.json, and mail.json so they match target. Only records that differ from local are written. A removal the database refuses
 // (see storage/sync.ts) leaves the record in place, so the snapshot read after this still has it.
 export function applySnapshot(local: Snapshot, target: Snapshot): void {
   applyMcp(local.mcp, target.mcp);
+  applyMail(local.mail, target.mail);
   applyPart(local.piCredentials, target.piCredentials, pi.writePiCredentialRow, (credential) => pi.removePiCredentialRow(credential.providerId));
   applyPart(local.piModels, target.piModels, pi.writePiModelRow, (model) => pi.removePiModelRow(model.providerId));
   applyPart(local.piFiles, target.piFiles, (file) => pi.writePiConfigFile(file.name as pi.PiConfigFile, file.text), (file) => pi.removePiConfigFile(file.name as pi.PiConfigFile));
@@ -75,6 +89,13 @@ function applyMcp(local: Record<string, McpServerRecord>, target: Record<string,
     throw new AppError(409, `a synced MCP server cannot be used: "${first.server}": ${first.error}. Nothing was changed.`);
   }
   writeMcpConfigText(text);
+}
+
+// Rewrites mail.json when the accounts differ. writeMailAccounts checks the new accounts before it writes.
+function applyMail(local: Record<string, MailRecord>, target: Record<string, MailRecord>): void {
+  const ids = new Set([...Object.keys(local), ...Object.keys(target)]);
+  if ([...ids].every((id) => sameRecord(local[id], target[id]))) return;
+  writeMailAccounts(Object.values(target));
 }
 
 // Writes an agent's settings, then adds the messages the database does not have yet. Messages are never removed here.

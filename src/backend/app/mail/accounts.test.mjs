@@ -96,6 +96,16 @@ try {
   assert.ok(readFile().accounts.broken, "a removal keeps the entry the app does not load");
   assert.throws(() => accounts.removeMailAccount("added"), (err) => err instanceof AppError && err.status === 404);
 
+  // 6. A sync replaces the accounts with the synced list and keeps the other fields. An account that would not load leaves the file as it was.
+  const synced = [{ ...parsed.accounts[1], id: "synced", password: "pw4" }];
+  accounts.writeMailAccounts(synced);
+  assert.deepEqual(Object.keys(readFile().accounts), ["synced"]);
+  assert.equal(readFile().accounts.synced.password, "pw4", "the synced password is written");
+  assert.equal(readFile().note, "kept", "fields the app does not own are kept on a sync");
+  assert.equal((statSync(paths.MAIL_CONFIG_FILE).mode & 0o777).toString(8), "600");
+  assert.throws(() => accounts.writeMailAccounts([{ ...synced[0], host: "" }]), (err) => err instanceof AppError && err.status === 409);
+  assert.deepEqual(Object.keys(readFile().accounts), ["synced"], "a refused sync changes nothing");
+
   console.log("mail account file tests passed");
 } finally {
   rmSync(root, { recursive: true, force: true });
