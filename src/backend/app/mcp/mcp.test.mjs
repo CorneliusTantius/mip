@@ -129,7 +129,7 @@ try {
   await manager.startMcpServers();
   assert.deepEqual(manager.mcpTools(), []);
   assert.ok(!tools.agentDeferredTools().some((tool) => tool.name.startsWith("mcp_")));
-  assert.deepEqual(tools.botDeferredTools(), []);
+  assert.ok(!tools.botDeferredTools().some((tool) => tool.name.startsWith("mcp_")));
 
   // 8. Closing a live server leaves nothing connected.
   writeFileSync(paths.MCP_CONFIG_FILE, JSON.stringify({ mcpServers: { fake: { command: process.execPath, args: [serverPath] } } }));

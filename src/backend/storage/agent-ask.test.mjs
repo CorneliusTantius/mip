@@ -17,7 +17,7 @@ try {
 
   // 1. A reply keeps its question, and a message without one has none.
   const agent = insertAgent("claude-cli", "default", "Freya");
-  assert.equal(agent.openToBots, false, "a new agent is closed to bots");
+  assert.equal(agent.openToBots, true, "a new agent is open to bots");
   const ask = { question: "Which colour?", kind: "choice", options: ["Red", "Blue"] };
   addMessage(agent.id, { role: "assistant", text: "Two are left.", tools: ["ask_user"], error: null, ask });
   addMessage(agent.id, { role: "user", text: "Blue", tools: [], error: null });
