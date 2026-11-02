@@ -8,7 +8,7 @@ import { MESSAGING_CARD_HEIGHT } from "../../ui/SourceCard";
 import { SlackDialog } from "./SlackDialog";
 import { SlackThreadDialog } from "./SlackThreadDialog";
 import { SlackTranscript } from "./SlackTranscript";
-import { useConversations, useMessages, useSlack } from "./useSlack";
+import { useConversations, useMessages, useSlack, useUnread } from "./useSlack";
 
 // How long, after a sign-in starts, the account list is re-read while the browser finishes the sign-in on Slack's page.
 const WAIT_MS = 120_000;
@@ -35,6 +35,8 @@ function SlackBody() {
   const [chosenId, setChosenId] = useState<string>();
   const conversation: SlackConversation | undefined = conversations.list.find((candidate) => candidate.id === chosenId) ?? conversations.list[0];
   const messages = useMessages(account?.id, conversation?.id);
+  const unread = useUnread(account?.id);
+  const unreadTotal = Object.values(unread.counts).reduce((sum, count) => sum + count, 0);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string>();
@@ -93,7 +95,14 @@ function SlackBody() {
     <>
       <div className="card-body min-h-0 flex-1 gap-3 p-4">
         <div className="flex items-center gap-2">
-          <h2 className="card-title mr-auto">Slack</h2>
+          <h2 className="card-title mr-auto">
+            Slack
+            {unreadTotal > 0 && (
+              <span className="badge badge-primary badge-sm" aria-label={`${unreadTotal} unread`}>
+                {unreadTotal > 99 ? "99+" : unreadTotal}
+              </span>
+            )}
+          </h2>
           <button className="btn btn-sm" onClick={() => setDialogOpen(true)}>
             Accounts
           </button>
@@ -142,10 +151,11 @@ function SlackBody() {
                 {conversations.list.map((candidate) => (
                   <option key={candidate.id} value={candidate.id}>
                     {label(candidate)}
+                    {unread.counts[candidate.id] ? ` (${unread.counts[candidate.id]} unread)` : ""}
                   </option>
                 ))}
               </select>
-              <button className="btn btn-sm btn-ghost" disabled={busy} onClick={() => void Promise.all([conversations.reload(), messages.reload()])}>
+              <button className="btn btn-sm btn-ghost" disabled={busy} onClick={() => void Promise.all([conversations.reload(), messages.reload(), unread.reload()])}>
                 Refresh
               </button>
             </div>

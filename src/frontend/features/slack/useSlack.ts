@@ -48,6 +48,27 @@ export function useSlack() {
 }
 
 // The conversations of one account. The server keeps its answer, so a reload is quick. Refresh asks Slack again.
+// Unread messages per conversation id. The counts are extra: when they cannot be read, the list still works without them.
+export function useUnread(accountId: string | undefined) {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+
+  async function load(force = false) {
+    if (!accountId) return;
+    try {
+      setCounts(await api.get<Record<string, number>>(`/api/slack/accounts/${encodeURIComponent(accountId)}/unread${force ? "?refresh=1" : ""}`));
+    } catch {
+      setCounts({});
+    }
+  }
+
+  useEffect(() => {
+    setCounts({});
+    void load();
+  }, [accountId]);
+
+  return { counts, reload: () => load(true) };
+}
+
 export function useConversations(accountId: string | undefined) {
   const [list, setList] = useState<SlackConversation[]>([]);
   const [loading, setLoading] = useState(false);

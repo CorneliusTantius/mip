@@ -49,6 +49,10 @@ const MAX_USER_PAGES = 50;
 const CONVERSATIONS_TTL = 10 * 60_000;
 const MESSAGES_TTL = 2 * 60_000;
 const NAMES_TTL = 24 * 60 * 60_000;
+const UNREAD_TTL = 2 * 60_000;
+const UNREAD_CONVERSATIONS = 40;
+const UNREAD_PER_CONVERSATION = 100;
+const UNREAD_BATCH = 5;
 
 // The conversations of an account, channels first, then direct messages.
 export function listConversations(accountId: string, force = false): Promise<SlackConversation[]> {
@@ -74,6 +78,45 @@ export function listConversations(accountId: string, force = false): Promise<Sla
     },
     force,
   );
+}
+
+// Unread messages per conversation: the messages after the user's last read, not counting the user's own. Slack has no unread count for a user
+// token, so each conversation is checked. Only the most recent conversations are counted, to stay under Slack's rate limits.
+// shortcut: 40 conversations, 100 messages each, so a busier inbox shows a low count; raise these when Slack's limits allow.
+export function unreadCounts(accountId: string, force = false): Promise<Record<string, number>> {
+  const account = accountOf(accountId);
+  return cached(
+    `unread:${account.id}`,
+    UNREAD_TTL,
+    async () => {
+      const conversations = (await listConversations(accountId, force)).slice(0, UNREAD_CONVERSATIONS);
+      const counts: Record<string, number> = {};
+      for (let i = 0; i < conversations.length; i += UNREAD_BATCH) {
+        await Promise.all(
+          conversations.slice(i, i + UNREAD_BATCH).map(async (conversation) => {
+            counts[conversation.id] = await unreadIn(account, conversation.id);
+          }),
+        );
+      }
+      return counts;
+    },
+    force,
+  );
+}
+
+async function unreadIn(account: SlackAccount, channel: string): Promise<number> {
+  try {
+    const info = await slackCall<{ channel: { last_read?: string } }>("conversations.info", account.token, { channel });
+    const reply = await slackCall<{ messages: { user?: string }[] }>("conversations.history", account.token, {
+      channel,
+      oldest: info.channel.last_read || "0",
+      limit: UNREAD_PER_CONVERSATION,
+    });
+    return reply.messages.filter((message) => message.user !== account.userId).length;
+  } catch {
+    // A conversation that cannot be read counts as none, so one refused read does not hide the rest.
+    return 0;
+  }
 }
 
 // The newest messages of one conversation, newest first. Replies inside threads are left out; their parent shows how many there are.

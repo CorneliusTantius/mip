@@ -1,6 +1,6 @@
 import { deleteSlackAccount, saveSlackAppInput, slackReply } from "../../app/slack/slack.js";
 import { startConnect, connectWithToken } from "../../app/slack/connect.js";
-import { listConversations, listMessages, listReplies } from "../../app/slack/read.js";
+import { listConversations, listMessages, listReplies, unreadCounts } from "../../app/slack/read.js";
 import { sendMessage } from "../../app/slack/post.js";
 import { created, ok, readJson, requireJson } from "../respond.js";
 import { del, get, post, put, type Route } from "../router.js";
@@ -26,6 +26,9 @@ export const slackRoutes: Route[] = [
   // ?refresh=1 asks Slack again instead of using the cached answer.
   get("/api/slack/accounts/:id/conversations", async ({ params, url }) =>
     ok(await listConversations(params.id, url.searchParams.get("refresh") === "1")),
+  ),
+  get("/api/slack/accounts/:id/unread", async ({ params, url }) =>
+    ok(await unreadCounts(params.id, url.searchParams.get("refresh") === "1")),
   ),
   get("/api/slack/accounts/:id/conversations/:channel/messages", async ({ params, url }) =>
     ok(await listMessages(params.id, params.channel, url.searchParams.get("refresh") === "1")),
