@@ -28,7 +28,8 @@ export const SLACK_USER_SCOPES = [
 ];
 
 // The address Slack must return to. It goes into the Slack app's Redirect URLs, so it is shown in the Slack card's Accounts dialog.
-export const slackRedirectUri = `http://${HOST}:${PORT}${SLACK_CALLBACK_PATH}`;
+// Slack's docs ask for HTTPS, so a public HTTPS address (a tunnel or nginx in front) can be set with MIP_SLACK_REDIRECT_URI.
+export const slackRedirectUri = process.env.MIP_SLACK_REDIRECT_URI?.trim() || `http://${HOST}:${PORT}${SLACK_CALLBACK_PATH}`;
 
 const STATE_MINUTES = 10;
 // Sign-ins that have started and not finished, by their state. A state is used once.
