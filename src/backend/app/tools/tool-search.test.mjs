@@ -72,7 +72,7 @@ try {
   assert.equal(described.tool_call.load, "search");
   assert.equal(described.room_search.load, "basic");
   assert.equal(described.agent_ask.load, "basic");
-  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "slack_search", "slack_read"];
+  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "slack_search", "slack_read", "spending_list"];
   assert.ok(describeTools().filter((tool) => !botOnly.includes(tool.name)).every((tool) => tool.agent === true));
   assert.deepEqual(describeTools().filter((tool) => tool.bot).map((tool) => tool.name), [
     "skill_search",
@@ -90,6 +90,7 @@ try {
     "mail_read",
     "slack_search",
     "slack_read",
+    "spending_list",
   ]);
 
   console.log("tool search tests passed");
