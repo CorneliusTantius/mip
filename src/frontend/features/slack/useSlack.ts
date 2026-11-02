@@ -24,7 +24,8 @@ export function useSlack() {
 
   // Starts the Slack sign-in and returns the page to open. Throws the reason when it cannot start.
   async function startConnect(): Promise<string> {
-    const reply = await api.post<{ url: string }>("/api/slack/connect");
+    // An empty JSON body: the server only accepts JSON for this call.
+    const reply = await api.post<{ url: string }>("/api/slack/connect", {});
     return reply.url;
   }
 
