@@ -160,7 +160,7 @@ Skills card: `features/skills/SkillsCard.tsx` (the installed skills, with Create
 
 ## 20. Bots sending tasks to agents (agent_ask)
 
-1. An agent is closed to bots until its switch is on: "Bots may ask" in the composer, which sets `agents.open_to_bots` through `PATCH /api/agents/:id`.
+1. An agent is open to bots from creation (`insertAgent` sets `open_to_bots = 1`). The "Bots may control" switch in the composer sets `agents.open_to_bots` through `PATCH /api/agents/:id`, and closes the agent when off.
 2. A bot calls `agents_list` for the open agents, then `agent_ask` with an agent's name and a task. Both are bot-only tools in `app/tools/index.ts`.
 3. `agent_ask` refuses a closed or unknown agent, an empty task, a call that is not a bot in a room, a room already sending a task, and an agent that is busy (`startRun` throws 409). A task that cannot start frees its room again.
 4. The task becomes a user message in the agent's chat ("Odin in Work asks: ..."). The agent runs it with its own tools, bash included. The switch is the user's consent for that.

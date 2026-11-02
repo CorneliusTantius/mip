@@ -58,7 +58,7 @@ Shared pieces. Each is used by more than one feature.
 | `ui/Markdown.tsx` | `Markdown` | A reply drawn as Markdown: paragraphs, headings, lists, quotes, code blocks, rules, bold, italic, code spans, and web links. Built as elements, never as HTML. `renderText` draws each plain-text run, so room replies keep their mention pills. |
 | `ui/markdown.ts` | `parseBlocks`, `parseInline` | The Markdown reader, with no DOM: text in, blocks and inline pieces out. Only http and https links are links. Tested by `ui/markdown.test.mjs`. |
 | `ui/ToolCallsDialog.tsx` | `ToolCallsButton`, `ToolCallsDialog` | The button and the dialog listing one reply's tool calls with their inputs and results. Used by agent replies and bot replies in the room. A reply saved before details were recorded lists its names only. |
-| `Composer.tsx` | `Composer` | Model and thinking dropdowns, the "Bots may ask" switch, the message box, and the `/` list of installed skills. Owns the draft. |
+| `Composer.tsx` | `Composer` | Model and thinking dropdowns, the "Bots may control" switch, the message box, and the `/` list of installed skills. Owns the draft. |
 | `skillCommand.ts` | `skillCommandQuery`, `matchingSkills` | Pure rules for the `/` list: which text opens it, and which skills it offers. Tested by `skillCommand.test.mjs`. |
 
 ## features/bots/

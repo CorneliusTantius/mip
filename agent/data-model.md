@@ -7,7 +7,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | table | columns | primary key / constraints | owner | written by |
 | --- | --- | --- | --- | --- |
 | `personas` | id, name, system_prompt, is_default (0/1), created_at, updated_at | id | `storage/personas.ts` | `app/personas.ts` |
-| `agents` | id, provider_id, provider_session_id (nullable), persona_id (default `'default'`), title, updated_at, meta_updated_at (title and settings), model (nullable), thinking (nullable), open_to_bots (0 or 1, default 0: bots may send tasks to it) | id | `storage/agents.ts` | `app/agents.ts`, `app/runs.ts` |
+| `agents` | id, provider_id, provider_session_id (nullable), persona_id (default `'default'`), title, updated_at, meta_updated_at (title and settings), model (nullable), thinking (nullable), open_to_bots (0 or 1; a new agent is 1, bots may send tasks to it) | id | `storage/agents.ts` | `app/agents.ts`, `app/runs.ts` |
 | `messages` | id (autoincrement), agent_id, role (`user`/`assistant`), text, tools (JSON array of names), calls (JSON array of `{name, input, output, isError}`, default `[]`), error (nullable), ask (JSON of the question the reply ends with, nullable), created_at | id | `storage/agents.ts` | `app/runs.ts`, `app/agents.ts` (delete) |
 | `runs` | id, agent_id, status (`running`/`done`/`error`), started_at | id | `storage/runs.ts` (+ `agents.ts` delete) | `app/runs.ts`, `db.ts` (recovery) |
 | `run_events` | run_id, seq, event (JSON `AgentEvent`) | (run_id, seq) | `storage/runs.ts` (+ `agents.ts` delete) | `app/runs.ts` |

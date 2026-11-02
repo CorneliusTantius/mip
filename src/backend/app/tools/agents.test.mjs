@@ -22,6 +22,8 @@ try {
 
   // Two agents: Freya is closed to bots, Thorin is open. Thorin's provider does not exist, so a task sent to it cannot start.
   const freya = insertAgent("claude-cli", "default", "Freya");
+  // New agents are open to bots, so this one is closed on purpose to test the closed case.
+  setAgentOpenToBots(freya.id, false);
   const thorin = insertAgent("no-such-provider", "default", "Thorin");
   setAgentOpenToBots(thorin.id, true);
 

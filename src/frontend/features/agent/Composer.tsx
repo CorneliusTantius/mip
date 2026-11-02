@@ -97,7 +97,7 @@ export function Composer({
             disabled={!agent}
             onChange={(e) => onChangeSettings({ openToBots: e.currentTarget.checked })}
           />
-          Bots may ask
+          Bots may control
         </label>
       </div>
 

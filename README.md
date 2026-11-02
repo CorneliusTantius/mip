@@ -106,7 +106,7 @@ Bots are named agents, and they talk in rooms. Create them with **Manage bots** 
 - Each turn sees the last 30 messages of its room. A bot has nine tools: memory search, memory read, memory edit (only for notes that already exist), skill search, skill read, skill file, a search of its room's messages, and tool search and tool call, which reach its MCP tools. Its Claude turns run with the built-in tools turned off.
 - Bots only run when you post. Nothing runs on a schedule yet.
 
-A bot can send a task to an agent that you have opened to bots, with the "Bots may ask" switch in the agent's composer. The agent does the task in its own chat, with its own tools, and its reply is posted to the room. A room sends one task at a time.
+A bot can send a task to an agent that is open to bots. New agents start open; the "Bots may control" switch in the agent's composer closes or opens one. The agent does the task in its own chat, with its own tools, and its reply is posted to the room. A room sends one task at a time.
 
 ## Memory
 

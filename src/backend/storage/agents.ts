@@ -65,7 +65,8 @@ function toAgent(row: Row): Agent {
 export function insertAgent(providerId: string, personaId: string, title: string): Agent {
   const id = randomUUID();
   const now = Date.now();
-  db.prepare("INSERT INTO agents (id, provider_id, persona_id, title, updated_at, meta_updated_at) VALUES (?, ?, ?, ?, ?, ?)").run(
+  // A new agent is open to bots from the start. Turn it off in its composer.
+  db.prepare("INSERT INTO agents (id, provider_id, persona_id, title, updated_at, meta_updated_at, open_to_bots) VALUES (?, ?, ?, ?, ?, ?, 1)").run(
     id,
     providerId,
     personaId,
