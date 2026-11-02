@@ -7,13 +7,29 @@ import { handleMcp } from "./mcp.js";
 import { handleOAuthCallback } from "./mcp-oauth.js";
 import { SLACK_CALLBACK_PATH } from "../app/slack/connect.js";
 import { handleSlackCallback } from "./slack-oauth.js";
-import { notFound, readJson, sendJson } from "./respond.js";
+import { notFound, readJson, requireJson, sendJson } from "./respond.js";
 import { matchRoute } from "./router.js";
 import { routes } from "./routes/index.js";
 import { serveStatic } from "./static.js";
 
-// Every request goes through here, in this order: the web build, the tool endpoint, the MCP sign-in callback, then the API routes.
+// The names this machine answers to. The server listens on HOST only, so these are the names a browser on this machine uses.
+const LOCAL_NAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
+// The methods that carry a body to the API. Their bodies must be JSON.
+const WRITE_METHODS = new Set(["POST", "PUT", "PATCH"]);
+
+// True when a Host header names this machine, on any port. A page on another site can point its own name at 127.0.0.1 (DNS
+// rebinding) and then read the API as same-origin, so any other name is refused.
+function namesThisMachine(host: string | undefined): boolean {
+  return host !== undefined && LOCAL_NAMES.has(host.replace(/:\d+$/, "").toLowerCase());
+}
+
+// Every request goes through here, in this order: the Host check, the web build, the tool endpoint, the MCP and Slack sign-in callbacks,
+// the JSON check for API writes, then the API routes.
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!namesThisMachine(req.headers.host)) {
+    return sendJson(res, 403, { error: "this server answers only on this machine" });
+  }
+
   const url = new URL(req.url ?? "/", `http://${HOST}`);
 
   if (req.method === "GET" && !url.pathname.startsWith("/api/") && (await serveStatic(url.pathname, res))) return;
@@ -31,6 +47,8 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   if (req.method === "GET" && url.pathname === SLACK_CALLBACK_PATH) {
     return handleSlackCallback(url, res);
   }
+
+  if (WRITE_METHODS.has(req.method ?? "")) requireJson(req);
 
   const match = matchRoute(routes, req.method ?? "", url.pathname);
   const reply = match ? await match.route.handle({ req, url, params: match.params }) : notFound();

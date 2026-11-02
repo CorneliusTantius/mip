@@ -39,10 +39,9 @@ Replies:
 - Handlers return `Reply {status, body}` (`http/respond.ts`): `ok` 200, `created` 201, `accepted` 202, `ack` (200 `{ok:true}`), `notFound`.
 - `sendJson` sets `Content-Type: application/json` and `Cache-Control: no-store`.
 - A thrown `AppError` (`app/errors.ts`) gives its status and `{error}`. Any other error gives 500 and `{error}`. A body that is not valid JSON gives 500.
-- `requireJson(req)` throws `AppError(415)` unless `Content-Type` contains `application/json`.
-  - Calls it: mail add and test; MCP add and sign-in; Slack app save, connect, token, and send; sync account and run; system update and restart; skill create, import, and confirm.
-  - Parses bodies without it, so any `Content-Type` is accepted: run, agents, personas, bots, rooms, room messages, memory, repos, spending, providers.
-- No `Origin` or `Host` check exists under `http/`. Access control is the loopback bind and the JSON check on the routes above.
+- `requireJson(req)` throws `AppError(415)` unless `Content-Type` contains `application/json`. `server.ts` calls it for every `POST`, `PUT`, and `PATCH` to the API, after step 4 and before step 5. `/mcp` (step 2) and the two callbacks are not checked, and no route calls it.
+- Host check: before step 1, `server.ts` answers 403 unless the `Host` header names `localhost`, `127.0.0.1`, or `[::1]`, with or without a port. This blocks DNS rebinding.
+- No `Origin` check exists under `http/`. Access control is the loopback bind, the Host check, and the JSON check on writes.
 
 ## 3. Send an agent message (run)
 Server, entry `POST /api/run` `{agentId, prompt}` (`http/routes/runs.ts`):

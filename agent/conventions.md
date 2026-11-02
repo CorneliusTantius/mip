@@ -91,7 +91,7 @@ API regression check: before and after a change, record each route's status and 
 1. Add a `get|post|put|patch|del(path, handler)` entry (from `http/router.ts`) to the array in `src/backend/http/routes/<domain>.ts`. Path parameters are `:name` segments. The first route whose method and segments match wins.
 2. For a new domain, create the file, export its array, and spread it in `src/backend/http/routes/index.ts`.
 3. The handler returns a `Reply` (`http/respond.ts`): `ok` (200), `created` (201), `accepted` (202), `ack` (200, `{"ok": true}`), or `notFound` (404). Throw `AppError(status, message)` (`app/errors.ts`) for client errors.
-4. Routes in the sync, system, mail, mcp-servers, slack, and skills files call `requireJson(req)` first. It answers 415 unless the `Content-Type` contains `application/json`. The reason is in `http/respond.ts`: a page on another site cannot send a JSON request without a preflight, and the server does not answer preflights. The repos routes (`routes/repos.ts`) run git and do not call it.
+4. Do not check the body type in the route. `http/server.ts` answers 415 to any `POST`, `PUT`, or `PATCH` to the API whose `Content-Type` lacks `application/json`, before routing, so a new write route is covered with no call. The reason is in `http/respond.ts`: a page on another site cannot send a JSON request without a preflight, and the server does not answer preflights. A raw `fetch` to a write route must send `Content-Type: application/json`. `api/client.ts` already does, and sends `{}` for a write with no body.
 5. Put the logic in an `app/*` function, and the storage access in `storage/*`.
 6. Add the route to `agent/api.md`.
 

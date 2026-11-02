@@ -14,10 +14,12 @@ export class ApiError extends Error {
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  // Every write sends JSON, with {} when there is no body, because the server answers 415 to any other content type.
+  const write = method === "POST" || method === "PUT" || method === "PATCH";
   const res = await fetch(path, {
     method,
-    headers: body === undefined ? undefined : JSON_HEADERS,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: write ? JSON_HEADERS : undefined,
+    body: write ? JSON.stringify(body ?? {}) : undefined,
   });
   const data = await res.json();
   if (!res.ok) throw new ApiError(res.status, data.error ?? `request failed with status ${res.status}`);

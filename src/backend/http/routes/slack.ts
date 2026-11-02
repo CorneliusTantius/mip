@@ -2,7 +2,7 @@ import { deleteSlackAccount, saveSlackAppInput, slackReply } from "../../app/sla
 import { startConnect, connectWithToken } from "../../app/slack/connect.js";
 import { listConversations, listMessages, listReplies, unreadCounts } from "../../app/slack/read.js";
 import { sendMessage } from "../../app/slack/post.js";
-import { created, ok, readJson, requireJson } from "../respond.js";
+import { created, ok, readJson } from "../respond.js";
 import { del, get, post, put, type Route } from "../router.js";
 
 // Slack: the app's client ID and secret, connecting an account (through Slack's sign-in, or a pasted user token), disconnecting one, and
@@ -10,15 +10,12 @@ import { del, get, post, put, type Route } from "../router.js";
 export const slackRoutes: Route[] = [
   get("/api/slack", () => ok(slackReply())),
   put("/api/slack/app", async ({ req }) => {
-    requireJson(req);
     return ok(saveSlackAppInput(await readJson(req)));
   }),
   post("/api/slack/connect", ({ req }) => {
-    requireJson(req);
     return ok(startConnect());
   }),
   post("/api/slack/token", async ({ req }) => {
-    requireJson(req);
     const body = await readJson(req);
     return created(await connectWithToken(String(body.token ?? "")));
   }),
@@ -37,7 +34,6 @@ export const slackRoutes: Route[] = [
     ok(await listReplies(params.id, params.channel, params.ts, url.searchParams.get("refresh") === "1")),
   ),
   post("/api/slack/accounts/:id/conversations/:channel/messages", async ({ req, params }) => {
-    requireJson(req);
     const body = await readJson(req);
     return created(await sendMessage(params.id, params.channel, String(body.text ?? ""), body.threadTs ? String(body.threadTs) : undefined));
   }),

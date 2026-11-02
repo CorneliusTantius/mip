@@ -2,12 +2,13 @@
 
 ## Processes
 - One Node process serves everything: `node dist/backend/http/server.js`. Entry `src/backend/http/server.ts`. Built by `tsc -p src/backend/tsconfig.json` into `dist/backend`.
-- Requests, in the order `http/server.ts` checks them:
+- Requests, in the order `http/server.ts` checks them. First, the Host check: a `Host` header that does not name `localhost`, `127.0.0.1`, or `[::1]` (with or without a port) gets 403 `{"error":"this server answers only on this machine"}`.
   1. `GET` for any path not starting with `/api/`: a file from `dist/frontend` (`http/static.ts`). `/` serves `index.html`.
   2. `POST /mcp`: the tool endpoint for the Claude CLI (`http/mcp.ts`). The bearer token is the run token.
   3. `GET /api/mcp/oauth/callback` (`OAUTH_CALLBACK_PATH`): an MCP server's sign-in returns here (`http/mcp-oauth.ts`).
   4. `GET /api/slack/oauth/callback` (`SLACK_CALLBACK_PATH`): Slack's sign-in returns here (`http/slack-oauth.ts`).
-  5. The JSON API: routes from `http/routes/index.ts`. No match: 404 `{"error":"not found"}`.
+  5. JSON check: a `POST`, `PUT`, or `PATCH` to the API without `Content-Type: application/json` gets 415.
+  6. The JSON API: routes from `http/routes/index.ts`. No match: 404 `{"error":"not found"}`.
 - A thrown `AppError` answers with its status. Any other error answers 500. Both bodies are `{"error": message}`.
 - Restart (`POST /api/system/restart`, 202): `restartMip()` in `app/system.ts` replies, then the process exits after 300 ms. A detached `sh -c` script waits for that PID, runs `npm install && npm run build` in the checkout, appends the output to `MIP_HOME/restart.log`, then `exec node dist/backend/http/server.js`. The server starts even when install or build fails.
 - Update (`POST /api/system/update`, 200): `pullLatest()` in `app/system.ts` runs `git -C <checkout> pull --ff-only`. The new code runs after a restart.

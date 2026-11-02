@@ -20,8 +20,8 @@ Routing (`http/router.ts`):
 
 Request and reply (`http/respond.ts`):
 - `readJson(req)`: reads the whole body and `JSON.parse`s it. Empty body → `{}`. Does not check `Content-Type`.
-- `requireJson(req)`: throws `AppError(415, "send this request as JSON")` unless the `Content-Type` header contains `application/json`. The **JSON** column in each table says whether the route calls it.
-- No route checks `Origin` or `Host`.
+- `requireJson(req)`: throws `AppError(415, "send this request as JSON")` unless the `Content-Type` header contains `application/json`. `http/server.ts` calls it before routing for every `POST`, `PUT`, and `PATCH` to the API, so no route calls it. `DELETE` has no body and is not checked. `/mcp` and the two OAuth callbacks are not API routes and are not checked.
+- Host: `http/server.ts` answers `403 {"error": "this server answers only on this machine"}` before any other step, unless the `Host` header names `localhost`, `127.0.0.1`, or `[::1]`, with or without a port. No route checks `Origin`.
 - `Reply` is `{status, body}`. Helpers: `ok` 200, `created` 201, `accepted` 202, `ack()` 200 `{ok: true}`, `notFound()` 404 `{error: "not found"}`.
 - `sendJson` sends `Content-Type: application/json` and `Cache-Control: no-store`.
 
@@ -31,7 +31,7 @@ Errors (`app/errors.ts`, `http/server.ts`):
 - A malformed JSON body is therefore `500`, not `400`.
 - If headers were already sent, the response is ended without a body.
 
-Tables below: **JSON** is `yes` when the handler calls `requireJson`. **reads** lists the fields the handler reads; `?` means optional. Field types are what the handler passes on; the app coerces with `String()`, `Number()` or `Boolean()` where noted. Quoted error messages are exact.
+Tables below: **JSON** is `yes` when the route is `POST`, `PUT`, or `PATCH`, so `server.ts` checks its `Content-Type`. **reads** lists the fields the handler reads; `?` means optional. Field types are what the handler passes on; the app coerces with `String()`, `Number()` or `Boolean()` where noted. Quoted error messages are exact.
 
 ## Agents (agents) — `routes/agents.ts`
 App: `app/agents.ts`.
@@ -39,9 +39,9 @@ App: `app/agents.ts`.
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/agents | no | — | 200 `{agents: Agent[]}` | — |
-| POST | /api/agents | no | `providerId` string; `personaId?` string (missing → default persona) | 201 `Agent` | 400 "unknown provider"; 400 "unknown persona" (also for `personaId: null`) |
+| POST | /api/agents | yes | `providerId` string; `personaId?` string (missing → default persona) | 201 `Agent` | 400 "unknown provider"; 400 "unknown persona" (also for `personaId: null`) |
 | GET | /api/agents/:agentId | no | — | 200 `{agent, messages, activeRunId?}` | 404 "no such agent" |
-| PATCH | /api/agents/:agentId | no | `title?` string (trimmed, non-empty); `openToBots?` boolean; `model?` string (`""` or `null` = provider default); `thinking?` string (`""` or `null` clears) | 200 `Agent` | 404 "no such agent"; 400 "title is required"; 400 "openToBots must be true or false"; 400 `this provider has no model "<id>"`; 400 `this model has no thinking level "<level>"` (only when `thinking` is sent) |
+| PATCH | /api/agents/:agentId | yes | `title?` string (trimmed, non-empty); `openToBots?` boolean; `model?` string (`""` or `null` = provider default); `thinking?` string (`""` or `null` clears) | 200 `Agent` | 404 "no such agent"; 400 "title is required"; 400 "openToBots must be true or false"; 400 `this provider has no model "<id>"`; 400 `this model has no thinking level "<level>"` (only when `thinking` is sent) |
 | DELETE | /api/agents/:agentId | no | — | 200 `{ok: true}` | 404 "no such agent"; 409 "this agent is still running" |
 
 - `Agent`: `{id, providerId, providerSessionId, personaId, model, thinking, title, openToBots, updatedAt}`. New agents have `openToBots: true`.
@@ -56,7 +56,7 @@ App: `app/runs.ts`.
 
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
-| POST | /api/run | no | `agentId` string (missing → ""); `prompt` string (trimmed; missing → "") | 202 `{runId}` | 404 "no such agent"; 400 "prompt is required"; 409 "this agent is still running" |
+| POST | /api/run | yes | `agentId` string (missing → ""); `prompt` string (trimmed; missing → "") | 202 `{runId}` | 404 "no such agent"; 400 "prompt is required"; 409 "this agent is still running" |
 | GET | /api/runs/:runId/events | no | query `after` (missing → 0; `Number()`, not validated) | 200 `{status, events: {seq, event}[]}` | 404 "no such run" |
 
 - `status`: `"running"` until the run ends, then `"done"` or `"error"`.
@@ -72,10 +72,10 @@ App: `app/personas.ts`.
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/personas | no | — | 200 `{personas: Persona[]}` | — |
-| POST | /api/personas | no | `name` string (trimmed, required); `systemPrompt` string (trimmed, required) | 201 `Persona` | 400 "name is required"; 400 "system prompt is required" |
-| PUT | /api/personas/:personaId | no | same as POST | 200 `Persona` | 404 "no such persona"; 400 as POST |
+| POST | /api/personas | yes | `name` string (trimmed, required); `systemPrompt` string (trimmed, required) | 201 `Persona` | 400 "name is required"; 400 "system prompt is required" |
+| PUT | /api/personas/:personaId | yes | same as POST | 200 `Persona` | 404 "no such persona"; 400 as POST |
 | DELETE | /api/personas/:personaId | no | — | 200 `{ok: true}` | 404 "no such persona"; 400 "the built-in Default persona can't be deleted" (id `default`); 400 "set another persona as default before deleting this one"; 409 `<n> agent(s) use(s) this persona` |
-| POST | /api/personas/:personaId/default | no | — | 200 `{ok: true}` | 404 "no such persona" |
+| POST | /api/personas/:personaId/default | yes | — | 200 `{ok: true}` | 404 "no such persona" |
 
 - `Persona`: `{id, name, systemPrompt, isDefault}`. Exactly one persona has `isDefault: true`.
 - Built-in persona id `default` (`DEFAULT_PERSONA_ID`) is created at startup and cannot be deleted. It is the fallback when an agent's persona is missing (`personaPrompt`).
@@ -87,8 +87,8 @@ App: `app/bots.ts`.
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/bots | no | — | 200 `{bots: Bot[]}` | — |
-| POST | /api/bots | no | `name` string (trimmed; rule below); `persona` string (trimmed, required, max 4000); `providerId?` string (missing or null → `"claude-cli"`); `model?` string (missing or empty → provider default); `thinking?` string (missing or empty → none); `color?` one of the colors (missing → first color no bot uses) | 201 `Bot` | 400 "name must start with a letter and use 2 to 24 letters, digits, - or _"; 409 `a bot called <name> already exists`; 400 "persona is required"; 400 "persona must be 4000 characters or fewer"; 400 "unknown provider"; 400 `this provider has no model "<id>"`; 400 `this model has no thinking level "<level>"`; 400 `color must be one of frost, orange, violet, green, yellow, red, teal, blue` |
-| PUT | /api/bots/:botId | no | same fields as POST, as a full replacement: omitted `model` and `thinking` clear, omitted `providerId` becomes `"claude-cli"`, omitted `color` keeps the bot's color | 200 `Bot` | 404 "no such bot" (checked before the fields); same 400 and 409 as POST |
+| POST | /api/bots | yes | `name` string (trimmed; rule below); `persona` string (trimmed, required, max 4000); `providerId?` string (missing or null → `"claude-cli"`); `model?` string (missing or empty → provider default); `thinking?` string (missing or empty → none); `color?` one of the colors (missing → first color no bot uses) | 201 `Bot` | 400 "name must start with a letter and use 2 to 24 letters, digits, - or _"; 409 `a bot called <name> already exists`; 400 "persona is required"; 400 "persona must be 4000 characters or fewer"; 400 "unknown provider"; 400 `this provider has no model "<id>"`; 400 `this model has no thinking level "<level>"`; 400 `color must be one of frost, orange, violet, green, yellow, red, teal, blue` |
+| PUT | /api/bots/:botId | yes | same fields as POST, as a full replacement: omitted `model` and `thinking` clear, omitted `providerId` becomes `"claude-cli"`, omitted `color` keeps the bot's color | 200 `Bot` | 404 "no such bot" (checked before the fields); same 400 and 409 as POST |
 | DELETE | /api/bots/:botId | no | — | 200 `{ok: true}` | 404 "no such bot" |
 
 - `Bot`: `{id, name, persona, providerId, model, thinking, color}`.
@@ -103,11 +103,11 @@ App: `app/room/rooms.ts` (rooms), `app/room/room.ts` (messages and turns), `app/
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/rooms | no | — | 200 `{rooms: Room[]}`, oldest first | — |
-| POST | /api/rooms | no | `name` string (trimmed, required, max 40); `botIds?` string[] (each must be an existing bot; duplicates dropped; missing → []); `masterBotId?` string or null (`""` or null clears; must be in `botIds`); `collapseOthers?` (`Boolean()`, default false) | 201 `Room` | 400 "name is required"; 400 "name must be 40 characters or fewer"; 409 `a room called "<name>" already exists`; 400 "botIds must be a list"; 400 "a bot in the list does not exist"; 400 "the room master must be a bot in the room" |
-| PUT | /api/rooms/:roomId | no | same fields, all optional; a field left out keeps its value | 200 `Room` | 404 "no such room"; same 400 and 409 as POST |
+| POST | /api/rooms | yes | `name` string (trimmed, required, max 40); `botIds?` string[] (each must be an existing bot; duplicates dropped; missing → []); `masterBotId?` string or null (`""` or null clears; must be in `botIds`); `collapseOthers?` (`Boolean()`, default false) | 201 `Room` | 400 "name is required"; 400 "name must be 40 characters or fewer"; 409 `a room called "<name>" already exists`; 400 "botIds must be a list"; 400 "a bot in the list does not exist"; 400 "the room master must be a bot in the room" |
+| PUT | /api/rooms/:roomId | yes | same fields, all optional; a field left out keeps its value | 200 `Room` | 404 "no such room"; same 400 and 409 as POST |
 | DELETE | /api/rooms/:roomId | no | — | 200 `{ok: true}`; the room's messages and member rows are deleted | 404 "no such room"; 409 "keep at least one room" |
 | GET | /api/room | no | query `room` (room id; missing → 404); `after?` (message id; missing → 0; `Number()`, not validated) | 200 `{messages: RoomMessage[], busy: boolean, speaking: string \| null}` | 404 "no such room" |
-| POST | /api/room/messages | no | `room` string (room id); `text` string (trimmed, required, max 4000) | 202 `RoomMessage` (the saved user message) | 404 "no such room"; 409 "this room is busy, wait for the bots to finish"; 400 "message is required"; 400 "message must be 4000 characters or fewer" |
+| POST | /api/room/messages | yes | `room` string (room id); `text` string (trimmed, required, max 4000) | 202 `RoomMessage` (the saved user message) | 404 "no such room"; 409 "this room is busy, wait for the bots to finish"; 400 "message is required"; 400 "message must be 4000 characters or fewer" |
 
 - `Room`: `{id, name, botIds, masterBotId, collapseOthers, createdAt, updatedAt}`. `masterBotId` is cleared automatically when that bot leaves `botIds`.
 - `RoomMessage`: `{id, roomId, kind, botId, authorName, text, calls, createdAt}`. `kind` is `"user"`, `"bot"`, `"agent"` or `"system"`. `"agent"` is the reply of an agent a bot sent a task to (`agent_ask`); its `botId` is null. `calls` is non-empty only on bot messages.
@@ -124,10 +124,10 @@ App: `app/repos.ts`.
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/repos | no | — | 200 `{repos: RepoCard[]}`. `RepoCard` is `Repo` plus `branch` and `copies` | — |
-| POST | /api/repos | no | `url` string (trimmed; a link with no scheme such as `github.com/owner/repo` gets `https://`) | 202 `Repo` with `status: "cloning"` (no `branch` or `copies` keys) | 400 "paste a git clone link, such as github.com/owner/repo"; 400 `can't use "<name>" as a folder name`; 409 `a repository called "<name>" is already here` |
-| POST | /api/repos/pull | no | — | 200 `{results: {id, name, ok, message}[]}`, one per ready repo | — (a failed pull is `ok: false` with git's message) |
+| POST | /api/repos | yes | `url` string (trimmed; a link with no scheme such as `github.com/owner/repo` gets `https://`) | 202 `Repo` with `status: "cloning"` (no `branch` or `copies` keys) | 400 "paste a git clone link, such as github.com/owner/repo"; 400 `can't use "<name>" as a folder name`; 409 `a repository called "<name>" is already here` |
+| POST | /api/repos/pull | yes | — | 200 `{results: {id, name, ok, message}[]}`, one per ready repo | — (a failed pull is `ok: false` with git's message) |
 | DELETE | /api/repos/:repoId | no | — | 200 `{ok: true}`; removes the master clone folder | 404 "no such repository"; 409 `<name> is still cloning` |
-| POST | /api/repos/:repoId/copies | no | `agentId` string | 201 `{ok: true}`; clones into `MIP_HOME/workspaces/<agentId>/<name>` | 404 "no such repository"; 404 "no such agent"; 409 `<name> isn't ready yet`; 409 `this agent already has <name>`; 500 git's message (partial copy removed) |
+| POST | /api/repos/:repoId/copies | yes | `agentId` string | 201 `{ok: true}`; clones into `MIP_HOME/workspaces/<agentId>/<name>` | 404 "no such repository"; 404 "no such agent"; 409 `<name> isn't ready yet`; 409 `this agent already has <name>`; 500 git's message (partial copy removed) |
 
 - `Repo`: `{id, name, url, status, error}`. `status` is `"cloning"`, `"ready"` or `"error"`. `name` is the last path segment of the link without `.git`.
 - `branch`: the checked-out branch. `"detached"` when HEAD is detached. Null when not ready or unknown.
@@ -143,7 +143,7 @@ App: `app/memory.ts`.
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/graph | no | — | 200 `{nodes: {id, title, missing, degree}[], edges: {source, target}[]}` | — |
 | GET | /api/memory | no | query `q?` string | 200 `{notes: NoteItem[]}`. Without `q` (or blank): every note as `{id, title, updatedAt}`, newest first. With `q`: up to 100 matches as `{id, title, snippet}`, best first | — |
-| POST | /api/memory | no | `title` string (trimmed, required); `body?` string (missing → "") | 200 `{title, links, tags}` (200, not 201) | 400 "title is required" |
+| POST | /api/memory | yes | `title` string (trimmed, required); `body?` string (missing → "") | 200 `{title, links, tags}` (200, not 201) | 400 "title is required" |
 | GET | /api/memory/:title | no | path `title` (decoded; `%2F` allowed) | 200 `{id, title, body, links, backlinks, tags}` | 404 "no such note" |
 | DELETE | /api/memory/:title | no | — | 200 `{ok: true}`; links from other notes to it stay | 404 "no such note" |
 
@@ -162,10 +162,10 @@ App: `app/providers.ts`. Adapters: `adapters/claude-cli.ts` (id `claude-cli`), `
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/providers | no | — | 200 `{providers: ProviderInfo[]}` | — |
-| POST | /api/providers/:providerId/targets/:targetId/sign-in | no | `method?` (`"subscription"`, `"api_key"` or `"cli"`; passed to the adapter unchecked) | 202 `{started: true}`. Sign-in runs in the background; poll GET `/api/providers` (`targets[].progress`) | 404 `unknown provider "<id>"`; 500 for adapter errors (plain `Error`): unknown target, method not supported |
-| POST | /api/providers/:providerId/targets/:targetId/answer | no | `answer` string (missing → "") | 200 `{ok: true}` | 404 `unknown provider "<id>"`; 500 for adapter errors |
-| POST | /api/providers/:providerId/targets/:targetId/sign-out | no | — | 200 `{ok: true}` | 404 `unknown provider "<id>"`; 500 for adapter errors |
-| POST | /api/providers/:providerId/targets/:targetId/:action | no | body is read first | 404 `{error: "not found"}` for any other `:action` | — |
+| POST | /api/providers/:providerId/targets/:targetId/sign-in | yes | `method?` (`"subscription"`, `"api_key"` or `"cli"`; passed to the adapter unchecked) | 202 `{started: true}`. Sign-in runs in the background; poll GET `/api/providers` (`targets[].progress`) | 404 `unknown provider "<id>"`; 500 for adapter errors (plain `Error`): unknown target, method not supported |
+| POST | /api/providers/:providerId/targets/:targetId/answer | yes | `answer` string (missing → "") | 200 `{ok: true}` | 404 `unknown provider "<id>"`; 500 for adapter errors |
+| POST | /api/providers/:providerId/targets/:targetId/sign-out | yes | — | 200 `{ok: true}` | 404 `unknown provider "<id>"`; 500 for adapter errors |
+| POST | /api/providers/:providerId/targets/:targetId/:action | yes | body is read first | 404 `{error: "not found"}` for any other `:action` | — |
 
 - `ProviderInfo`: `{id, name, capabilities: {streaming, tools, mcp, sessions, signIn}, models: ModelOption[], targets: SignInTarget[], error?}`.
 - A failing `targets()` gives `targets: []` and `error`. A failing `models()` gives `models: []`.
@@ -275,7 +275,7 @@ Servers are the entries under `mcpServers` in `MIP_HOME/data/mcp.json` (`MCP_CON
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/mcp | no | — | 200 `McpStatus`: `{configFile, servers: McpServerStatus[], problems: {server, error}[]}` | — |
-| POST | /api/mcp/reload | no | — | 200 `McpStatus`, after every server has connected or failed. Old connections are closed first | — |
+| POST | /api/mcp/reload | yes | — | 200 `McpStatus`, after every server has connected or failed. Old connections are closed first | — |
 | POST | /api/mcp | yes | `name` string (required; `^[A-Za-z0-9][A-Za-z0-9_-]{0,31}$`); `transport` `"oauth"`, `"http"` or `"stdio"`; `url` string (oauth, http); `headers` object of strings (http; default `{}`); `command` string (stdio); `args` string[] (stdio; default `[]`); `env` object of strings (stdio; default `{}`) | 201 `McpStatus`, with the new server connected, waiting for sign-in, or failed. Its entry is written to mcp.json first | 400 "A name is required."; 400 `The transport must be "oauth", "http", or "stdio".`; 400 the entry's problem (for example `a stdio server needs a "command"`); 409 `A server called "<name>" is already listed.`; 409 `mcp.json is not valid JSON. Fix it, then try again.` or `mcp.json has no "mcpServers" map. Fix it, then try again.`; 415 |
 | DELETE | /api/mcp/:name | no | — | 200 `McpStatus`, after the entry is removed and the others reconnect | 404 `No MCP server called "<name>".`; 409 (mcp.json invalid) |
 | POST | /api/mcp/:name/sign-in | yes | — | 200 `McpStatus`. Starts a new OAuth sign-in, so `signInUrl` is a new link | 400 `"<name>" does not sign in with OAuth`; 404 `no MCP server called "<name>"`; 415 |
@@ -349,7 +349,7 @@ App: `app/spending.ts`. Storage: `storage/spending.ts`.
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/spending | no | — | 200 `{entries: SpendingEntry[]}`, newest first | — |
-| POST | /api/spending | no | `kind` `"income"` or `"expense"` (required); `category` string (trimmed, required, max 40; takes the spelling of an existing category that matches case-insensitively); `amount` number (`Number()`; finite and above 0); `description?` string (trimmed, max 200); `id?` string (trimmed, max 64; an existing id is replaced and keeps `createdAt`) | 201 `SpendingEntry`, also when it replaces an entry | 400 "kind must be income or expense"; 400 "category is required"; 400 "category must be 40 characters or fewer"; 400 "amount must be a number above 0"; 400 "description must be 200 characters or fewer"; 400 "id must be 64 characters or fewer" |
+| POST | /api/spending | yes | `kind` `"income"` or `"expense"` (required); `category` string (trimmed, required, max 40; takes the spelling of an existing category that matches case-insensitively); `amount` number (`Number()`; finite and above 0); `description?` string (trimmed, max 200); `id?` string (trimmed, max 64; an existing id is replaced and keeps `createdAt`) | 201 `SpendingEntry`, also when it replaces an entry | 400 "kind must be income or expense"; 400 "category is required"; 400 "category must be 40 characters or fewer"; 400 "amount must be a number above 0"; 400 "description must be 200 characters or fewer"; 400 "id must be 64 characters or fewer" |
 
 - `SpendingEntry`: `{id, kind, category, amount, description, createdAt}`. `description` is `""` when none was given.
 

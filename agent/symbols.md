@@ -501,8 +501,8 @@
 | src/backend/storage/sync.ts | 307 | function | insertRoomMessageRow |
 | src/frontend/App.tsx | 30 | function | App |
 | src/frontend/api/client.ts | 4 | class | ApiError |
-| src/frontend/api/client.ts | 27 | const | api |
-| src/frontend/api/client.ts | 36 | function | errorText |
+| src/frontend/api/client.ts | 29 | const | api |
+| src/frontend/api/client.ts | 38 | function | errorText |
 | src/frontend/api/constants.ts | 4 | const | DEFAULT_PERSONA_ID |
 | src/frontend/api/constants.ts | 6 | const | DEFAULT_PROVIDER_ID |
 | src/frontend/api/events.ts | 5 | const | AGENTS_CHANGED |
