@@ -8,7 +8,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | --- | --- | --- |
 | src/backend/adapters/async-queue.ts | - | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts |
 | src/backend/adapters/claude-cli.ts | src/backend/adapters/async-queue.ts, src/backend/adapters/sign-in-session.ts, src/backend/adapters/contract.ts | src/backend/app/providers.ts |
-| src/backend/adapters/contract.ts | - | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts, src/backend/adapters/sign-in-session.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/app/tools/ask.ts, src/backend/app/tools/bash.ts, src/backend/app/tools/files.ts, src/backend/app/tools/index.ts, src/backend/app/tools/memory.ts, src/backend/app/tools/result.ts, src/backend/app/tools/room.ts, src/backend/app/tools/search.ts, src/backend/app/tools/skills.ts, src/backend/http/routes/providers.ts |
+| src/backend/adapters/contract.ts | - | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts, src/backend/adapters/sign-in-session.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/app/tools/ask.ts, src/backend/app/tools/bash.ts, src/backend/app/tools/files.ts, src/backend/app/tools/index.ts, src/backend/app/tools/memory.ts, src/backend/app/tools/result.ts, src/backend/app/tools/room.ts, src/backend/app/tools/search.ts, src/backend/app/tools/skills.ts, src/backend/app/tools/social.ts, src/backend/http/routes/providers.ts |
 | src/backend/adapters/pi-signin.test.mjs | - | - |
 | src/backend/adapters/pi.ts | src/backend/adapters/async-queue.ts, src/backend/adapters/sign-in-session.ts, src/backend/adapters/contract.ts | src/backend/app/providers.ts |
 | src/backend/adapters/sign-in-session.ts | src/backend/adapters/contract.ts | src/backend/adapters/claude-cli.ts, src/backend/adapters/pi.ts |
@@ -21,13 +21,13 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/installation.test.mjs | - | - |
 | src/backend/app/installation.ts | src/backend/storage/paths.ts | src/backend/app/providers.ts |
 | src/backend/app/mail/accounts.test.mjs | - | - |
-| src/backend/app/mail/accounts.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts, src/backend/app/mail/sessions.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/snapshot.ts |
+| src/backend/app/mail/accounts.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts, src/backend/app/mail/sessions.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/snapshot.ts, src/backend/app/tools/social.ts |
 | src/backend/app/mail/cache.ts | src/backend/storage/paths.ts, src/backend/app/mail/messages.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts |
 | src/backend/app/mail/fake-imap.test-support.mjs | - | src/backend/app/mail/mail-sync.test.mjs, src/backend/app/mail/mail.test.mjs |
 | src/backend/app/mail/imap.ts | src/backend/app/mail/accounts.ts, src/backend/app/mail/cache.ts, src/backend/app/mail/messages.ts, src/backend/app/mail/sessions.ts | src/backend/app/mail/mail.ts |
 | src/backend/app/mail/mail-sync.test.mjs | src/backend/app/mail/fake-imap.test-support.mjs | - |
 | src/backend/app/mail/mail.test.mjs | src/backend/app/mail/fake-imap.test-support.mjs | - |
-| src/backend/app/mail/mail.ts | src/backend/app/errors.ts, src/backend/app/mail/accounts.ts, src/backend/app/mail/cache.ts, src/backend/app/mail/imap.ts, src/backend/app/mail/messages.ts, src/backend/app/mail/sessions.ts | src/backend/http/routes/mail.ts |
+| src/backend/app/mail/mail.ts | src/backend/app/errors.ts, src/backend/app/mail/accounts.ts, src/backend/app/mail/cache.ts, src/backend/app/mail/imap.ts, src/backend/app/mail/messages.ts, src/backend/app/mail/sessions.ts | src/backend/app/tools/social.ts, src/backend/http/routes/mail.ts |
 | src/backend/app/mail/messages.test.mjs | - | - |
 | src/backend/app/mail/messages.ts | - | src/backend/app/mail/cache.ts, src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts |
 | src/backend/app/mail/sessions.ts | src/backend/app/mail/accounts.ts | src/backend/app/mail/imap.ts, src/backend/app/mail/mail.ts |
@@ -55,13 +55,13 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/skills/imports.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/skills/format.ts, src/backend/app/skills/registry.ts | src/backend/http/routes/skills.ts |
 | src/backend/app/skills/registry.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/skills/format.ts | src/backend/app/runs.ts, src/backend/app/skills/create.ts, src/backend/app/skills/imports.ts, src/backend/app/tools/skills.ts, src/backend/http/routes/skills.ts |
 | src/backend/app/skills/skills.test.mjs | - | - |
-| src/backend/app/slack/api.ts | src/backend/app/errors.ts | src/backend/app/slack/connect.ts, src/backend/app/slack/post.ts, src/backend/app/slack/read.ts |
+| src/backend/app/slack/api.ts | src/backend/app/errors.ts | src/backend/app/slack/connect.ts, src/backend/app/slack/post.ts, src/backend/app/slack/read.ts, src/backend/app/tools/social.ts |
 | src/backend/app/slack/cache.test.mjs | - | - |
 | src/backend/app/slack/cache.ts | src/backend/storage/paths.ts | src/backend/app/slack/post.ts, src/backend/app/slack/read.ts, src/backend/app/slack/slack.ts |
-| src/backend/app/slack/config.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/slack/connect.ts, src/backend/app/slack/read.ts, src/backend/app/slack/slack.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/snapshot.ts |
+| src/backend/app/slack/config.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts | src/backend/app/slack/connect.ts, src/backend/app/slack/read.ts, src/backend/app/slack/slack.ts, src/backend/app/sync/merge.ts, src/backend/app/sync/snapshot.ts, src/backend/app/tools/social.ts |
 | src/backend/app/slack/connect.ts | src/backend/app/config.ts, src/backend/app/errors.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts | src/backend/app/slack/slack.ts, src/backend/http/routes/slack.ts, src/backend/http/server.ts, src/backend/http/slack-oauth.ts |
 | src/backend/app/slack/post.ts | src/backend/app/errors.ts, src/backend/app/slack/api.ts, src/backend/app/slack/cache.ts, src/backend/app/slack/read.ts | src/backend/http/routes/slack.ts |
-| src/backend/app/slack/read.ts | src/backend/app/errors.ts, src/backend/app/slack/cache.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts | src/backend/app/slack/post.ts, src/backend/http/routes/slack.ts |
+| src/backend/app/slack/read.ts | src/backend/app/errors.ts, src/backend/app/slack/cache.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts | src/backend/app/slack/post.ts, src/backend/app/tools/social.ts, src/backend/http/routes/slack.ts |
 | src/backend/app/slack/slack.test.mjs | - | - |
 | src/backend/app/slack/slack.ts | src/backend/app/errors.ts, src/backend/app/slack/cache.ts, src/backend/app/slack/config.ts, src/backend/app/slack/connect.ts | src/backend/http/routes/slack.ts |
 | src/backend/app/sync/engine.ts | src/backend/storage/paths.ts, src/backend/app/errors.ts, src/backend/app/sync/merge.ts, src/backend/app/mcp/manager.ts, src/backend/app/providers.ts, src/backend/app/sync/github.ts, src/backend/app/sync/repo.ts, src/backend/app/sync/snapshot.ts | src/backend/http/routes/sync.ts |
@@ -81,13 +81,15 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/backend/app/tools/calls.ts | src/backend/storage/agents.ts | src/backend/app/room/room.ts, src/backend/app/runs.ts |
 | src/backend/app/tools/files.ts | src/backend/adapters/contract.ts, src/backend/app/tools/result.ts, src/backend/app/tools/workspace.ts | src/backend/app/tools/index.ts |
 | src/backend/app/tools/guides.test.mjs | - | - |
-| src/backend/app/tools/index.ts | src/backend/adapters/contract.ts, src/backend/storage/bots.ts, src/backend/storage/agents.ts, src/backend/storage/room.ts, src/backend/storage/rooms.ts, src/backend/app/mcp/manager.ts, src/backend/app/tools/ask.ts, src/backend/app/tools/bash.ts, src/backend/app/tools/files.ts, src/backend/app/tools/memory.ts, src/backend/app/tools/room.ts, src/backend/app/tools/search.ts, src/backend/app/tools/skills.ts, src/backend/app/errors.ts, src/backend/app/runs.ts, src/backend/app/tools/result.ts | src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/http/mcp.ts, src/backend/http/routes/tools.ts |
+| src/backend/app/tools/index.ts | src/backend/adapters/contract.ts, src/backend/storage/bots.ts, src/backend/storage/agents.ts, src/backend/storage/room.ts, src/backend/storage/rooms.ts, src/backend/app/mcp/manager.ts, src/backend/app/tools/ask.ts, src/backend/app/tools/bash.ts, src/backend/app/tools/files.ts, src/backend/app/tools/memory.ts, src/backend/app/tools/room.ts, src/backend/app/tools/search.ts, src/backend/app/tools/skills.ts, src/backend/app/tools/social.ts, src/backend/app/errors.ts, src/backend/app/runs.ts, src/backend/app/tools/result.ts | src/backend/app/room/room.ts, src/backend/app/runs.ts, src/backend/http/mcp.ts, src/backend/http/routes/tools.ts |
 | src/backend/app/tools/memory.ts | src/backend/adapters/contract.ts, src/backend/app/memory.ts, src/backend/app/tools/result.ts | src/backend/app/tools/index.ts |
-| src/backend/app/tools/result.ts | src/backend/adapters/contract.ts | src/backend/app/tools/ask.ts, src/backend/app/tools/files.ts, src/backend/app/tools/index.ts, src/backend/app/tools/memory.ts, src/backend/app/tools/room.ts, src/backend/app/tools/search.ts, src/backend/app/tools/skills.ts |
+| src/backend/app/tools/result.ts | src/backend/adapters/contract.ts | src/backend/app/tools/ask.ts, src/backend/app/tools/files.ts, src/backend/app/tools/index.ts, src/backend/app/tools/memory.ts, src/backend/app/tools/room.ts, src/backend/app/tools/search.ts, src/backend/app/tools/skills.ts, src/backend/app/tools/social.ts |
 | src/backend/app/tools/room-search.test.mjs | - | - |
 | src/backend/app/tools/room.ts | src/backend/adapters/contract.ts, src/backend/storage/room.ts, src/backend/app/tools/result.ts | src/backend/app/tools/index.ts |
 | src/backend/app/tools/search.ts | src/backend/adapters/contract.ts, src/backend/app/tools/result.ts | src/backend/app/tools/index.ts |
 | src/backend/app/tools/skills.ts | src/backend/adapters/contract.ts, src/backend/app/skills/registry.ts, src/backend/app/tools/result.ts | src/backend/app/tools/index.ts |
+| src/backend/app/tools/social.test.mjs | - | - |
+| src/backend/app/tools/social.ts | src/backend/adapters/contract.ts, src/backend/app/mail/accounts.ts, src/backend/app/mail/mail.ts, src/backend/app/slack/api.ts, src/backend/app/slack/config.ts, src/backend/app/slack/read.ts, src/backend/app/tools/result.ts | src/backend/app/tools/index.ts |
 | src/backend/app/tools/tool-search.test.mjs | - | - |
 | src/backend/app/tools/workspace.ts | src/backend/storage/paths.ts | src/backend/app/agents.ts, src/backend/app/repos.ts, src/backend/app/runs.ts, src/backend/app/tools/files.ts |
 | src/backend/http/mcp-oauth.ts | src/backend/app/errors.ts, src/backend/app/mcp/manager.ts, src/backend/http/page.ts | src/backend/http/server.ts |

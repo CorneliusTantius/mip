@@ -32,6 +32,7 @@ Docs:
     node src/backend/app/room/engine.test.mjs
     node src/backend/app/room/rooms.test.mjs
     node src/backend/app/tools/tool-search.test.mjs
+    node src/backend/app/tools/social.test.mjs
     node src/backend/app/tools/guides.test.mjs
     node src/backend/app/tools/room-search.test.mjs
     node src/backend/app/tools/calls.test.mjs

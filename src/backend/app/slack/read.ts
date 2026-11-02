@@ -134,7 +134,7 @@ function toMessage(message: RawMessage, names: Record<string, string>): SlackMes
 }
 
 // The display names of a workspace's people, by user id, from users.list. Cached for a day.
-function namesOf(account: SlackAccount): Promise<Record<string, string>> {
+export function namesOf(account: SlackAccount): Promise<Record<string, string>> {
   return cached(`users:${account.teamId}`, NAMES_TTL, () => allNames(account.token));
 }
 

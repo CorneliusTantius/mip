@@ -12,6 +12,7 @@ import { memoryEditTool, memoryReadTool, memorySearchTool } from "./memory.js";
 import { roomSearchTool } from "./room.js";
 import { toolCallTool, toolSearchTool } from "./search.js";
 import { skillFileTool, skillReadTool, skillSearchTool } from "./skills.js";
+import { SOCIAL_TOOLS } from "./social.js";
 import { errorMessage } from "../errors.js";
 import { activeRunId, startRun } from "../runs.js";
 import { fail, ok } from "./result.js";
@@ -116,9 +117,11 @@ const agentAskTool: ToolSpec = {
 const roomSearch = guarded(roomSearchTool);
 const agentsList = guarded(agentsListTool);
 const agentAsk = guarded(agentAskTool);
+// The bots' read tools for mail and Slack. Bots defer them, so they are found with tool_search and run with tool_call.
+const SOCIAL_DEFERRED = SOCIAL_TOOLS.map(guarded);
 
 // The one registry of tool definitions. Each kind of run takes its lists from here, so a definition exists in one place.
-export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS, roomSearch, agentsList, agentAsk];
+export const TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...DEFERRED_TOOLS, ...SEARCH_TOOLS, roomSearch, agentsList, agentAsk, ...SOCIAL_DEFERRED];
 
 // Agents (the agents) are offered the basic tools and the two search tools. They run the deferred tools through tool_call.
 export const AGENT_TOOLS: ToolSpec[] = [...BASIC_TOOLS, ...SEARCH_TOOLS];
@@ -144,7 +147,7 @@ export const BOT_TOOLS: ToolSpec[] = [
 ];
 // The deferred tools of one bot turn: the MCP tools that are connected right now. Like an agent run, a turn takes this list when it starts.
 export function botDeferredTools(): ToolSpec[] {
-  return mcpTools();
+  return [...SOCIAL_DEFERRED, ...mcpTools()];
 }
 
 // What one run may do: the folder its tools work in, the agent it belongs to, the room it is in, the tools it is offered, and the
@@ -185,9 +188,14 @@ export function describeTools() {
     description: tool.description,
     guide: tool.guide,
     inputSchema: tool.inputSchema,
-    load: DEFERRED_TOOLS.includes(tool) || external.includes(tool) ? "deferred" : SEARCH_TOOLS.includes(tool) ? "search" : "basic",
+    load:
+      DEFERRED_TOOLS.includes(tool) || external.includes(tool) || SOCIAL_DEFERRED.includes(tool)
+        ? "deferred"
+        : SEARCH_TOOLS.includes(tool)
+          ? "search"
+          : "basic",
     agent: AGENT_TOOLS.includes(tool) || AGENT_DEFERRED.includes(tool) || external.includes(tool),
-    bot: BOT_TOOLS.includes(tool) || external.includes(tool),
+    bot: BOT_TOOLS.includes(tool) || external.includes(tool) || SOCIAL_DEFERRED.includes(tool),
   }));
 }
 
