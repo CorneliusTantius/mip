@@ -194,11 +194,11 @@
 | src/backend/app/slack/config.ts | 108 | function | writeSlackState |
 | src/backend/app/slack/connect.ts | 11 | const | SLACK_CALLBACK_PATH |
 | src/backend/app/slack/connect.ts | 15 | const | SLACK_USER_SCOPES |
-| src/backend/app/slack/connect.ts | 54 | const | slackRedirectUri |
-| src/backend/app/slack/connect.ts | 61 | function | startConnect |
-| src/backend/app/slack/connect.ts | 78 | function | completeConnect |
-| src/backend/app/slack/connect.ts | 102 | function | connectWithToken |
-| src/backend/app/slack/connect.ts | 110 | function | userNameOf |
+| src/backend/app/slack/connect.ts | 53 | const | slackRedirectUri |
+| src/backend/app/slack/connect.ts | 60 | function | startConnect |
+| src/backend/app/slack/connect.ts | 77 | function | completeConnect |
+| src/backend/app/slack/connect.ts | 101 | function | connectWithToken |
+| src/backend/app/slack/connect.ts | 109 | function | userNameOf |
 | src/backend/app/slack/read.ts | 9 | type | SlackKind |
 | src/backend/app/slack/read.ts | 11 | interface | SlackConversation |
 | src/backend/app/slack/read.ts | 17 | interface | SlackMessage |

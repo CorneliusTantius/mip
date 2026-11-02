@@ -33,7 +33,6 @@ export const SLACK_USER_SCOPES = [
   "search:read.users",
   "chat:write",
   "channels:write",
-  "channels:join",
   "groups:write",
   "im:write",
   "mpim:write",
