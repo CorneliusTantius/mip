@@ -78,8 +78,8 @@ export function App() {
               <RepositoriesCard />
             </div>
 
-            {/* Below everything else. Three per row on tablets, six on desktops. */}
-            <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-3 xl:grid-cols-6 [&>*]:min-h-52">
+            {/* Below everything else. Two per row on tablets, three on desktops, so the cards stay wide enough to read. */}
+            <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-h-52">
               <PlaceholderCard title="Tasks" summary="No tasks yet." glow="yellow" />
               <PlaceholderCard title="Activity" summary="No activity yet." glow="blue" />
               <PlaceholderCard title="Spending" summary="No spending tracked yet." glow="green" />
