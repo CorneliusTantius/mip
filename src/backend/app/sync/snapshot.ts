@@ -1,7 +1,9 @@
 import * as pi from "../../storage/pi.js";
 import * as store from "../../storage/sync.js";
 import { readMailAccounts, writeMailAccounts } from "../mail/accounts.js";
+import { dropMailbox, readMailCache, saveMailbox } from "../mail/cache.js";
 import { mcpConfigText, parseMcpConfig, readMcpConfig, writeMcpConfigText } from "../mcp/config.js";
+import { dropSlackEntry, slackEntries, setSlackEntry } from "../slack/cache.js";
 import { readSlackConfig, writeSlackState } from "../slack/config.js";
 import { AppError } from "../errors.js";
 import {
@@ -9,10 +11,12 @@ import {
   keyOf,
   sameRecord,
   type AgentRecord,
+  type MailCacheRecord,
   type MailRecord,
   type McpServerRecord,
   type PiFileRecord,
   type SlackAppRecord,
+  type SlackCacheRecord,
   type SlackRecord,
   type Snapshot,
 } from "./merge.js";
@@ -36,7 +40,19 @@ export function readLocal(): Snapshot {
     piCredentials: indexBy(pi.readPiCredentialRows(), keyOf.piCredential),
     piModels: indexBy(pi.readPiModelRows(), keyOf.piModel),
     piFiles: indexBy(readPiFiles(), keyOf.piFile),
+    mailCache: indexBy(readMailCacheForSync(), keyOf.mailCache),
+    slackCache: indexBy(readSlackCacheForSync(), keyOf.slackCache),
   };
+}
+
+// The mail headers kept per account, one record each.
+function readMailCacheForSync(): MailCacheRecord[] {
+  return Object.entries(readMailCache()).map(([accountId, mailbox]) => ({ accountId, ...mailbox }));
+}
+
+// The Slack answers kept, one record each. The time they were read is the record's change time.
+function readSlackCacheForSync(): SlackCacheRecord[] {
+  return Object.entries(slackEntries()).map(([key, entry]) => ({ key, updatedAt: entry.at, value: entry.value }));
 }
 
 // The Pi config files that exist in Pi's agent folder, with their text.
@@ -89,6 +105,24 @@ export function applySnapshot(local: Snapshot, target: Snapshot): void {
   applyPart(local.piCredentials, target.piCredentials, pi.writePiCredentialRow, (credential) => pi.removePiCredentialRow(credential.providerId));
   applyPart(local.piModels, target.piModels, pi.writePiModelRow, (model) => pi.removePiModelRow(model.providerId));
   applyPart(local.piFiles, target.piFiles, (file) => pi.writePiConfigFile(file.name as pi.PiConfigFile, file.text), (file) => pi.removePiConfigFile(file.name as pi.PiConfigFile));
+  applyPart(
+    local.mailCache,
+    target.mailCache,
+    ({ accountId, uidValidity, messages }) => saveMailbox(accountId, { uidValidity, messages }),
+    ({ accountId }) => {
+      dropMailbox(accountId);
+      return true;
+    },
+  );
+  applyPart(
+    local.slackCache,
+    target.slackCache,
+    ({ key, updatedAt, value }) => setSlackEntry(key, { at: updatedAt, value }),
+    ({ key }) => {
+      dropSlackEntry(key);
+      return true;
+    },
+  );
   applyPart(local.personas, target.personas, store.writePersonaRow, (persona) => store.removePersonaRow(persona.id));
   applyPart(local.bots, target.bots, store.writeBotRow, (bot) => store.removeBotRow(bot.name));
   applyPart(local.notes, target.notes, store.writeNoteRow, (note) => store.removeNoteRow(note.title));

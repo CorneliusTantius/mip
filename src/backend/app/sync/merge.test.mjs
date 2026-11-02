@@ -170,4 +170,24 @@ const withFiles = (...files) => ({ ...emptySnapshot(), piFiles: indexBy(files, k
   assert.match(notes.join("\n"), /Pi file "settings.json" was changed on both sides; kept the copy on GitHub/);
 }
 
+
+// Caches sync like the rest, but their changes are not reported. A Slack entry keeps the newer read; a mail cache takes GitHub's copy.
+{
+  const cache = (accountId, uidValidity) => ({ accountId, uidValidity, messages: [] });
+  const entry = (key, updatedAt, value) => ({ key, updatedAt, value });
+  const withCaches = (mailCache, slackCache) => ({ ...emptySnapshot(), mailCache: indexBy(mailCache, keyOf.mailCache), slackCache: indexBy(slackCache, keyOf.slackCache) });
+  const base = withCaches([cache("a", 1)], [entry("k", 1, "old")]);
+  const local = withCaches([cache("a", 2)], [entry("k", 5, "local")]);
+  const remote = withCaches([cache("a", 3)], [entry("k", 3, "remote"), entry("other", 4, "new")]);
+  const { merged, notes } = mergeSnapshots(base, local, remote);
+  assert.equal(merged.slackCache.k.value, "local", "the newer Slack read wins");
+  assert.equal(merged.slackCache.other.value, "new", "an entry added on GitHub is kept");
+  assert.equal(merged.mailCache.a.uidValidity, 3, "a mail cache changed on both sides takes GitHub's copy");
+  assert.deepEqual(notes, [], "cache changes are not reported");
+
+  const dropped = mergeSnapshots(base, withCaches([], []), withCaches([cache("a", 1)], [entry("k", 1, "old")]));
+  assert.deepEqual(Object.keys(dropped.merged.mailCache), [], "a cache removed here is removed on GitHub too");
+  assert.deepEqual(Object.keys(dropped.merged.slackCache), [], "a Slack entry removed here is removed on GitHub too");
+}
+
 console.log("merge tests passed");

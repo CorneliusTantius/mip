@@ -264,7 +264,8 @@ Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
   data/mcp.json         MCP servers to connect to, tokens included. Sync carries them to the dotmip repo
   data/mail.json        Mail accounts and their app passwords. Sync carries them to the dotmip repo
   data/slack.json       The Slack app's secret and connected user tokens. Sync carries them to the dotmip repo
-  data/slack-cache.json Slack conversations, messages, and names, kept so a reload does not call Slack. Not synced
+  data/slack-cache.json Slack conversations, messages, and names, kept so a reload does not call Slack. Sync carries them to the dotmip repo
+  data/mail-cache.json  The newest mail headers of each account. Sync carries them to the dotmip repo
   repos/<name>/         Master clones from the Repositories card
   sessions/claude/      Claude CLI config, login, and transcripts
   sessions/pi/          Pi session files

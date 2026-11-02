@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { Credential, ModelsStoreEntry } from "@earendil-works/pi-ai";
 import type { Ask } from "../../storage/agents.js";
 import type { MailAccount } from "../mail/accounts.js";
+import type { CachedMailbox } from "../mail/cache.js";
 import type { McpServerEntry } from "../mcp/config.js";
 import type { SlackAccount } from "../slack/config.js";
 
@@ -110,6 +111,18 @@ export interface PiFileRecord {
   text: string;
 }
 
+// The newest mail headers of one account, as the mail cache keeps them. The account's id is the key.
+export interface MailCacheRecord extends CachedMailbox {
+  accountId: string;
+}
+
+// One Slack cache entry, by its key. updatedAt is when Slack was read, so the newer read wins.
+export interface SlackCacheRecord {
+  key: string;
+  updatedAt: number;
+  value: unknown;
+}
+
 // The whole synced state. Each part maps a record's key to the record. The keys are in keyOf below.
 export interface Snapshot {
   personas: Record<string, PersonaRecord>;
@@ -125,6 +138,8 @@ export interface Snapshot {
   piCredentials: Record<string, PiCredentialRecord>;
   piModels: Record<string, PiModelRecord>;
   piFiles: Record<string, PiFileRecord>;
+  mailCache: Record<string, MailCacheRecord>;
+  slackCache: Record<string, SlackCacheRecord>;
 }
 
 export const PARTS = [
@@ -141,6 +156,8 @@ export const PARTS = [
   "piCredentials",
   "piModels",
   "piFiles",
+  "mailCache",
+  "slackCache",
 ] as const;
 
 export function emptySnapshot(): Snapshot {
@@ -158,6 +175,8 @@ export function emptySnapshot(): Snapshot {
     piCredentials: {},
     piModels: {},
     piFiles: {},
+    mailCache: {},
+    slackCache: {},
   };
 }
 
@@ -188,6 +207,8 @@ export const keyOf = {
   piCredential: (credential: PiCredentialRecord) => credential.providerId,
   piModel: (model: PiModelRecord) => model.providerId,
   piFile: (file: PiFileRecord) => file.name,
+  mailCache: (cache: MailCacheRecord) => cache.accountId,
+  slackCache: (entry: SlackCacheRecord) => entry.key,
 };
 
 function digest(text: string): string {
@@ -274,6 +295,20 @@ const slackKind: Kind<SlackRecord> = {
   combine: (local, remote) => [remote, `Slack account "${local.userName}" was changed on both sides; kept the copy on GitHub`],
 };
 
+// The caches hold what the servers said, so a conflict keeps the newer read (Slack) or GitHub's copy (mail). Their changes are not
+// reported in the sync log, since a cache changes on every reload.
+const mailCacheKind: Kind<MailCacheRecord> = {
+  name: "mail cache",
+  label: (cache) => cache.accountId,
+  combine: (_local, remote) => [remote, ""],
+};
+
+const slackCacheKind: Kind<SlackCacheRecord> = {
+  name: "Slack cache",
+  label: (entry) => entry.key,
+  combine: (local, remote) => [newer(local, remote), ""],
+};
+
 // How one part is merged: its name for the sync log, a label for a record, and how two edits of one record are combined.
 interface Kind<T> {
   name: string;
@@ -348,6 +383,7 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
   const rooms = mergeKind(roomKind, base.rooms, local.rooms, remote.rooms, notes);
   // Room messages are never edited, so both sides' messages are kept. A room that is gone takes its messages with it.
   const messages = { ...remote.room, ...local.room };
+  const quiet: string[] = [];
   const merged: Snapshot = {
     personas: mergeKind(personaKind, base.personas, local.personas, remote.personas, notes),
     bots: mergeKind(botKind, base.bots, local.bots, remote.bots, notes),
@@ -362,6 +398,8 @@ export function mergeSnapshots(base: Snapshot, local: Snapshot, remote: Snapshot
     piCredentials: mergeKind(piCredentialKind, base.piCredentials, local.piCredentials, remote.piCredentials, notes),
     piModels: mergeKind(piModelKind, base.piModels, local.piModels, remote.piModels, notes),
     piFiles: mergeKind(piFileKind, base.piFiles, local.piFiles, remote.piFiles, notes),
+    mailCache: mergeKind(mailCacheKind, base.mailCache, local.mailCache, remote.mailCache, quiet),
+    slackCache: mergeKind(slackCacheKind, base.slackCache, local.slackCache, remote.slackCache, quiet),
   };
   return { merged, notes };
 }

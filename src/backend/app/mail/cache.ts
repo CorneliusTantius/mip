@@ -3,7 +3,7 @@ import { MAIL_CACHE_FILE } from "../../storage/paths.js";
 import type { MailHeader } from "./messages.js";
 
 // The newest message headers of each account, as the last sync left them, newest first. A sync adds what is new and drops what the server
-// removed, so a reload asks the server only for changes. Headers only, no bodies. It is a copy of the mailbox, so sync does not carry it.
+// removed, so a reload asks the server only for changes. Headers only, no bodies. Sync carries it to the dotmip repo.
 
 export interface CachedMailbox {
   uidValidity: number;
