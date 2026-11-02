@@ -83,37 +83,31 @@ export function SlackDialog({
         <div className="flex min-h-0 flex-col gap-6 overflow-y-auto pr-1">
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">Slack app</h3>
-            <p className="text-sm opacity-70">
-              mip signs in as you through a Slack app in your own workspace. The app only asks for user permissions, so nothing posts as a bot.
-              Set it up in these steps:
-            </p>
-            <ol className="flex list-decimal flex-col gap-3 pl-5 text-sm opacity-80">
+            <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm opacity-80">
               <li>
-                Open{" "}
+                At{" "}
                 <a className="link" href="https://api.slack.com/apps" target="_blank" rel="noopener">
                   api.slack.com/apps
                 </a>
-                , press <span className="font-medium">Create New App</span>, then <span className="font-medium">From scratch</span>. Name the app and
-                pick your workspace.
+                , press <span className="font-medium">Create New App</span>, then <span className="font-medium">From scratch</span>.
               </li>
               <li>
-                In the app's left menu, open <span className="font-medium">OAuth &amp; Permissions</span>.
-              </li>
-              <li>
-                Scroll to <span className="font-medium">User Token Scopes</span> and add each of these scopes:
-                <code className="mt-1 block break-all rounded bg-base-300/60 px-2 py-1 text-xs">{state?.scopes.join(", ") ?? "Loading…"}</code>
-              </li>
-              <li>
-                Scroll to <span className="font-medium">Redirect URLs</span>, press <span className="font-medium">Add New Redirect URL</span>, paste
-                this address, then press <span className="font-medium">Save URLs</span>.
+                Open <span className="font-medium">OAuth &amp; Permissions</span>. Under <span className="font-medium">Redirect URLs</span>, add:
                 <code className="mt-1 block break-all rounded bg-base-300/60 px-2 py-1 text-xs">{state?.redirectUri ?? "Loading…"}</code>
               </li>
               <li>
-                Open <span className="font-medium">Basic Information</span>. Under <span className="font-medium">App Credentials</span>, copy the
-                Client ID and the Client Secret into the fields below, then press <span className="font-medium">Save app</span>.
+                On the same page, under <span className="font-medium">User Token Scopes</span>, add the scopes below.
+                <details className="mt-1">
+                  <summary className="cursor-pointer">Scopes</summary>
+                  <code className="mt-1 block break-all rounded bg-base-300/60 px-2 py-1 text-xs">{state?.scopes.join(", ") ?? "Loading…"}</code>
+                </details>
               </li>
               <li>
-                Press <span className="font-medium">Sign in with Slack</span> below and approve in the tab that opens.
+                Open <span className="font-medium">Basic Information</span>, copy the Client ID and Client Secret below, then press{" "}
+                <span className="font-medium">Save app</span>.
+              </li>
+              <li>
+                Press <span className="font-medium">Sign in with Slack</span>.
               </li>
             </ol>
 
@@ -157,9 +151,6 @@ export function SlackDialog({
 
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">Accounts</h3>
-            <p className="text-sm opacity-70">
-              Sign in opens Slack's page in a new tab. Approve it there, and the card fills in. The card reads as the account you connect.
-            </p>
             <div className="flex flex-wrap items-center gap-2">
               <button className="btn btn-primary btn-sm" disabled={!hasApp} onClick={() => void signIn()}>
                 Sign in with Slack
