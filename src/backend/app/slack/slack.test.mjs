@@ -16,6 +16,7 @@ try {
   const paths = await import(`${DIST}storage/paths.js`);
   const config = await import(`${DIST}app/slack/config.js`);
   const read = await import(`${DIST}app/slack/read.js`);
+  const post = await import(`${DIST}app/slack/post.js`);
   const connect = await import(`${DIST}app/slack/connect.js`);
   const slack = await import(`${DIST}app/slack/slack.js`);
   const { AppError } = await import(`${DIST}app/errors.js`);
@@ -100,6 +101,10 @@ try {
   // 9. A person's mention is replaced with their name when a message is read. Unknown ids stay as ids.
   assert.equal(read.resolveMentions("hi <@U1|ann> and <@U2>, <@U3>", { U1: "Ann", U2: "Bo" }), "hi @Ann and @Bo, @U3");
   assert.equal(read.resolveMentions("<#C1|general> <!here>", {}), "<#C1|general> <!here>", "other markup is left for the client");
+
+  // 10. Sending and thread reads refuse an account that is not connected, before any call reaches Slack.
+  await assert.rejects(post.sendMessage("missing", "C1", "hi"), (err) => err instanceof AppError && err.status === 404);
+  assert.throws(() => read.listReplies("missing", "C1", "1.2"), (err) => err instanceof AppError && err.status === 404);
 
   console.log("slack connection tests passed");
 } finally {

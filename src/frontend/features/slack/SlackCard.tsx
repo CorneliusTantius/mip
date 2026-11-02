@@ -1,23 +1,24 @@
 import { useEffect, useState } from "preact/hooks";
 import { errorText } from "../../api/client";
 import type { SlackConversation } from "../../api/types";
-import { Card, CardBody, ExpandButton, useCardExpansion } from "../../ui/Card";
+import { Card, ExpandButton, useCardExpansion } from "../../ui/Card";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { usePolling } from "../../ui/hooks";
 import { MESSAGING_CARD_HEIGHT } from "../../ui/SourceCard";
 import { SlackDialog } from "./SlackDialog";
-import { SlackText } from "./SlackText";
+import { SlackThreadDialog } from "./SlackThreadDialog";
+import { SlackTranscript } from "./SlackTranscript";
 import { useConversations, useMessages, useSlack } from "./useSlack";
 
 // How long, after a sign-in starts, the account list is re-read while the browser finishes the sign-in on Slack's page.
 const WAIT_MS = 120_000;
 const POLL_MS = 3000;
 
-// The Slack card: the conversations of a connected Slack account, and the newest messages of the one chosen. It reads as the connected user,
-// so the messages are the ones that user can see. The Accounts button opens the Slack setup and the connected accounts, as the mail card does.
+// The Slack card, laid out like the bots card: a title row, the accounts and conversation, the transcript as chat bubbles, a status line,
+// and a composer. It reads and sends as the connected user. Accounts opens the Slack setup. A thread opens in its own dialog.
 export function SlackCard() {
   return (
-    <Card glow="violet" className={MESSAGING_CARD_HEIGHT}>
+    <Card glow="violet" className={`flex shrink-0 ${MESSAGING_CARD_HEIGHT}`}>
       <SlackBody />
     </Card>
   );
@@ -32,9 +33,12 @@ function SlackBody() {
   const account = accounts.find((candidate) => candidate.id === selectedId) ?? accounts[0];
   const conversations = useConversations(account?.id);
   const [chosenId, setChosenId] = useState<string>();
-  const conversation = conversations.list.find((candidate) => candidate.id === chosenId) ?? conversations.list[0];
+  const conversation: SlackConversation | undefined = conversations.list.find((candidate) => candidate.id === chosenId) ?? conversations.list[0];
   const messages = useMessages(account?.id, conversation?.id);
-  const text = expanded ? "text-base" : "text-sm";
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string>();
+  const [threadTs, setThreadTs] = useState<string>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [signInError, setSignInError] = useState<string>();
@@ -44,6 +48,8 @@ function SlackBody() {
   useEffect(() => {
     if (accounts.length > 0) setWaiting(false);
   }, [accounts.length]);
+  // A thread belongs to one conversation, so it closes when another is chosen.
+  useEffect(() => setThreadTs(undefined), [conversation?.id]);
 
   // Opens Slack's sign-in page and waits for the approval. Throws the reason when the sign-in cannot start.
   async function signIn() {
@@ -62,29 +68,38 @@ function SlackBody() {
     }
   }
 
+  // Sends the draft as the user. The draft stays when Slack refuses, so nothing is lost.
+  async function send(e: Event) {
+    e.preventDefault();
+    const text = draft.trim();
+    if (!text) return;
+    setSending(true);
+    setSendError(undefined);
+    try {
+      await messages.send(text);
+      setDraft("");
+    } catch (err) {
+      setSendError(errorText(err));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const large = expanded;
+  const status = messages.error ?? sendError ?? conversations.error;
+  const busy = sending || messages.loading || conversations.loading;
+
   return (
     <>
-      <CardBody
-        title="Slack"
-        className="min-h-0 flex-1 gap-3"
-        actions={
-          <>
-            <button className="btn btn-ghost btn-sm" onClick={() => setDialogOpen(true)}>
-              Accounts
-            </button>
-            {account && (
-              <button
-                className="btn btn-ghost btn-sm"
-                disabled={conversations.loading || messages.loading}
-                onClick={() => void Promise.all([conversations.reload(), messages.reload()])}
-              >
-                Refresh
-              </button>
-            )}
-            <ExpandButton />
-          </>
-        }
-      >
+      <div className="card-body min-h-0 flex-1 gap-3 p-4">
+        <div className="flex items-center gap-2">
+          <h2 className="card-title mr-auto">Slack</h2>
+          <button className="btn btn-sm" onClick={() => setDialogOpen(true)}>
+            Accounts
+          </button>
+          <ExpandButton />
+        </div>
+
         <ErrorAlert message={slack.error} />
         {slack.state === undefined && !slack.error && <div className="text-sm opacity-60">Loading Slack…</div>}
         {slack.state && !slack.state.app && (
@@ -103,11 +118,11 @@ function SlackBody() {
 
         {accounts.length > 0 && (
           <>
-            <div className="join self-start" role="group" aria-label="Slack account">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               {accounts.map((candidate) => (
                 <button
                   key={candidate.id}
-                  className={`join-item btn ${expanded ? "btn-sm" : "btn-xs"} ${account?.id === candidate.id ? "btn-active" : ""}`}
+                  className={`btn btn-xs ${candidate.id === account?.id ? "btn-active" : "btn-ghost"}`}
                   onClick={() => setSelectedId(candidate.id)}
                 >
                   {candidate.userName} · {candidate.teamName}
@@ -115,52 +130,76 @@ function SlackBody() {
               ))}
             </div>
 
-            <ErrorAlert message={conversations.error} />
-            {conversations.list.length === 0 && conversations.loading && (
-              <div className="py-2 text-center text-sm opacity-60">Loading conversations…</div>
-            )}
-            {conversations.list.length > 0 && (
+            <div className="flex min-w-0 items-center gap-2">
               <select
-                className={`select w-full ${expanded ? "select-sm" : "select-xs"}`}
+                className="select select-sm min-w-0 flex-1"
                 aria-label="Conversation"
+                disabled={conversations.list.length === 0}
                 value={conversation?.id ?? ""}
                 onChange={(e) => setChosenId((e.target as HTMLSelectElement).value)}
               >
+                {conversations.list.length === 0 && <option value="">{conversations.loading ? "Loading conversations…" : "No conversations"}</option>}
                 {conversations.list.map((candidate) => (
                   <option key={candidate.id} value={candidate.id}>
                     {label(candidate)}
                   </option>
                 ))}
               </select>
-            )}
+              <button className="btn btn-sm btn-ghost" disabled={busy} onClick={() => void Promise.all([conversations.reload(), messages.reload()])}>
+                Refresh
+              </button>
+            </div>
 
-            <ErrorAlert message={messages.error} />
-            <ul className="flex min-h-0 flex-1 flex-col divide-y divide-base-300/40 overflow-y-auto">
-              {messages.list.map((message) => (
-                <li key={message.ts} className={`flex flex-col gap-0.5 py-1.5 ${text}`}>
-                  <span className="flex min-w-0 items-baseline justify-between gap-2">
-                    <span className="truncate font-semibold">{message.author}</span>
-                    <span className="shrink-0 text-xs opacity-60">{formatTime(message.time)}</span>
-                  </span>
-                  <div className="opacity-80">{message.text ? <SlackText text={message.text} /> : "(no text)"}</div>
-                </li>
-              ))}
-            </ul>
+            <SlackTranscript
+              messages={[...messages.list].reverse()}
+              me={account?.userId}
+              large={large}
+              emptyText={
+                !conversation ? "Choose a conversation." : messages.loading ? "Loading messages…" : "No messages in this conversation yet."
+              }
+              onOpenThread={setThreadTs}
+            />
 
-            {messages.loading && messages.list.length === 0 && <div className="py-2 text-center text-sm opacity-60">Loading messages…</div>}
-            {conversation && !messages.loading && messages.list.length === 0 && !messages.error && (
-              <div className="py-4 text-center text-sm opacity-60">No messages in this conversation.</div>
-            )}
+            {/* A fixed-height line, so showing or hiding the status never moves the transcript. */}
+            <p role="status" className="flex h-5 flex-none items-center gap-2 text-xs">
+              {status ? (
+                <span className="truncate text-error">{status}</span>
+              ) : (
+                busy && (
+                  <>
+                    <span className="loading loading-dots loading-xs opacity-70" />
+                    <span className="opacity-70">{sending ? "Sending…" : "Loading…"}</span>
+                  </>
+                )
+              )}
+            </p>
+
+            <form className="join relative w-full" onSubmit={send}>
+              <input
+                className="input input-sm join-item w-full"
+                placeholder={conversation ? `Message ${label(conversation)}` : "Choose a conversation first"}
+                aria-label="Message"
+                disabled={!conversation || sending}
+                value={draft}
+                onInput={(e) => setDraft((e.target as HTMLInputElement).value)}
+              />
+              <button className="btn btn-primary btn-sm join-item" disabled={!conversation || sending || !draft.trim()}>
+                Send
+              </button>
+            </form>
           </>
         )}
-      </CardBody>
+      </div>
 
-      <SlackDialog
-        open={dialogOpen}
-        slack={slack}
-        waiting={waiting}
-        onSignIn={signIn}
-        onClose={() => setDialogOpen(false)}
+      <SlackDialog open={dialogOpen} slack={slack} waiting={waiting} onSignIn={signIn} onClose={() => setDialogOpen(false)} />
+      <SlackThreadDialog
+        open={threadTs !== undefined}
+        accountId={account?.id}
+        userId={account?.userId}
+        channelId={conversation?.id}
+        channelName={conversation?.name}
+        threadTs={threadTs}
+        onClose={() => setThreadTs(undefined)}
       />
     </>
   );
@@ -172,8 +211,4 @@ function label(conversation: SlackConversation): string {
   if (conversation.kind === "private") return `🔒 ${conversation.name}`;
   if (conversation.kind === "group") return `Group: ${conversation.name}`;
   return `# ${conversation.name}`;
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

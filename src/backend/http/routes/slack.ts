@@ -1,6 +1,7 @@
 import { deleteSlackAccount, saveSlackAppInput, slackReply } from "../../app/slack/slack.js";
 import { startConnect, connectWithToken } from "../../app/slack/connect.js";
-import { listConversations, listMessages } from "../../app/slack/read.js";
+import { listConversations, listMessages, listReplies } from "../../app/slack/read.js";
+import { sendMessage } from "../../app/slack/post.js";
 import { created, ok, readJson, requireJson } from "../respond.js";
 import { del, get, post, put, type Route } from "../router.js";
 
@@ -29,4 +30,12 @@ export const slackRoutes: Route[] = [
   get("/api/slack/accounts/:id/conversations/:channel/messages", async ({ params, url }) =>
     ok(await listMessages(params.id, params.channel, url.searchParams.get("refresh") === "1")),
   ),
+  get("/api/slack/accounts/:id/conversations/:channel/threads/:ts", async ({ params, url }) =>
+    ok(await listReplies(params.id, params.channel, params.ts, url.searchParams.get("refresh") === "1")),
+  ),
+  post("/api/slack/accounts/:id/conversations/:channel/messages", async ({ req, params }) => {
+    requireJson(req);
+    const body = await readJson(req);
+    return created(await sendMessage(params.id, params.channel, String(body.text ?? ""), body.threadTs ? String(body.threadTs) : undefined));
+  }),
 ];

@@ -351,10 +351,14 @@ export interface SlackConversation {
   kind: SlackKind;
 }
 
-// One message, newest first in a conversation. time is an ISO date.
+// One message. time is an ISO date. user is the author's Slack id ("" for a bot). replies counts the thread under it, and threadTs names
+// the thread the message is in.
 export interface SlackMessage {
   ts: string;
   time: string;
+  user: string;
   author: string;
   text: string;
+  replies: number;
+  threadTs?: string;
 }

@@ -79,20 +79,26 @@ export function useConversations(accountId: string | undefined) {
   return { list, loading, error, reload: () => load(true) };
 }
 
-// The newest messages of one conversation. The server keeps its answer for a couple of minutes, and Refresh asks Slack again.
+// Where one conversation's messages or thread replies are read and sent. Empty when the conversation or account is not chosen.
+function conversationPath(accountId: string | undefined, channelId: string | undefined): string | undefined {
+  return accountId && channelId ? `/api/slack/accounts/${encodeURIComponent(accountId)}/conversations/${encodeURIComponent(channelId)}` : undefined;
+}
+
+// The newest messages of one conversation, and a way to send one. The server keeps its answer for a couple of minutes; Refresh and a send ask
+// Slack again.
 export function useMessages(accountId: string | undefined, channelId: string | undefined) {
   const [list, setList] = useState<SlackMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const latest = useRef(0);
+  const base = conversationPath(accountId, channelId);
 
   async function load(force = false) {
-    if (!accountId || !channelId) return;
+    if (!base) return;
     const request = ++latest.current;
     setLoading(true);
     try {
-      const path = `/api/slack/accounts/${encodeURIComponent(accountId)}/conversations/${encodeURIComponent(channelId)}/messages`;
-      const reply = await api.get<SlackMessage[]>(`${path}${force ? "?refresh=1" : ""}`);
+      const reply = await api.get<SlackMessage[]>(`${base}/messages${force ? "?refresh=1" : ""}`);
       if (request !== latest.current) return;
       setList(reply);
       setError(undefined);
@@ -103,10 +109,52 @@ export function useMessages(accountId: string | undefined, channelId: string | u
     }
   }
 
+  // Sends a message as the user. Throws the reason when Slack refuses it, so the composer keeps the text.
+  async function send(text: string): Promise<void> {
+    if (!base) return;
+    await api.post(`${base}/messages`, { text });
+    await load(true);
+  }
+
   useEffect(() => {
     setList([]);
     void load();
   }, [accountId, channelId]);
 
-  return { list, loading, error, reload: () => load(true) };
+  return { list, loading, error, reload: () => load(true), send };
+}
+
+// One thread: the parent message and its replies, oldest first, and a way to reply in it.
+export function useThread(accountId: string | undefined, channelId: string | undefined, threadTs: string | undefined) {
+  const [list, setList] = useState<SlackMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
+  const base = conversationPath(accountId, channelId);
+
+  async function load(force = false) {
+    if (!base || !threadTs) return;
+    setLoading(true);
+    try {
+      setList(await api.get<SlackMessage[]>(`${base}/threads/${encodeURIComponent(threadTs)}${force ? "?refresh=1" : ""}`));
+      setError(undefined);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Replies in the thread as the user. Throws the reason when Slack refuses it.
+  async function reply(text: string): Promise<void> {
+    if (!base || !threadTs) return;
+    await api.post(`${base}/messages`, { text, threadTs });
+    await load(true);
+  }
+
+  useEffect(() => {
+    setList([]);
+    void load();
+  }, [accountId, channelId, threadTs]);
+
+  return { list, loading, error, reload: () => load(true), reply };
 }

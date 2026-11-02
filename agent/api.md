@@ -154,7 +154,9 @@ The Slack app and the connected users, in `data/slack.json`. Tokens and the clie
 | POST | /api/slack/token | 201 | the account, without its token. Body `{token}`, which must start with `xoxp-` | 400 not a user token; 401 Slack refuses it; 415 not JSON |
 | DELETE | /api/slack/accounts/:id | 200 | the same shape as GET | 404 no such account |
 | GET | /api/slack/accounts/:id/conversations | 200 | `{id, name, kind: "channel" \| "private" \| "group" \| "dm"}[]`, channels first. Served from the cache unless `?refresh=1` | 404 no such account; 401 the connection is no longer accepted; 403 a missing scope; 429 rate limited |
-| GET | /api/slack/accounts/:id/conversations/:channel/messages | 200 | `{ts, time, author, text}[]`, the newest 30, newest first. Served from the cache for two minutes unless `?refresh=1` | 400 not a conversation id; 404 no such account or no access to the conversation; 429 rate limited |
+| GET | /api/slack/accounts/:id/conversations/:channel/messages | 200 | `{ts, time, user, author, text, replies, threadTs?}[]`, the newest 30, newest first, replies left out. Served from the cache for two minutes unless `?refresh=1` | 400 not a conversation id; 404 no such account or no access to the conversation; 429 rate limited |
+| POST | /api/slack/accounts/:id/conversations/:channel/messages | 201 | `{ts}`. Body `{text, threadTs?}`. Sends as the user (`chat.postMessage`); the card sends only when the user presses Send. Max 4,000 characters | 400 empty, too long, or a bad channel or thread; 404 no such account; 415 not JSON; 401 or 403 Slack refuses it |
+| GET | /api/slack/accounts/:id/conversations/:channel/threads/:ts | 200 | `{ts, time, user, author, text, replies, threadTs?}[]`, the parent then its replies, oldest first. Served from the cache for two minutes unless `?refresh=1` | 400 not a conversation or thread id; 404 no such account |
 
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |

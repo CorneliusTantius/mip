@@ -3,9 +3,9 @@ import { cached } from "./cache.js";
 import { slackCall } from "./api.js";
 import { type SlackAccount, readSlackConfig } from "./config.js";
 
-// Reading as a connected user: the conversations the user is in, and the newest messages of one. Answers are cached, so a reload does not call
-// Slack again. Force refreshes a read. Names come from one users.list pass per workspace, not a call per person. Slack limits how often
-// history can be read for apps outside its Marketplace, so a refused read says so.
+// Reading as a connected user: the conversations the user is in, the newest messages of one, and the replies in a thread. Answers are cached,
+// so a reload does not call Slack again. Force refreshes a read. Names come from one users.list pass per workspace, not a call per person.
+// Slack limits how often history can be read for apps outside its Marketplace, so a refused read says so.
 
 export type SlackKind = "channel" | "private" | "group" | "dm";
 
@@ -18,13 +18,31 @@ export interface SlackConversation {
 export interface SlackMessage {
   ts: string;
   time: string;
+  // The author's Slack user id, or "" for a bot or an app message.
+  user: string;
   author: string;
   text: string;
+  // How many replies the message has in its thread. A thread reply has 0.
+  replies: number;
+  // The timestamp of the thread the message belongs to, when it is in one.
+  threadTs?: string;
+}
+
+interface RawMessage {
+  ts: string;
+  user?: string;
+  bot_id?: string;
+  username?: string;
+  text?: string;
+  reply_count?: number;
+  thread_ts?: string;
 }
 
 const CHANNEL_ID = /^[A-Z0-9]{1,32}$/;
+const THREAD_TS = /^\d+\.\d+$/;
 const MAX_CONVERSATIONS = 200;
 const MESSAGES_PER_READ = 30;
+const REPLIES_PER_READ = 100;
 // Pages of users.list read for names, 200 people each. Past this, the rest show as ids.
 // shortcut: 50 pages of 200 people, so a bigger workspace shows some names as ids; raise it when that matters.
 const MAX_USER_PAGES = 50;
@@ -58,7 +76,7 @@ export function listConversations(accountId: string, force = false): Promise<Sla
   );
 }
 
-// The newest messages of one conversation, newest first. A message's author is the person's name, or the bot's id for a bot message.
+// The newest messages of one conversation, newest first. Replies inside threads are left out; their parent shows how many there are.
 export function listMessages(accountId: string, channel: string, force = false): Promise<SlackMessage[]> {
   const account = accountOf(accountId);
   if (!CHANNEL_ID.test(channel)) throw new AppError(400, "That is not a conversation id.");
@@ -66,16 +84,32 @@ export function listMessages(accountId: string, channel: string, force = false):
     `messages:${account.id}:${channel}`,
     MESSAGES_TTL,
     async () => {
-      const reply = await slackCall<{
-        messages: { ts: string; user?: string; bot_id?: string; username?: string; text?: string }[];
-      }>("conversations.history", account.token, { channel, limit: MESSAGES_PER_READ });
+      const reply = await slackCall<{ messages: RawMessage[] }>("conversations.history", account.token, {
+        channel,
+        limit: MESSAGES_PER_READ,
+      });
       const names = await namesOf(account);
-      return reply.messages.map((message) => ({
-        ts: message.ts,
-        time: timeOf(message.ts),
-        author: message.user ? (names[message.user] ?? message.user) : (message.username ?? message.bot_id ?? "Unknown"),
-        text: resolveMentions(message.text ?? "", names),
-      }));
+      return reply.messages.filter((message) => !message.thread_ts || message.thread_ts === message.ts).map((message) => toMessage(message, names));
+    },
+    force,
+  );
+}
+
+// The replies in one thread, oldest first, with the parent message first. The thread is named by its parent's timestamp.
+export function listReplies(accountId: string, channel: string, threadTs: string, force = false): Promise<SlackMessage[]> {
+  const account = accountOf(accountId);
+  if (!CHANNEL_ID.test(channel) || !THREAD_TS.test(threadTs)) throw new AppError(400, "That is not a thread.");
+  return cached(
+    `replies:${account.id}:${channel}:${threadTs}`,
+    MESSAGES_TTL,
+    async () => {
+      const reply = await slackCall<{ messages: RawMessage[] }>("conversations.replies", account.token, {
+        channel,
+        ts: threadTs,
+        limit: REPLIES_PER_READ,
+      });
+      const names = await namesOf(account);
+      return reply.messages.map((message) => toMessage(message, names));
     },
     force,
   );
@@ -84,6 +118,19 @@ export function listMessages(accountId: string, channel: string, force = false):
 // Slack writes a person as <@U123>, which becomes @name. The rest of Slack's markup is read by the client.
 export function resolveMentions(text: string, names: Record<string, string>): string {
   return text.replace(/<@([UW][A-Z0-9]+)(?:\|[^>]*)?>/g, (_, id: string) => `@${names[id] ?? id}`);
+}
+
+function toMessage(message: RawMessage, names: Record<string, string>): SlackMessage {
+  const user = message.user ?? "";
+  return {
+    ts: message.ts,
+    time: timeOf(message.ts),
+    user,
+    author: user ? (names[user] ?? user) : (message.username ?? message.bot_id ?? "Unknown"),
+    text: resolveMentions(message.text ?? "", names),
+    replies: message.reply_count ?? 0,
+    ...(message.thread_ts ? { threadTs: message.thread_ts } : {}),
+  };
 }
 
 // The display names of a workspace's people, by user id, from users.list. Cached for a day.
@@ -108,7 +155,8 @@ async function allNames(token: string): Promise<Record<string, string>> {
   return names;
 }
 
-function accountOf(id: string): SlackAccount {
+// The connected account with this id. Other modules use it, so a request with an unknown id is refused in one place.
+export function accountOf(id: string): SlackAccount {
   const account = readSlackConfig().accounts.find((candidate) => candidate.id === id);
   if (!account) throw new AppError(404, `No Slack account called "${id}".`);
   return account;
