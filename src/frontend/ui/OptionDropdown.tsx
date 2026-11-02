@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { filterOptions } from "./filterOptions";
 import { Icon } from "./Icon";
 
+// The most the list can be tall (max-h-64), in pixels, so the placement can tell whether it fits above or below the button.
+const LIST_HEIGHT = 256;
+
 export interface DropdownOption {
   value: string;
   label: string;
@@ -30,6 +33,8 @@ export function OptionDropdown({
   const details = useRef<HTMLDetailsElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
+  // Whether the list opens above the button. It opens above when there is room, and below when there is not.
+  const [up, setUp] = useState(true);
   const current = options.find((option) => option.value === value);
   const shown = searchable ? filterOptions(options, query) : options;
 
@@ -50,6 +55,9 @@ export function OptionDropdown({
   // Each time the list opens, the search box takes focus. Closing clears the search, so the next open shows every option.
   function toggled() {
     if (!details.current?.open) return setQuery("");
+    const button = details.current.querySelector("summary")!.getBoundingClientRect();
+    const height = Math.min(details.current.querySelector("ul")!.scrollHeight, LIST_HEIGHT);
+    setUp(button.top >= height || button.top >= innerHeight - button.bottom);
     requestAnimationFrame(() => search.current?.focus());
   }
 
@@ -62,7 +70,7 @@ export function OptionDropdown({
   }
 
   return (
-    <details ref={details} className="dropdown dropdown-top" onToggle={toggled}>
+    <details ref={details} className={`dropdown ${up ? "dropdown-top" : "dropdown-bottom"}`} onToggle={toggled}>
       <summary
         className={"btn btn-xs w-52 flex-nowrap justify-between font-normal list-none [&::-webkit-details-marker]:hidden " + (disabled ? "btn-disabled" : "")}
         aria-label={label}
