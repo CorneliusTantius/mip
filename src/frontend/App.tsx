@@ -19,7 +19,7 @@ import { Starfield } from "./ui/Starfield";
 const WIDTH = "mx-auto w-full max-w-5xl xl:max-w-none 2xl:max-w-[1920px]";
 const SIDES = "px-4 xl:px-4.75";
 // Medium cards: memory and repositories share a row from tablets up, and stack on phones.
-const MEDIUM = "col-span-12 md:col-span-6";
+const MEDIUM = "col-span-12 h-[25rem] md:col-span-6";
 
 // The page: a header, then one scrolling grid of cards. Each card sits in a grid cell, and the cells keep their order.
 export function App() {
@@ -38,10 +38,10 @@ export function App() {
         </div>
 
         {/* The agent and the bots room are the tall cards. Desktops put them side by side, both as tall as the window allows. */}
-        <div className="col-span-12 h-[min(44rem,80vh)] xl:col-span-8">
+        <div className="col-span-12 h-[min(47rem,85vh)] xl:col-span-8">
           <AgentCard />
         </div>
-        <div className="col-span-12 h-[min(40rem,80vh)] xl:col-span-4 xl:h-[min(44rem,80vh)]">
+        <div className="col-span-12 h-[min(43rem,85vh)] xl:col-span-4 xl:h-[min(47rem,85vh)]">
           <BotsCard />
         </div>
 
@@ -60,7 +60,7 @@ export function App() {
         </div>
 
         {/* Below everything else. Two per row on tablets, five on desktops. */}
-        <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-5">
+        <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-5 [&>*]:min-h-52">
           <PlaceholderCard title="Tasks" summary="No tasks yet." glow="yellow" />
           <PlaceholderCard title="Activity" summary="No activity yet." glow="blue" />
           <ToolsCard />
