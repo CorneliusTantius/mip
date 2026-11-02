@@ -11,7 +11,8 @@ import {
   saveMailAccount,
   viewOf,
 } from "./accounts.js";
-import { LIST_LIMIT, checkAccount, fetchMessage, recentHeaders, signInOnce } from "./imap.js";
+import { dropMailbox, readMailCache, saveMailbox } from "./cache.js";
+import { LIST_LIMIT, checkAccount, fetchMessage, signInOnce, syncMailbox } from "./imap.js";
 import { type MailHeader, type MailMessage, messageOf } from "./messages.js";
 import { closeMailSession } from "./sessions.js";
 
@@ -78,6 +79,7 @@ export async function addMailAccount(input: unknown): Promise<MailAccountView> {
 // Removes an account from mail.json, and closes its connection. Nothing is sent to the server.
 export async function deleteMailAccount(id: string): Promise<MailAccountsReply> {
   removeMailAccount(id);
+  dropMailbox(id);
   await closeMailSession(id);
   return mailAccountsReply();
 }
@@ -88,10 +90,13 @@ export async function testMailAccount(id: string): Promise<{ messages: number; u
   return reading(account, () => checkAccount(account));
 }
 
-// The newest messages in an account's mailbox, newest first.
+// The newest messages in an account's mailbox, newest first. The headers are kept, so a call fetches only what is new since the last one, and
+// older ones only when count asks for more than is kept.
 export async function listMailMessages(id: string, count = LIST_LIMIT): Promise<{ mailbox: string; messages: MailHeader[] }> {
   const account = findAccount(id);
-  const messages = await reading(account, () => recentHeaders(account, count));
+  const box = await reading(account, () => syncMailbox(account, readMailCache()[id], count));
+  saveMailbox(id, box);
+  const messages = box.messages.slice(0, count);
   return { mailbox: account.mailbox, messages };
 }
 

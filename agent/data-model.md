@@ -45,6 +45,7 @@ Owner = the storage module that reads and writes the table. Only that module wri
 | `pi_state` | `storage/pi.ts` | small app settings, such as the one-time Pi auth import |
 | `MIP_HOME/data/pi/` | `storage/paths.ts` (`PI_AGENT_DIR`) | Pi's agent folder: `settings.json` and `models.json`, which sync |
 | `MIP_HOME/data/mail.json` | `app/mail/accounts.ts` (read on each request, written with mode 600) | the mail accounts: named accounts with an IMAP server, a login, an app password, a mailbox, and watch settings. Synced to the private dotmip repo, under `mail/`, the same as MCP servers |
+| `MIP_HOME/data/mail-cache.json` | `app/mail/cache.ts` (written with mode 600) | the newest message headers of each account, with the mailbox's UIDVALIDITY. A reload reads only what is new. Not synced |
 | `MIP_HOME/data/slack.json` | `app/slack/config.ts` (read on each request, written with mode 600) | the Slack app's client ID and secret (`app`), and the connected users (`accounts`), each with its user token. Synced to the private dotmip repo, under `slack-app/` and `slack/` |
 | `MIP_HOME/data/slack-cache.json` | `app/slack/cache.ts` (written with mode 600) | Slack answers kept with their fetch time: conversations, messages, and each workspace's names. A cache, so not synced |
 | `MIP_HOME/data/mcp.json` | `app/mcp/config.ts` (read at startup and on reload) | the MCP servers: a `mcpServers` map of stdio commands or Streamable HTTP links. An OAuth server's entry holds its sign-in state and tokens, under `oauth`. Its tokens sync to the private dotmip repo, under `mcp/` |

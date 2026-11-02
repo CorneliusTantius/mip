@@ -42,6 +42,7 @@ Docs:
     node src/backend/app/mail/accounts.test.mjs
     node src/backend/app/mail/messages.test.mjs
     node src/backend/app/mail/mail.test.mjs
+    node src/backend/app/mail/mail-sync.test.mjs
     node src/backend/app/sync/github.test.mjs
     node src/backend/app/sync/merge.test.mjs
     node src/backend/app/sync/sync.test.mjs

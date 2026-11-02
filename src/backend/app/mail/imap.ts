@@ -1,6 +1,7 @@
 import { ImapFlow } from "imapflow";
 import { type ParsedMail, simpleParser } from "mailparser";
 import { type MailAccount } from "./accounts.js";
+import { type CachedMailbox } from "./cache.js";
 import { type MailHeader, headerOf } from "./messages.js";
 import { inSession, newConnection } from "./sessions.js";
 
@@ -24,22 +25,61 @@ export function checkAccount(account: MailAccount): Promise<{ messages: number; 
   return inSession(account, (client) => countMailbox(client, account.mailbox));
 }
 
-// The newest messages of the account's mailbox, newest first. Read-only, so the server keeps every message's read state.
-export function recentHeaders(account: MailAccount, limit = LIST_LIMIT): Promise<MailHeader[]> {
+// The cached headers of the account's mailbox, brought up to date with the server. It returns at least count of the newest messages, or all
+// of them when there are fewer. A sync reads only what changed: the UIDs the cache lacks (new mail, or older mail when the list is short),
+// the read state of the cached messages, and the messages the server removed. Bodies are not read. Read-only, so nothing is marked read.
+export function syncMailbox(account: MailAccount, cached: CachedMailbox | undefined, count: number): Promise<CachedMailbox> {
   return inSession(account, async (client) => {
     const lock = await client.getMailboxLock(account.mailbox, { readOnly: true });
     try {
-      const exists = client.mailbox ? client.mailbox.exists : 0;
-      if (exists === 0) return [];
-      const headers: MailHeader[] = [];
-      for await (const message of client.fetch(`${Math.max(1, exists - limit + 1)}:*`, { uid: true, flags: true, envelope: true })) {
-        headers.push(headerOf(message));
+      const uidValidity = Number(client.mailbox ? client.mailbox.uidValidity : 0);
+      // A new UIDVALIDITY means the server renumbered the mailbox, so nothing cached can be trusted.
+      let messages = cached && cached.uidValidity === uidValidity ? cached.messages : [];
+      const uids = ((await client.search({ all: true }, { uid: true })) || []).sort((a, b) => a - b);
+      const present = new Set(uids);
+      messages = messages.filter((message) => present.has(message.uid));
+
+      // New mail: every UID above the newest cached one. An empty cache starts with the newest count.
+      const newest = messages[0]?.uid ?? 0;
+      const fresh = messages.length ? uids.filter((uid) => uid > newest) : uids.slice(-count);
+      messages = [...(await headersOf(client, fresh)), ...messages];
+
+      // Older mail, only while the list is shorter than count.
+      while (messages.length < count) {
+        const oldest = messages[messages.length - 1]?.uid ?? Infinity;
+        const older = uids.filter((uid) => uid < oldest).slice(-(count - messages.length));
+        if (older.length === 0) break;
+        messages = [...messages, ...(await headersOf(client, older))];
       }
-      return headers.reverse();
+
+      // The read state can change on the server, so the cached messages' flags are read again.
+      const seen = await seenFlags(client, messages.map((message) => message.uid));
+      messages = messages.map((message) => ({ ...message, seen: seen.get(message.uid) ?? message.seen }));
+      return { uidValidity, messages };
     } finally {
       lock.release();
     }
   });
+}
+
+// The headers of these UIDs, newest first.
+async function headersOf(client: ImapFlow, uids: number[]): Promise<MailHeader[]> {
+  if (uids.length === 0) return [];
+  const headers: MailHeader[] = [];
+  for await (const message of client.fetch(uids.join(","), { uid: true, flags: true, envelope: true }, { uid: true })) {
+    headers.push(headerOf(message));
+  }
+  return headers.sort((a, b) => b.uid - a.uid);
+}
+
+// Whether each of these UIDs is read, by UID.
+async function seenFlags(client: ImapFlow, uids: number[]): Promise<Map<number, boolean>> {
+  const seen = new Map<number, boolean>();
+  if (uids.length === 0) return seen;
+  for await (const message of client.fetch(uids.join(","), { uid: true, flags: true }, { uid: true })) {
+    seen.set(message.uid, message.flags?.has("\\Seen") === true);
+  }
+  return seen;
 }
 
 // One message by its UID, parsed. The body is fetched with BODY.PEEK, so reading it does not mark it as read. Returns nothing when the

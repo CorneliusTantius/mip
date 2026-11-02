@@ -11,6 +11,8 @@ export const DEVICE_ID_FILE = join(DATA_DIR, "device-id");
 export const MCP_CONFIG_FILE = join(DATA_DIR, "mcp.json");
 // The mail accounts mip reads over IMAP. They hold app passwords, and sync carries them to the private dotmip repo.
 export const MAIL_CONFIG_FILE = join(DATA_DIR, "mail.json");
+// The newest message headers of each mail account, so a reload fetches only what is new. Sync does not carry it.
+export const MAIL_CACHE_FILE = join(DATA_DIR, "mail-cache.json");
 // The Slack app's client ID and secret, and the connected Slack users with their user tokens. Sync carries them to the private dotmip repo.
 export const SLACK_CONFIG_FILE = join(DATA_DIR, "slack.json");
 // Conversations, messages, and names read from Slack, kept so a reload does not call Slack again. Sync does not carry it.

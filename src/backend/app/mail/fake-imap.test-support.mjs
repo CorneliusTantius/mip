@@ -27,6 +27,8 @@ function envelopeOf(message) {
 export function startFakeImap({ user, password, messages, port = 0 }) {
   const store = messages.map((message) => ({ ...message, flags: new Set(message.flags ?? []) }));
   const fetches = [];
+  // The message sets each FETCH asked for, so a test can see which headers a sync read.
+  const ranges = [];
   const sockets = new Set();
   let connections = 0;
 
@@ -45,6 +47,7 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
     const fetch = (tag, args) => {
       const [, setText, itemText] = /^(?:UID\s+)?FETCH\s+(\S+)\s+\((.*)\)$/i.exec(args) ?? [];
       if (!setText) return send(`${tag} BAD cannot read that FETCH\r\n`);
+      ranges.push(setText);
       const byUid = /^UID\s+/i.test(args);
       const items = itemText.toUpperCase().split(/\s+/);
       const wanted = setText === "*" ? [store.length] : setText.split(",").flatMap((part) => {
@@ -114,6 +117,10 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
           return fetch(tag, `${command} ${rest.join(" ")}`.replace(/^FETCH\s+/i, "FETCH "));
         case "UID":
           if (!selected) return send(`${tag} NO no mailbox selected\r\n`);
+          // Every UID in the mailbox, for a sync that looks for new and removed messages.
+          if (rest[0]?.toUpperCase() === "SEARCH") {
+            return send(`* SEARCH ${store.map((message) => message.uid).join(" ")}\r\n${tag} OK SEARCH completed\r\n`);
+          }
           return fetch(tag, `UID ${rest.join(" ")}`);
         case "LOGOUT":
           send(`* BYE logging out\r\n${tag} OK LOGOUT completed\r\n`);
@@ -140,6 +147,8 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
       resolve({
         port: server.address().port,
         fetches,
+        // The FETCH message sets since the last call, oldest first.
+        takeRanges: () => ranges.splice(0),
         // How many connections have been made to the server so far.
         connectionCount: () => connections,
         // Drops every open connection, as a server does when it times one out.
@@ -147,6 +156,12 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
           for (const socket of sockets) socket.destroy();
         },
         flagsOf: (uid) => [...(store.find((message) => message.uid === uid)?.flags ?? [])],
+        // Adds a message, as a new arrival does, and removes one, as an expunge does.
+        add: (message) => store.push({ ...message, flags: new Set(message.flags ?? []) }),
+        remove: (uid) => {
+          const index = store.findIndex((message) => message.uid === uid);
+          if (index !== -1) store.splice(index, 1);
+        },
         stop: () =>
           new Promise((done) => {
             for (const socket of sockets) socket.destroy();
