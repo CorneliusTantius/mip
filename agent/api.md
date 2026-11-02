@@ -163,7 +163,7 @@ The Slack app and the connected users, in `data/slack.json`. Tokens and the clie
 | Method | Path | Success | Body | Errors |
 |---|---|---|---|---|
 | GET | /api/spending | 200 | `{entries: {id, kind: "income" \| "expense", category, amount, createdAt}[]}`, newest first | |
-| POST | /api/spending | 201 | Body `{kind, category, amount}`. A category typed in another case keeps the existing spelling | 400 bad kind, empty or long category, or amount not above 0 |
+| POST | /api/spending | 201 | Body `{kind, category, amount, description?}`; a description is optional, 200 characters at most. A category typed in another case keeps the existing spelling | 400 bad kind, empty or long category, amount not above 0, or description too long |
 
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 | method | path | auth | body | notes |

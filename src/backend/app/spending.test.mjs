@@ -24,18 +24,27 @@ try {
   const lower = addSpendingEntry({ kind: "expense", category: " food ", amount: 15000 });
   assert.equal(lower.category, "Food");
 
+  // The description is optional: it is trimmed, and an entry without one keeps an empty description.
+  const gas = addSpendingEntry({ kind: "expense", category: "Gas", amount: 1, description: "  full tank  " });
+  assert.equal(gas.description, "full tank");
+  const plain = addSpendingEntry({ kind: "expense", category: "Gas", amount: 2 });
+  assert.equal(plain.description, "");
+
   // Refused: a kind other than income or expense, a missing or long category, and an amount that is not a number above 0.
   rejects({ kind: "transfer", category: "x", amount: 1 }, "kind must be income or expense");
   rejects({ kind: "expense", category: "   ", amount: 1 }, "category is required");
   rejects({ kind: "expense", category: "x".repeat(41), amount: 1 }, "category must be 40 characters or fewer");
   rejects({ kind: "expense", category: "Gas", amount: 0 }, "amount must be a number above 0");
   rejects({ kind: "expense", category: "Gas", amount: "abc" }, "amount must be a number above 0");
+  rejects({ kind: "expense", category: "Gas", amount: 1, description: "x".repeat(201) }, "description must be 200 characters or fewer");
 
   // The list is newest first, and a refused entry is not kept.
   const entries = allSpending();
-  assert.equal(entries.length, 3);
-  assert.equal(entries[0].category, "Food");
-  assert.equal(entries[2].category, "Salary");
+  assert.equal(entries.length, 5);
+  assert.equal(entries[0].id, plain.id);
+  assert.equal(entries[1].id, gas.id);
+  assert.equal(entries[2].category, "Food");
+  assert.equal(entries[4].category, "Salary");
 
   console.log("spending tests passed");
 } finally {

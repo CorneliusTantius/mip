@@ -144,12 +144,16 @@ db.exec(`
     kind TEXT NOT NULL,
     category TEXT NOT NULL,
     amount REAL NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     created_at INTEGER NOT NULL
   );
 `);
 
 // Every agent and bot can use every installed skill now, so the per-agent and per-bot skill lists are dropped.
 db.exec("DROP TABLE IF EXISTS skill_enablements; DROP TABLE IF EXISTS bot_skill_enablements;");
+
+// Spending entries made before the description existed have none.
+if (!hasColumn("spending_entries", "description")) db.exec("ALTER TABLE spending_entries ADD COLUMN description TEXT NOT NULL DEFAULT ''");
 
 // Migrations for databases made before some columns existed. Each one adds the column only when it is missing.
 

@@ -371,6 +371,8 @@ export interface SpendingEntry {
   kind: "income" | "expense";
   category: string;
   amount: number;
+  // Empty when none was given.
+  description: string;
   createdAt: number;
 }
 
@@ -378,4 +380,5 @@ export interface NewSpendingEntry {
   kind: "income" | "expense";
   category: string;
   amount: number;
+  description?: string;
 }

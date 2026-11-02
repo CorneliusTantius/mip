@@ -65,7 +65,10 @@ function Row({ entry }: { entry: SpendingEntry }) {
   return (
     <li className="flex items-center gap-2 text-sm">
       <span className={`badge badge-sm ${income ? "badge-success" : "badge-error"}`}>{income ? "Income" : "Expense"}</span>
-      <span className="min-w-0 flex-1 truncate">{entry.category}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate">{entry.category}</span>
+        {entry.description && <span className="block truncate text-xs opacity-60">{entry.description}</span>}
+      </span>
       <span className="opacity-60">{new Date(entry.createdAt).toLocaleDateString()}</span>
       <span className={`font-medium tabular-nums ${income ? "text-success" : "text-error"}`}>
         {income ? "+" : "-"}

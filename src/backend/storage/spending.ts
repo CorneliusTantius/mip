@@ -6,6 +6,8 @@ export interface SpendingEntry {
   kind: "income" | "expense";
   category: string;
   amount: number;
+  // Optional. An empty string when none was given.
+  description: string;
   createdAt: number;
 }
 
@@ -15,15 +17,16 @@ export function listSpendingEntries(): SpendingEntry[] {
 }
 
 export function insertSpendingEntry(entry: SpendingEntry): void {
-  db.prepare("INSERT INTO spending_entries (id, kind, category, amount, created_at) VALUES (?, ?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO spending_entries (id, kind, category, amount, description, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
     entry.id,
     entry.kind,
     entry.category,
     entry.amount,
+    entry.description,
     entry.createdAt,
   );
 }
 
 function toEntry(row: Row): SpendingEntry {
-  return { id: row.id, kind: row.kind, category: row.category, amount: row.amount, createdAt: row.created_at };
+  return { id: row.id, kind: row.kind, category: row.category, amount: row.amount, description: row.description, createdAt: row.created_at };
 }

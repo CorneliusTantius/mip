@@ -19,6 +19,7 @@ export function AddSpendingDialog({
   const [kind, setKind] = useState<NewSpendingEntry["kind"]>("expense");
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -26,6 +27,7 @@ export function AddSpendingDialog({
     setKind("expense");
     setCategory("");
     setAmount("");
+    setDescription("");
     setError(undefined);
     onClose();
   }
@@ -35,7 +37,7 @@ export function AddSpendingDialog({
     setError(undefined);
     setBusy(true);
     try {
-      await onAdd({ kind, category, amount: Number(amount) });
+      await onAdd({ kind, category, amount: Number(amount), description });
       close();
     } catch (err) {
       setError(errorText(err));
@@ -91,6 +93,17 @@ export function AddSpendingDialog({
             placeholder="0"
             value={amount}
             onInput={(e) => setAmount((e.target as HTMLInputElement).value)}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          Description <span className="opacity-60">(optional)</span>
+          <input
+            className="input input-sm w-full"
+            placeholder="What it was for"
+            maxLength={200}
+            value={description}
+            onInput={(e) => setDescription((e.target as HTMLInputElement).value)}
           />
         </label>
 
