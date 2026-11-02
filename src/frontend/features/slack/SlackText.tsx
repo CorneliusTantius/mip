@@ -1,3 +1,4 @@
+import { shortLink } from "../../ui/links";
 import { type Block, type Inline, parseBlocks, parseInline } from "./mrkdwn";
 
 // A Slack message drawn in Slack's text format: quotes, code blocks, bold, italic, strike, code, links, and mentions. Everything is built as
@@ -68,12 +69,15 @@ function InlineNode({ node }: { node: Inline }) {
           <InlineView nodes={node.children} />
         </s>
       );
-    case "link":
+    case "link": {
+      // A link with no label of its own shows its short address; a labeled link keeps its label.
+      const bare = node.children.length === 1 && node.children[0] === node.href;
       return (
-        <a className="link" href={node.href} target="_blank" rel="noopener noreferrer">
-          <InlineView nodes={node.children} />
+        <a className="link max-w-full break-all" href={node.href} title={node.href} target="_blank" rel="noopener noreferrer">
+          {bare ? shortLink(node.href) : <InlineView nodes={node.children} />}
         </a>
       );
+    }
     case "mention":
       return <span className="rounded bg-primary/15 px-1 font-medium">{node.text}</span>;
   }

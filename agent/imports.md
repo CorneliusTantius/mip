@@ -158,7 +158,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/frontend/features/bots/useRooms.ts | src/frontend/api/client.ts, src/frontend/api/types.ts | src/frontend/features/bots/BotsCard.tsx |
 | src/frontend/features/email/AddMailAccountDialog.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx | src/frontend/features/email/EmailCard.tsx |
 | src/frontend/features/email/EmailCard.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/Card.tsx, src/frontend/ui/ConfirmDialog.tsx, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/SourceCard.tsx, src/frontend/features/email/AddMailAccountDialog.tsx, src/frontend/features/email/MailMessageDialog.tsx, src/frontend/features/email/mailFormat.ts, src/frontend/features/email/useMail.ts | src/frontend/App.tsx |
-| src/frontend/features/email/MailMessageDialog.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx, src/frontend/features/email/mailFormat.ts | src/frontend/features/email/EmailCard.tsx |
+| src/frontend/features/email/MailMessageDialog.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/links.ts, src/frontend/ui/Modal.tsx, src/frontend/features/email/mailFormat.ts | src/frontend/features/email/EmailCard.tsx |
 | src/frontend/features/email/mailFormat.test.mjs | src/frontend/features/email/mailFormat.ts | - |
 | src/frontend/features/email/mailFormat.ts | - | src/frontend/features/email/EmailCard.tsx, src/frontend/features/email/MailMessageDialog.tsx, src/frontend/features/email/mailFormat.test.mjs |
 | src/frontend/features/email/useMail.ts | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/hooks.ts | src/frontend/features/email/EmailCard.tsx |
@@ -194,7 +194,7 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/frontend/features/skills/useSkills.ts | src/frontend/api/client.ts, src/frontend/api/types.ts | src/frontend/features/skills/SkillsCard.tsx |
 | src/frontend/features/slack/SlackCard.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/Card.tsx, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/hooks.ts, src/frontend/ui/SourceCard.tsx, src/frontend/features/slack/SlackDialog.tsx, src/frontend/features/slack/SlackThreadDialog.tsx, src/frontend/features/slack/SlackTranscript.tsx, src/frontend/features/slack/useSlack.ts | src/frontend/App.tsx |
 | src/frontend/features/slack/SlackDialog.tsx | src/frontend/api/client.ts, src/frontend/api/types.ts, src/frontend/ui/ConfirmDialog.tsx, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx, src/frontend/features/slack/useSlack.ts | src/frontend/features/slack/SlackCard.tsx |
-| src/frontend/features/slack/SlackText.tsx | src/frontend/features/slack/mrkdwn.ts | src/frontend/features/slack/SlackTranscript.tsx |
+| src/frontend/features/slack/SlackText.tsx | src/frontend/ui/links.ts, src/frontend/features/slack/mrkdwn.ts | src/frontend/features/slack/SlackTranscript.tsx |
 | src/frontend/features/slack/SlackThreadDialog.tsx | src/frontend/api/client.ts, src/frontend/ui/ErrorAlert.tsx, src/frontend/ui/Modal.tsx, src/frontend/features/slack/SlackTranscript.tsx, src/frontend/features/slack/useSlack.ts | src/frontend/features/slack/SlackCard.tsx |
 | src/frontend/features/slack/SlackTranscript.tsx | src/frontend/api/types.ts, src/frontend/features/slack/SlackText.tsx | src/frontend/features/slack/SlackCard.tsx, src/frontend/features/slack/SlackThreadDialog.tsx |
 | src/frontend/features/slack/mrkdwn.test.mjs | src/frontend/features/slack/mrkdwn.ts | - |
@@ -219,6 +219,8 @@ Each file, the local modules it imports, and the local modules that import it.
 | src/frontend/ui/filterOptions.test.mjs | src/frontend/ui/filterOptions.ts | - |
 | src/frontend/ui/filterOptions.ts | - | src/frontend/ui/OptionDropdown.tsx, src/frontend/ui/filterOptions.test.mjs |
 | src/frontend/ui/hooks.ts | src/frontend/api/events.ts | src/frontend/features/agent/useAgents.ts, src/frontend/features/bots/useRoom.ts, src/frontend/features/email/useMail.ts, src/frontend/features/mcp/useMcpServers.ts, src/frontend/features/repos/RepositoriesCard.tsx, src/frontend/features/settings/ProviderTab.tsx, src/frontend/features/slack/SlackCard.tsx |
+| src/frontend/ui/links.test.mjs | src/frontend/ui/links.ts | - |
+| src/frontend/ui/links.ts | - | src/frontend/features/email/MailMessageDialog.tsx, src/frontend/features/slack/SlackText.tsx, src/frontend/ui/links.test.mjs |
 | src/frontend/ui/markdown.test.mjs | src/frontend/ui/markdown.ts | - |
 | src/frontend/ui/markdown.ts | - | src/frontend/ui/Markdown.tsx, src/frontend/ui/markdown.test.mjs |
 | src/frontend/ui/toolName.ts | - | src/frontend/ui/ToolCallDetails.tsx, src/frontend/ui/ToolCallsDialog.tsx |

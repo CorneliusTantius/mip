@@ -555,7 +555,7 @@
 | src/frontend/features/bots/useRooms.ts | 7 | function | useRooms |
 | src/frontend/features/email/AddMailAccountDialog.tsx | 9 | function | AddMailAccountDialog |
 | src/frontend/features/email/EmailCard.tsx | 16 | function | EmailCard |
-| src/frontend/features/email/MailMessageDialog.tsx | 10 | function | MailMessageDialog |
+| src/frontend/features/email/MailMessageDialog.tsx | 11 | function | MailMessageDialog |
 | src/frontend/features/email/mailFormat.ts | 3 | function | formatMailDate |
 | src/frontend/features/email/mailFormat.ts | 12 | function | displaySender |
 | src/frontend/features/email/mailFormat.ts | 19 | function | paragraphsOf |
@@ -598,7 +598,7 @@
 | src/frontend/features/skills/useSkills.ts | 6 | function | useSkills |
 | src/frontend/features/slack/SlackCard.tsx | 19 | function | SlackCard |
 | src/frontend/features/slack/SlackDialog.tsx | 12 | function | SlackDialog |
-| src/frontend/features/slack/SlackText.tsx | 5 | function | SlackText |
+| src/frontend/features/slack/SlackText.tsx | 6 | function | SlackText |
 | src/frontend/features/slack/SlackThreadDialog.tsx | 9 | function | SlackThreadDialog |
 | src/frontend/features/slack/SlackTranscript.tsx | 7 | function | SlackTranscript |
 | src/frontend/features/slack/mrkdwn.ts | 5 | type | Inline |
@@ -635,6 +635,7 @@
 | src/frontend/ui/filterOptions.ts | 3 | function | filterOptions |
 | src/frontend/ui/hooks.ts | 5 | function | usePolling |
 | src/frontend/ui/hooks.ts | 17 | function | useAnnouncement |
+| src/frontend/ui/links.ts | 3 | function | shortLink |
 | src/frontend/ui/markdown.ts | 5 | type | Inline |
 | src/frontend/ui/markdown.ts | 12 | type | Block |
 | src/frontend/ui/markdown.ts | 39 | function | parseBlocks |

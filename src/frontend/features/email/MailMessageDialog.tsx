@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { api, errorText } from "../../api/client";
 import type { MailMessage } from "../../api/types";
 import { ErrorAlert } from "../../ui/ErrorAlert";
+import { shortLink } from "../../ui/links";
 import { Modal } from "../../ui/Modal";
 import { displaySender, formatMailDate, linkPieces, paragraphsOf } from "./mailFormat";
 
@@ -56,8 +57,15 @@ export function MailMessageDialog({
                   <p key={l} className={line.match(/^([•·*-]|\d+[.)])\s/) ? "pl-4 -indent-4" : ""}>
                     {linkPieces(line).map((piece, i) =>
                       piece.href ? (
-                        <a key={i} className="link" href={piece.href} target="_blank" rel="noopener noreferrer">
-                          {piece.text}
+                        <a
+                          key={i}
+                          className="link max-w-full break-all"
+                          href={piece.href}
+                          title={piece.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {shortLink(piece.href)}
                         </a>
                       ) : (
                         <span key={i}>{piece.text}</span>
