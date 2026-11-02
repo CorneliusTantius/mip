@@ -555,7 +555,7 @@
 | src/frontend/features/bots/useRooms.ts | 7 | function | useRooms |
 | src/frontend/features/email/AddMailAccountDialog.tsx | 9 | function | AddMailAccountDialog |
 | src/frontend/features/email/EmailCard.tsx | 16 | function | EmailCard |
-| src/frontend/features/email/MailMessageDialog.tsx | 9 | function | MailMessageDialog |
+| src/frontend/features/email/MailMessageDialog.tsx | 11 | function | MailMessageDialog |
 | src/frontend/features/email/mailFormat.ts | 3 | function | formatMailDate |
 | src/frontend/features/email/mailFormat.ts | 12 | function | displaySender |
 | src/frontend/features/email/useMail.ts | 8 | function | useMailAccounts |

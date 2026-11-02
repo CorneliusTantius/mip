@@ -6,6 +6,8 @@ import { Modal } from "../../ui/Modal";
 import { formatMailDate } from "./mailFormat";
 
 // One message opened in full: its subject, who sent it and who it went to, when, and its text. The server does not mark it read.
+// The dialog is as wide as the Slack dialogs. Its text is read as plain text: line breaks are kept, runs of blank lines are cut to one,
+// and long links wrap inside the panel.
 export function MailMessageDialog({
   open,
   accountId,
@@ -32,25 +34,32 @@ export function MailMessageDialog({
   }, [open, accountId, uid]);
 
   return (
-    <Modal open={open} onClose={onClose} closeButton glow="frost">
-      <div className="flex flex-col gap-3">
-        <h3 className="text-lg font-semibold break-words">{message?.subject || "Message"}</h3>
-        {message && (
-          <div className="flex flex-col gap-1 text-sm opacity-70">
-            <div className="break-all">From {message.from || "unknown"}</div>
-            {message.to && <div className="break-all">To {message.to}</div>}
-            <div>{formatMailDate(message.date)}</div>
+    <Modal open={open} onClose={onClose} closeButton glow="frost" boxClassName="flex max-h-[80vh] w-[min(48rem,92vw)] max-w-none flex-col">
+      <h2 className="pr-8 text-lg font-semibold leading-snug break-words">{message?.subject || "Message"}</h2>
+      {message && (
+        <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs opacity-70">
+          <dt>From</dt>
+          <dd className="break-all">{message.from || "unknown"}</dd>
+          {message.to && (
+            <>
+              <dt>To</dt>
+              <dd className="break-all">{message.to}</dd>
+            </>
+          )}
+          <dt>Date</dt>
+          <dd>{formatMailDate(message.date)}</dd>
+        </dl>
+      )}
+      {!message && !error && <div className="mt-3 text-sm opacity-60">Loading the message…</div>}
+      <ErrorAlert message={error} />
+      {message && (
+        <>
+          <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t border-base-300/60 pt-3 text-sm leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
+            {(message.text || "(no text)").replace(/\n{3,}/g, "\n\n")}
           </div>
-        )}
-        {!message && !error && <div className="text-sm opacity-60">Loading the message…</div>}
-        <ErrorAlert message={error} />
-        {message && (
-          <>
-            <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap break-words rounded-box bg-base-300/40 p-3 text-sm">{message.text || "(no text)"}</div>
-            {message.truncated && <div className="text-xs opacity-60">The message is longer. Only its start is shown.</div>}
-          </>
-        )}
-      </div>
+          {message.truncated && <div className="mt-2 text-xs opacity-60">The message is longer. Only its start is shown.</div>}
+        </>
+      )}
     </Modal>
   );
 }
