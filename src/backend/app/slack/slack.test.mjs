@@ -75,7 +75,7 @@ try {
   assert.equal(url.origin + url.pathname, "https://slack.com/oauth/v2/authorize");
   assert.equal(url.searchParams.get("client_id"), "1.2");
   assert.equal(url.searchParams.get("redirect_uri"), reply.redirectUri);
-  assert.equal(url.searchParams.get("user_scope").split(",").includes("chat:write"), false, "sending is not asked for yet");
+  assert.ok(url.searchParams.get("user_scope").split(",").includes("chat:write"), "messages can be sent as the user");
   assert.ok(url.searchParams.get("user_scope").split(",").includes("channels:history"));
   await assert.rejects(connect.completeConnect("made-up", "code"), (err) => err instanceof AppError && err.status === 400);
 

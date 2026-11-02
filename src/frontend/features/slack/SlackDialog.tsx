@@ -89,18 +89,16 @@ export function SlackDialog({
                 <a className="link" href="https://api.slack.com/apps" target="_blank" rel="noopener">
                   api.slack.com/apps
                 </a>
-                , press <span className="font-medium">Create New App</span>, then <span className="font-medium">From scratch</span>.
-              </li>
-              <li>
-                Open <span className="font-medium">OAuth &amp; Permissions</span>. Under <span className="font-medium">Redirect URLs</span>, add:
-                <code className="mt-1 block break-all rounded bg-base-300/60 px-2 py-1 text-xs">{state?.redirectUri ?? "Loading…"}</code>
-              </li>
-              <li>
-                On the same page, under <span className="font-medium">User Token Scopes</span>, add the scopes below.
-                <details className="mt-1">
-                  <summary className="cursor-pointer">Scopes</summary>
-                  <code className="mt-1 block break-all rounded bg-base-300/60 px-2 py-1 text-xs">{state?.scopes.join(", ") ?? "Loading…"}</code>
-                </details>
+                , press <span className="font-medium">Create New App</span>, then <span className="font-medium">From a manifest</span>. Pick your
+                workspace, paste this manifest, and press <span className="font-medium">Create</span>.
+                <div className="relative mt-1">
+                  <pre className="max-h-40 overflow-auto rounded bg-base-300/60 p-2 text-xs">{state?.manifest ?? "Loading…"}</pre>
+                  {state?.manifest && (
+                    <button className="btn btn-xs absolute right-1 top-1" onClick={() => void navigator.clipboard.writeText(state.manifest)}>
+                      Copy
+                    </button>
+                  )}
+                </div>
               </li>
               <li>
                 Open <span className="font-medium">Basic Information</span>, copy the Client ID and Client Secret below, then press{" "}

@@ -10,6 +10,8 @@ export interface SlackReply {
   redirectUri: string;
   // The user scopes the Slack app must list under User Token Scopes, so the sign-in is allowed.
   scopes: string[];
+  // An app manifest for Slack's "From a manifest" page, with the same redirect address and scopes.
+  manifest: string;
   accounts: SlackAccountView[];
   problems: SlackConfigProblem[];
 }
@@ -20,9 +22,29 @@ export function slackReply(): SlackReply {
     app: config.app ? { clientId: config.app.clientId } : null,
     redirectUri: slackRedirectUri,
     scopes: SLACK_USER_SCOPES,
+    manifest: slackManifest(),
     accounts: config.accounts.map(viewOf),
     problems: config.problems,
   };
+}
+
+// The manifest a new Slack app is created from. Socket Mode is on, and the user events are the message events a socket will receive.
+function slackManifest(): string {
+  return JSON.stringify(
+    {
+      display_information: { name: "mip" },
+      features: {},
+      oauth_config: { redirect_urls: [slackRedirectUri], scopes: { user: SLACK_USER_SCOPES } },
+      settings: {
+        event_subscriptions: { user_events: ["message.channels", "message.groups", "message.im", "message.mpim"] },
+        socket_mode_enabled: true,
+        org_deploy_enabled: false,
+        token_rotation_enabled: false,
+      },
+    },
+    null,
+    2,
+  );
 }
 
 // Saves the app's client ID and secret. A client ID is digits and a dot, and both values are required.

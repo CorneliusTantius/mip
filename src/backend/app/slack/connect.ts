@@ -10,9 +10,13 @@ import { type SlackAccount, readSlackConfig, saveSlackAccount, viewOf, type Slac
 
 export const SLACK_CALLBACK_PATH = "/api/slack/oauth/callback";
 
-// The read scopes. Sending messages needs chat:write, which is added when sending is built.
+// The user scopes for reading and writing as the user: conversations, history, search, messages, reactions, pins, stars, files, and reminders.
+// A connection made before a change here must sign in again to get the new scopes.
 export const SLACK_USER_SCOPES = [
   "users:read",
+  "users.profile:read",
+  "team:read",
+  "usergroups:read",
   "channels:read",
   "groups:read",
   "im:read",
@@ -25,6 +29,24 @@ export const SLACK_USER_SCOPES = [
   "search:read.private",
   "search:read.im",
   "search:read.mpim",
+  "search:read.files",
+  "search:read.users",
+  "chat:write",
+  "channels:write",
+  "channels:join",
+  "groups:write",
+  "im:write",
+  "mpim:write",
+  "reactions:read",
+  "reactions:write",
+  "pins:read",
+  "pins:write",
+  "stars:read",
+  "stars:write",
+  "files:read",
+  "files:write",
+  "reminders:read",
+  "reminders:write",
 ];
 
 // The address Slack must return to. It goes into the Slack app's Redirect URLs, so it is shown in the Slack card's Accounts dialog.
