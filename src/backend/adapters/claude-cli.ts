@@ -47,6 +47,9 @@ function toModelOption(model: CliModel): ModelOption {
   };
 }
 
+// The thinking level a run uses when none is chosen.
+const DEFAULT_THINKING = "medium";
+
 interface ClaudeAuthStatus {
   loggedIn: boolean;
   authMethod?: string;
@@ -268,7 +271,8 @@ export class ClaudeCliProvider implements AgentProvider {
     // A run with an empty tool list gets no tools at all, not Claude Code's built-in ones.
     if (options.tools?.length === 0) args.push("--tools", "");
     if (options.model) args.push("--model", options.model);
-    if (options.thinking) args.push("--effort", options.thinking);
+    // With no thinking level chosen, the run uses medium, so the bots think by default.
+    args.push("--effort", options.thinking ?? DEFAULT_THINKING);
     // Replaces Claude Code's default prompt. Snapshot off re-renders it on every run, so resumed agents pick up changes.
     if (options.systemPrompt) args.push("--system-prompt", options.systemPrompt, "--system-prompt-snapshot", "off");
     args.push(options.sessionId ? "--resume" : "--session-id", sessionId);
