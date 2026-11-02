@@ -84,20 +84,36 @@ export function SlackDialog({
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">Slack app</h3>
             <p className="text-sm opacity-70">
-              mip signs in to Slack as you, through a Slack app that you create for your own workspace. The app asks for user permissions only, so
-              nothing posts as a bot. Create it at{" "}
-              <a className="link" href="https://api.slack.com/apps" target="_blank" rel="noopener">
-                api.slack.com/apps
-              </a>{" "}
-              with <span className="font-medium">Create New App → From scratch</span>. Then, in its settings:
+              mip signs in as you through a Slack app in your own workspace. The app only asks for user permissions, so nothing posts as a bot.
+              Set it up in these steps:
             </p>
-            <ol className="list-decimal pl-5 text-sm opacity-70">
+            <ol className="flex list-decimal flex-col gap-3 pl-5 text-sm opacity-80">
               <li>
-                Under <span className="font-medium">OAuth &amp; Permissions</span>, add this address to <span className="font-medium">Redirect URLs</span>:
+                Open{" "}
+                <a className="link" href="https://api.slack.com/apps" target="_blank" rel="noopener">
+                  api.slack.com/apps
+                </a>
+                , press <span className="font-medium">Create New App</span>, then <span className="font-medium">From scratch</span>. Name the app and
+                pick your workspace.
+              </li>
+              <li>
+                In the app's left menu, open <span className="font-medium">OAuth &amp; Permissions</span>.
+              </li>
+              <li>
+                Scroll to <span className="font-medium">User Token Scopes</span> and add each of these scopes:
+                <code className="mt-1 block break-all rounded bg-base-300/60 px-2 py-1 text-xs">{state?.scopes.join(", ") ?? "Loading…"}</code>
+              </li>
+              <li>
+                Scroll to <span className="font-medium">Redirect URLs</span>, press <span className="font-medium">Add New Redirect URL</span>, paste
+                this address, then press <span className="font-medium">Save URLs</span>.
                 <code className="mt-1 block break-all rounded bg-base-300/60 px-2 py-1 text-xs">{state?.redirectUri ?? "Loading…"}</code>
               </li>
               <li>
-                Under <span className="font-medium">Basic Information</span>, copy the Client ID and Client Secret into the fields below.
+                Open <span className="font-medium">Basic Information</span>. Under <span className="font-medium">App Credentials</span>, copy the
+                Client ID and the Client Secret into the fields below, then press <span className="font-medium">Save app</span>.
+              </li>
+              <li>
+                Press <span className="font-medium">Sign in with Slack</span> below and approve in the tab that opens.
               </li>
             </ol>
 

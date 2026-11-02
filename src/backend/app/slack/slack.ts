@@ -1,6 +1,6 @@
 import { AppError } from "../errors.js";
 import { type SlackAccountView, type SlackConfigProblem, readSlackConfig, removeSlackAccount, saveSlackApp, viewOf } from "./config.js";
-import { slackRedirectUri } from "./connect.js";
+import { SLACK_USER_SCOPES, slackRedirectUri } from "./connect.js";
 
 // The Slack connection as the card and its dialog use it: the app's client ID (never its secret), the connected accounts, and any part of
 // slack.json that could not be read.
@@ -8,6 +8,8 @@ import { slackRedirectUri } from "./connect.js";
 export interface SlackReply {
   app: { clientId: string } | null;
   redirectUri: string;
+  // The user scopes the Slack app must list under User Token Scopes, so the sign-in is allowed.
+  scopes: string[];
   accounts: SlackAccountView[];
   problems: SlackConfigProblem[];
 }
@@ -17,6 +19,7 @@ export function slackReply(): SlackReply {
   return {
     app: config.app ? { clientId: config.app.clientId } : null,
     redirectUri: slackRedirectUri,
+    scopes: SLACK_USER_SCOPES,
     accounts: config.accounts.map(viewOf),
     problems: config.problems,
   };

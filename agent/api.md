@@ -147,7 +147,7 @@ The Slack app and the connected users, in `data/slack.json`. Tokens and the clie
 
 | method | path | status | body / returns | errors |
 | --- | --- | --- | --- | --- |
-| GET | /api/slack | 200 | `{app: {clientId} \| null, redirectUri, accounts: {id, teamId, teamName, userId, userName}[], problems: {account, error}[]}` | |
+| GET | /api/slack | 200 | `{app: {clientId} \| null, redirectUri, scopes: string[], accounts: {id, teamId, teamName, userId, userName}[], problems: {account, error}[]}`. `scopes` is the list the Slack app must grant under User Token Scopes | |
 | PUT | /api/slack/app | 200 | the same shape. Body `{clientId, clientSecret}`; the client ID is `digits.digits` | 400 a bad client ID or a missing secret; 415 not JSON |
 | POST | /api/slack/connect | 200 | `{url}`, the Slack page to open. Its state is one-time and lasts ten minutes | 400 no app saved; 415 not JSON |
 | GET | /api/slack/oauth/callback | HTML | Slack's redirect lands here (not under `/api` JSON). Exchanges the code for the user's token and saves the account | 400 a refused sign-in, or an unknown or used state |

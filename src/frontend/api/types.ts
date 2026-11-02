@@ -337,6 +337,7 @@ export interface SlackAccount {
 export interface SlackState {
   app: { clientId: string } | null;
   redirectUri: string;
+  scopes: string[];
   accounts: SlackAccount[];
   problems: { account: string; error: string }[];
 }

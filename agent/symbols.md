@@ -205,9 +205,9 @@
 | src/backend/app/slack/read.ts | 30 | function | listConversations |
 | src/backend/app/slack/read.ts | 56 | function | listMessages |
 | src/backend/app/slack/slack.ts | 8 | interface | SlackReply |
-| src/backend/app/slack/slack.ts | 15 | function | slackReply |
-| src/backend/app/slack/slack.ts | 26 | function | saveSlackAppInput |
-| src/backend/app/slack/slack.ts | 37 | function | deleteSlackAccount |
+| src/backend/app/slack/slack.ts | 17 | function | slackReply |
+| src/backend/app/slack/slack.ts | 29 | function | saveSlackAppInput |
+| src/backend/app/slack/slack.ts | 40 | function | deleteSlackAccount |
 | src/backend/app/sync/engine.ts | 21 | interface | SyncRun |
 | src/backend/app/sync/engine.ts | 30 | interface | SyncStatus |
 | src/backend/app/sync/engine.ts | 46 | function | syncStatus |
@@ -514,9 +514,9 @@
 | src/frontend/api/types.ts | 321 | interface | MailboxReply |
 | src/frontend/api/types.ts | 327 | interface | SlackAccount |
 | src/frontend/api/types.ts | 337 | interface | SlackState |
-| src/frontend/api/types.ts | 344 | type | SlackKind |
-| src/frontend/api/types.ts | 346 | interface | SlackConversation |
-| src/frontend/api/types.ts | 353 | interface | SlackMessage |
+| src/frontend/api/types.ts | 345 | type | SlackKind |
+| src/frontend/api/types.ts | 347 | interface | SlackConversation |
+| src/frontend/api/types.ts | 354 | interface | SlackMessage |
 | src/frontend/features/agent/AgentCard.tsx | 19 | function | AgentCard |
 | src/frontend/features/agent/AgentHeader.tsx | 5 | function | AgentHeader |
 | src/frontend/features/agent/AgentList.tsx | 34 | function | AgentList |
