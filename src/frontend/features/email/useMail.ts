@@ -37,16 +37,22 @@ export function useMailAccounts() {
   return { reply, error, reload: load, add, remove };
 }
 
+// How many messages a list shows at first, and how many more Load more adds.
+const PAGE = 25;
+
 // The newest messages of one account's mailbox, re-read every pollSeconds while the account is shown. checkedAt is when the last read
-// finished, so the card can say how fresh its list is.
+// finished, so the card can say how fresh its list is. Each account starts with a page; more() adds one, and hasMore says whether the
+// mailbox may have more to show.
 export function useMailbox(accountId: string | undefined, pollSeconds: number) {
   const [mailbox, setMailbox] = useState<MailboxReply & { checkedAt: Date }>();
   const [error, setError] = useState<string>();
+  const [want, setWant] = useState({ accountId, count: PAGE });
+  const count = want.accountId === accountId ? want.count : PAGE;
 
   async function load() {
     if (!accountId) return;
     try {
-      const reply = await api.get<MailboxReply>(`/api/mail/accounts/${encodeURIComponent(accountId)}/messages`);
+      const reply = await api.get<MailboxReply>(`/api/mail/accounts/${encodeURIComponent(accountId)}/messages?count=${count}`);
       setMailbox({ ...reply, checkedAt: new Date() });
       setError(undefined);
     } catch (err) {
@@ -56,10 +62,19 @@ export function useMailbox(accountId: string | undefined, pollSeconds: number) {
 
   useEffect(() => {
     setMailbox(undefined);
-    void load();
   }, [accountId]);
+
+  useEffect(() => {
+    void load();
+  }, [accountId, count]);
 
   usePolling(() => void load(), pollSeconds * 1000, !!accountId);
 
-  return { mailbox, error, reload: load };
+  return {
+    mailbox,
+    error,
+    reload: load,
+    more: () => setWant({ accountId, count: count + PAGE }),
+    hasMore: !!mailbox && mailbox.messages.length >= count,
+  };
 }

@@ -11,7 +11,7 @@ import {
   saveMailAccount,
   viewOf,
 } from "./accounts.js";
-import { checkAccount, fetchMessage, recentHeaders, signInOnce } from "./imap.js";
+import { LIST_LIMIT, checkAccount, fetchMessage, recentHeaders, signInOnce } from "./imap.js";
 import { type MailHeader, type MailMessage, messageOf } from "./messages.js";
 import { closeMailSession } from "./sessions.js";
 
@@ -89,9 +89,9 @@ export async function testMailAccount(id: string): Promise<{ messages: number; u
 }
 
 // The newest messages in an account's mailbox, newest first.
-export async function listMailMessages(id: string): Promise<{ mailbox: string; messages: MailHeader[] }> {
+export async function listMailMessages(id: string, count = LIST_LIMIT): Promise<{ mailbox: string; messages: MailHeader[] }> {
   const account = findAccount(id);
-  const messages = await reading(account, () => recentHeaders(account));
+  const messages = await reading(account, () => recentHeaders(account, count));
   return { mailbox: account.mailbox, messages };
 }
 

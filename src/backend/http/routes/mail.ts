@@ -16,6 +16,10 @@ export const mailRoutes: Route[] = [
     requireJson(req);
     return ok(await testMailAccount(params.id));
   }),
-  get("/api/mail/accounts/:id/messages", async ({ params }) => ok(await listMailMessages(params.id))),
+  // ?count=N asks for the newest N messages (25 by default, at most 200). The card raises it with Load more.
+  get("/api/mail/accounts/:id/messages", async ({ params, url }) => {
+    const count = Math.min(200, Math.max(1, Number(url.searchParams.get("count")) || 25));
+    return ok(await listMailMessages(params.id, count));
+  }),
   get("/api/mail/accounts/:id/messages/:uid", async ({ params }) => ok(await openMailMessage(params.id, params.uid))),
 ];

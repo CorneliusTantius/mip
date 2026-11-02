@@ -561,7 +561,7 @@
 | src/frontend/features/email/mailFormat.ts | 19 | function | paragraphsOf |
 | src/frontend/features/email/mailFormat.ts | 39 | function | linkPieces |
 | src/frontend/features/email/useMail.ts | 8 | function | useMailAccounts |
-| src/frontend/features/email/useMail.ts | 42 | function | useMailbox |
+| src/frontend/features/email/useMail.ts | 46 | function | useMailbox |
 | src/frontend/features/mcp/AddMcpDialog.tsx | 12 | function | AddMcpDialog |
 | src/frontend/features/mcp/McpCard.tsx | 14 | function | McpCard |
 | src/frontend/features/mcp/mcpForm.ts | 5 | function | parseHeaders |

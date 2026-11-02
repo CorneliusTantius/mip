@@ -119,6 +119,13 @@ function EmailBody() {
                   </button>
                 </li>
               ))}
+              {inbox.hasMore && (
+                <li className="flex justify-center py-2">
+                  <button className="btn btn-ghost btn-xs" onClick={() => inbox.more()}>
+                    Load more
+                  </button>
+                </li>
+              )}
             </ul>
 
             {inbox.mailbox && messages.length === 0 && <div className="py-4 text-center text-sm opacity-60">The inbox is empty.</div>}
