@@ -1,4 +1,3 @@
-import type { CSSProperties } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { filterOptions } from "./filterOptions";
 import { Icon } from "./Icon";
@@ -35,8 +34,6 @@ export function OptionDropdown({
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLUListElement>(null);
   const [query, setQuery] = useState("");
-  // Where the list sits on screen, set when it opens. The list is fixed to the screen, so a scrolling card cannot cut it off.
-  const [place, setPlace] = useState<CSSProperties>({});
   const current = options.find((option) => option.value === value);
   const shown = searchable ? filterOptions(options, query) : options;
 
@@ -68,9 +65,13 @@ export function OptionDropdown({
   function toggled() {
     if (!details.current?.open) return setQuery("");
     const button = details.current.querySelector("summary")!.getBoundingClientRect();
-    const height = Math.min(details.current.querySelector("ul")!.scrollHeight, LIST_HEIGHT);
+    // The list is fixed to the screen, so it sits where the button is, and a scrolling card cannot cut it off.
+    const style = list.current!.style;
+    const height = Math.min(list.current!.scrollHeight, LIST_HEIGHT);
     const above = button.top >= height || button.top >= innerHeight - button.bottom;
-    setPlace(above ? { left: button.left, top: "auto", bottom: innerHeight - button.top + 4 } : { left: button.left, top: button.bottom + 4, bottom: "auto" });
+    style.left = `${button.left}px`;
+    style.top = above ? "auto" : `${button.bottom + 4}px`;
+    style.bottom = above ? `${innerHeight - button.top + 4}px` : "auto";
     requestAnimationFrame(() => search.current?.focus());
   }
 
@@ -83,7 +84,7 @@ export function OptionDropdown({
   }
 
   return (
-    <details ref={details} className="dropdown" onToggle={toggled}>
+    <details ref={details} onToggle={toggled}>
       <summary
         className={"btn btn-xs w-52 flex-nowrap justify-between font-normal list-none [&::-webkit-details-marker]:hidden " + (disabled ? "btn-disabled" : "")}
         aria-label={label}
@@ -93,7 +94,7 @@ export function OptionDropdown({
         <span className="truncate">{current?.label ?? placeholder}</span>
         <Icon name="chevronDown" className="size-3 shrink-0" strokeWidth={2.5} />
       </summary>
-      <ul ref={list} className="dropdown-content menu z-20 mb-1 max-h-64 w-52 flex-nowrap overflow-y-auto rounded-box bg-base-200 p-2 shadow-lg" style={{ position: "fixed", ...place }}>
+      <ul ref={list} className="dropdown-content menu z-20 mb-1 max-h-64 w-52 flex-nowrap overflow-y-auto rounded-box bg-base-200 p-2 shadow-lg" style={{ position: "fixed" }}>
         {searchable && (
           <li className="sticky top-0 z-10 w-full bg-base-200 pb-1">
             <input
