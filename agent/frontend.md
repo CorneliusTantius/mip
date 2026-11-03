@@ -93,7 +93,7 @@ Preact 11, Vite 8, Tailwind 4 (`@tailwindcss/vite`), daisyUI 5 (`themes: false`,
   2. `BotsCard` in a wrapper `col-span-12 h-[min(43rem,85vh)] xl:col-span-4 xl:h-[min(47rem,85vh)]`.
   3. Messaging row `col-span-12 grid md:grid-cols-3`: `EmailCard`, `SlackCard`, `WhatsAppCard`. Each is `h-[30rem]`.
   4. `MemoryCard` and `RepositoriesCard`, each in a wrapper `col-span-12 h-[30rem] md:col-span-6`.
-  5. Bottom grid `col-span-12 grid md:grid-cols-2 xl:grid-cols-3 [&>*]:h-72`: `SpendingCard`, `ToolsCard`, `SkillsCard`, `McpCard`, `PlaceholderCard` "Tasks" (yellow), `PlaceholderCard` "Activity" (blue). Every direct child is 18rem.
+  5. Bottom grid `col-span-12 grid md:grid-cols-2 xl:grid-cols-3 [&>*:not(.fixed)]:h-72`: `SpendingCard`, `ToolsCard`, `SkillsCard`, `McpCard`, `PlaceholderCard` "Tasks" (yellow), `PlaceholderCard` "Activity" (blue). Every direct child is 18rem, except a fixed one. The `:not(.fixed)` matters: `[&>*]:h-72` also set the height of an expanded card (`EXPANDED` is fixed, so a fixed height cropped it to 18rem) and of the backdrop behind it (which covered only the top 18rem). Tasks and Activity have no `ExpandButton`, so they only open their placeholder dialog.
 - Breakpoints (Tailwind defaults): `md` 768px, `xl` 1280px, `2xl` 1536px. Width: `max-w-5xl` below `xl`, none at `xl`, `max-w-[120rem]` at `2xl`. Gaps: 16px, and 20px at `xl`.
 
 ## features/agent/

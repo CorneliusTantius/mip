@@ -79,8 +79,9 @@ export function App() {
               <RepositoriesCard />
             </div>
 
-            {/* Below everything else. Two per row on tablets, three on desktops, so the cards stay wide enough to read. */}
-            <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-3 [&>*]:h-72">
+            {/* Below everything else. Two per row on tablets, three on desktops, so the cards stay wide enough to read. The height skips a fixed
+                child: an expanded card and the backdrop behind it fill the window, and a fixed height would crop them. */}
+            <div className="col-span-12 grid gap-4 xl:gap-5 md:grid-cols-2 xl:grid-cols-3 [&>*:not(.fixed)]:h-72">
               <SpendingCard />
               <ToolsCard />
               <SkillsCard />
