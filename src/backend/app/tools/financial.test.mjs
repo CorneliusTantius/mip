@@ -13,7 +13,7 @@ process.env.HOME = join(root, "home");
 try {
   const { saveSpendingEntry } = await import(`${DIST}app/spending.js`);
   const { spendingListTool, spendingUpsertTool } = await import(`${DIST}app/tools/financial.js`);
-  const { getSpendingEntry } = await import(`${DIST}storage/spending.js`);
+  const { getSpendingEntry, localDate } = await import(`${DIST}storage/spending.js`);
 
   // Nothing entered yet.
   assert.equal((await spendingListTool.run({}, {})).text, "No spending entries match.");
@@ -58,6 +58,16 @@ try {
   assert.equal(after.category, "Travel", "a category in another case keeps the existing spelling");
   assert.equal(after.createdAt, before.createdAt);
   assert.equal((await spendingListTool.run({ category: "Travel" }, {})).text.split("\n")[0], "Income 0 | Expense 90 | Balance -90");
+
+  // The entry's day: the list shows it, spending_upsert takes it, and an entry without one is dated today.
+  const dated = await spendingUpsertTool.run({ kind: "expense", category: "Books", amount: 40, date: "2026-02-10" }, {});
+  assert.equal(dated.text, `Saved ${dated.text.slice("Saved ".length).split(":")[0]}: expense | 2026-02-10 | Books | 40`);
+  const booksId = dated.text.slice("Saved ".length).split(":")[0];
+  assert.match((await spendingListTool.run({ category: "Books" }, {})).text, new RegExp(`^${booksId} \\| 2026-02-10 \\| expense \\| Books \\| 40$`, "m"));
+  const todayed = await spendingUpsertTool.run({ kind: "income", category: "Refund", amount: 9 }, {});
+  const refundId = todayed.text.slice("Saved ".length).split(":")[0];
+  assert.equal(getSpendingEntry(refundId).entryDate, localDate(Date.now()));
+  await assert.rejects(spendingUpsertTool.run({ kind: "expense", category: "x", amount: 1, date: "2026-13-01" }, {}), /date must be a real day as YYYY-MM-DD/);
 
   // Refused: a bad kind or amount throws the same message as the app's own save.
   await assert.rejects(spendingUpsertTool.run({ kind: "transfer", category: "x", amount: 1 }, {}), /kind must be income or expense/);

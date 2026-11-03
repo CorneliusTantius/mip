@@ -561,9 +561,9 @@ Gotchas:
 Card: `features/spending/SpendingCard.tsx`, `AddSpendingDialog.tsx`, `useSpending.ts`. Backend: `app/spending.ts`, `storage/spending.ts` (table `spending_entries`).
 
 - `GET /api/spending` → `{entries}`, newest first.
-- `POST /api/spending` `{kind, category, amount, description?, id?}` → 201 with the saved entry. `kind` is `income` or `expense`. `category` is trimmed, required, at most 40 characters. A name typed in another case uses the existing spelling. `amount` is above 0. `description` is at most 200 characters. An `id` at most 64 characters replaces that entry and keeps its first `createdAt`. Without an id a UUID is made.
-- Agents: `spending_upsert` (deferred, agent-only) adds or changes an entry by id. Its result is `Saved <id>: ...`.
-- Bots: `spending_list` (deferred, bot-only) returns totals for income, expense, and balance, totals per category and kind, and the newest entries (default 10, at most 50). It can filter by category and kind.
+- `POST /api/spending` `{kind, category, amount, description?, date?, id?}` → 201 with the saved entry. `date` is `YYYY-MM-DD`; left out, a new entry gets today's day (server time zone) and an edit keeps its own day. `kind` is `income` or `expense`. `category` is trimmed, required, at most 40 characters. A name typed in another case uses the existing spelling. `amount` is above 0. `description` is at most 200 characters. An `id` at most 64 characters replaces that entry and keeps its first `createdAt`. Without an id a UUID is made.
+- Agents: `spending_upsert` (deferred, agent-only) adds or changes an entry by id, with an optional `date`. Its result is `Saved <id>: <kind> | <date> | <category> | <amount>`.
+- Bots: `spending_list` (deferred, bot-only) returns totals for income, expense, and balance, totals per category and kind, and the newest entries (default 10, at most 50), each with its entry date. It can filter by category and kind.
 - Sync: `spending/` (flow 15). Entries are matched by id. A same-id edit made on both sides keeps GitHub's copy. A removal on GitHub removes the local entry.
 
 ## 27. System update and restart

@@ -349,9 +349,9 @@ App: `app/spending.ts`. Storage: `storage/spending.ts`.
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
 | GET | /api/spending | no | — | 200 `{entries: SpendingEntry[]}`, newest first | — |
-| POST | /api/spending | yes | `kind` `"income"` or `"expense"` (required); `category` string (trimmed, required, max 40; takes the spelling of an existing category that matches case-insensitively); `amount` number (`Number()`; finite and above 0); `description?` string (trimmed, max 200); `id?` string (trimmed, max 64; an existing id is replaced and keeps `createdAt`) | 201 `SpendingEntry`, also when it replaces an entry | 400 "kind must be income or expense"; 400 "category is required"; 400 "category must be 40 characters or fewer"; 400 "amount must be a number above 0"; 400 "description must be 200 characters or fewer"; 400 "id must be 64 characters or fewer" |
+| POST | /api/spending | yes | `kind` `"income"` or `"expense"` (required); `category` string (trimmed, required, max 40; takes the spelling of an existing category that matches case-insensitively); `amount` number (`Number()`; finite and above 0); `description?` string (trimmed, max 200); `date?` string as `YYYY-MM-DD`, a real day (default: today for a new entry, the entry's own day when an edit gives none); `id?` string (trimmed, max 64; an existing id is replaced and keeps `createdAt`) | 201 `SpendingEntry`, also when it replaces an entry | 400 "kind must be income or expense"; 400 "category is required"; 400 "category must be 40 characters or fewer"; 400 "amount must be a number above 0"; 400 "description must be 200 characters or fewer"; 400 "date must be a real day as YYYY-MM-DD"; 400 "id must be 64 characters or fewer" |
 
-- `SpendingEntry`: `{id, kind, category, amount, description, createdAt}`. `description` is `""` when none was given.
+- `SpendingEntry`: `{id, kind, category, amount, description, entryDate, createdAt}`. `description` is `""` when none was given. `entryDate` is the day the entry is for, `YYYY-MM-DD`. `createdAt` is when it was saved.
 
 ## Tool endpoint — `http/server.ts` and `http/mcp.ts`
 MCP over HTTP (JSON-RPC 2.0). The Claude CLI calls it with `toolServer: {url: http://127.0.0.1:3000/mcp, token}`, set in `app/runs.ts` and `app/room/room.ts`.

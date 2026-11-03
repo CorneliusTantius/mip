@@ -69,7 +69,7 @@ function Row({ entry }: { entry: SpendingEntry }) {
         <span className="block truncate">{entry.category}</span>
         {entry.description && <span className="block truncate text-xs opacity-60">{entry.description}</span>}
       </span>
-      <span className="opacity-60">{new Date(entry.createdAt).toLocaleDateString()}</span>
+      <span className="opacity-60">{dayLabel(entry.entryDate)}</span>
       <span className={`font-medium tabular-nums ${income ? "text-success" : "text-error"}`}>
         {income ? "+" : "-"}
         {entry.amount.toLocaleString()}
@@ -85,6 +85,12 @@ function Stat({ label, value, tone = "" }: { label: string; value: number; tone?
       <div className={`font-semibold tabular-nums ${tone}`}>{value.toLocaleString()}</div>
     </div>
   );
+}
+
+// The entry's day, in the browser's date format. It is built from its parts, so the day does not shift with the time zone.
+function dayLabel(day: string): string {
+  const [year, month, date] = day.split("-").map(Number);
+  return new Date(year, month - 1, date).toLocaleDateString();
 }
 
 function sumOf(entries: SpendingEntry[], kind: SpendingEntry["kind"]): number {

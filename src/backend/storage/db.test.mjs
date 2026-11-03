@@ -32,6 +32,9 @@ try {
   old.prepare("INSERT INTO messages (session_id, role, text, created_at) VALUES (?, ?, ?, ?)").run("a1", "user", "hello", 100);
   old.prepare("INSERT INTO runs (id, session_id, status, started_at) VALUES (?, ?, ?, ?)").run("r1", "a1", "done", 100);
   old.prepare("INSERT INTO skill_enablements (session_id, skill) VALUES (?, ?)").run("a1", "notes");
+  // A spending entry made before the description and the entry date. It gets the day it was saved, in local time.
+  old.exec("CREATE TABLE spending_entries (id TEXT PRIMARY KEY, kind TEXT NOT NULL, category TEXT NOT NULL, amount REAL NOT NULL, created_at INTEGER NOT NULL);");
+  old.prepare("INSERT INTO spending_entries (id, kind, category, amount, created_at) VALUES (?, ?, ?, ?, ?)").run("s1", "expense", "Food", 10, new Date(2026, 0, 15, 23, 30).getTime());
   old.close();
 
   // Opening the database with the current code renames the tables and columns, and keeps the rows.
@@ -59,6 +62,12 @@ try {
   assert.deepEqual(main.botIds.map((id) => bots.getBot(id).name).sort(), ["Freya", "Thorin"]);
   assert.deepEqual(rooms.listRooms().map((r) => r.id), ["main"]);
   assert.deepEqual(room.roomMessagesAfter("main", 0, 10).map((m) => [m.roomId, m.text, m.calls]), [["main", "hi room", []]]);
+  // The spending entry keeps its row, gets an empty description, and takes the local day it was saved as its entry date.
+  const spending = await import(`${DIST}storage/spending.js`);
+  const kept = spending.getSpendingEntry("s1");
+  assert.equal(kept.amount, 10);
+  assert.equal(kept.description, "");
+  assert.equal(kept.entryDate, "2026-01-15");
 
   console.log("database rename tests passed");
 } finally {

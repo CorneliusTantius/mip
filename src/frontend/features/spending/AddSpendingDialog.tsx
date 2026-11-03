@@ -4,7 +4,15 @@ import type { NewSpendingEntry } from "../../api/types";
 import { ErrorAlert } from "../../ui/ErrorAlert";
 import { Modal } from "../../ui/Modal";
 
-// The form that adds an entry: income or expense, a category, and an amount. A category typed as a new name becomes a new category.
+// Today's day as YYYY-MM-DD in this browser's time zone: the date a new entry starts with.
+export function todayDate(): string {
+  const day = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+}
+
+// The form that adds an entry: income or expense, a category, an amount, and the day it is for, which starts as today. A category typed
+// as a new name becomes a new category.
 export function AddSpendingDialog({
   open,
   categories,
@@ -20,6 +28,7 @@ export function AddSpendingDialog({
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [date, setDate] = useState(todayDate);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -28,6 +37,7 @@ export function AddSpendingDialog({
     setCategory("");
     setAmount("");
     setDescription("");
+    setDate(todayDate());
     setError(undefined);
     onClose();
   }
@@ -37,7 +47,7 @@ export function AddSpendingDialog({
     setError(undefined);
     setBusy(true);
     try {
-      await onAdd({ kind, category, amount: Number(amount), description });
+      await onAdd({ kind, category, amount: Number(amount), description, date });
       close();
     } catch (err) {
       setError(errorText(err));
@@ -64,6 +74,17 @@ export function AddSpendingDialog({
             </button>
           ))}
         </div>
+
+        <label className="flex flex-col gap-1 text-sm">
+          Date
+          <input
+            className="input input-sm w-full"
+            type="date"
+            required
+            value={date}
+            onInput={(e) => setDate((e.target as HTMLInputElement).value)}
+          />
+        </label>
 
         <label className="flex flex-col gap-1 text-sm">
           Category

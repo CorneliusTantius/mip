@@ -198,7 +198,8 @@ Index: `room_messages_room (room_id, id)`.
 | `category` | TEXT | NOT NULL | up to 40 characters. Matched to an existing name ignoring case |
 | `amount` | REAL | NOT NULL | above 0 |
 | `description` | TEXT | NOT NULL DEFAULT '' | up to 200 characters |
-| `created_at` | INTEGER | NOT NULL | kept when the entry is edited. No change-time column |
+| `entry_date` | TEXT | NOT NULL DEFAULT '' | the day the entry is for, `YYYY-MM-DD`. Set by the user, or today. Older rows are backfilled from `created_at` in local time |
+| `created_at` | INTEGER | NOT NULL | when the entry was saved. Kept when the entry is edited. No change-time column |
 
 ## Migrations and startup (`storage/db.ts`)
 
@@ -208,7 +209,7 @@ Runs in this order on every start:
 2. `messages.session_id` and `runs.session_id` are renamed to `agent_id`, when present.
 3. `CREATE TABLE IF NOT EXISTS` for every table and the FTS table. Then `CREATE INDEX IF NOT EXISTS room_messages_room`.
 4. `DROP TABLE IF EXISTS skill_enablements` and `bot_skill_enablements`.
-5. Added only when missing: `rooms.master_bot_id`, `rooms.collapse_others`, `spending_entries.description`, `agents.persona_id`, `personas.is_default`, `agents.model`, `agents.thinking`.
+5. Added only when missing: `rooms.master_bot_id`, `rooms.collapse_others`, `spending_entries.description`, `spending_entries.entry_date` (backfilled from `created_at` with SQLite's `date(..., 'localtime')`), `agents.persona_id`, `personas.is_default`, `agents.model`, `agents.thinking`.
 6. `personas.updated_at` and `bots.updated_at`, added when missing, backfilled from `created_at`.
 7. `bots.color`, added when missing. Each existing bot gets `BOT_COLORS[i % 8]` in `created_at, id` order, and `updated_at` moves to now.
 8. `agents.meta_updated_at`, added when missing, backfilled from `updated_at`.
@@ -239,7 +240,7 @@ Outside `db.ts`: `app/personas.ts` inserts the built-in `default` persona when m
 | piFiles | `data/pi/settings.json`, `data/pi/models.json` | `pi-files/settings.json.json`, `pi-files/models.json.json` | none | GitHub's copy |
 | mailCache | `mail-cache.json` | `mail-cache/<accountId>.json` | none | GitHub's copy |
 | slackCache | `slack-cache.json` | `slack-cache/<encoded key>.json` | `at` (time fetched) | newer read wins |
-| spending | `spending_entries` | `spending/<id>.json` | none; `created_at` kept | GitHub's copy |
+| spending | `spending_entries` | `spending/<id>.json` | none; `created_at` and `entry_date` kept | GitHub's copy |
 
 Merge rules (`app/sync/merge.ts`):
 

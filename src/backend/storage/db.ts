@@ -159,6 +159,12 @@ if (!hasColumn("rooms", "collapse_others")) db.exec("ALTER TABLE rooms ADD COLUM
 // Spending entries made before the description existed have none.
 if (!hasColumn("spending_entries", "description")) db.exec("ALTER TABLE spending_entries ADD COLUMN description TEXT NOT NULL DEFAULT ''");
 
+// Spending entries made before the entry date existed get the day they were saved, in this machine's time zone.
+if (!hasColumn("spending_entries", "entry_date")) {
+  db.exec("ALTER TABLE spending_entries ADD COLUMN entry_date TEXT NOT NULL DEFAULT ''");
+  db.exec("UPDATE spending_entries SET entry_date = date(created_at / 1000, 'unixepoch', 'localtime') WHERE entry_date = ''");
+}
+
 // Migrations for databases made before some columns existed. Each one adds the column only when it is missing.
 
 // Databases made before personas have no persona column. Their agents get the default persona.

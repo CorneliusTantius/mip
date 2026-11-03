@@ -235,8 +235,8 @@
 | src/backend/app/slack/slack.ts | 20 | function | slackReply |
 | src/backend/app/slack/slack.ts | 52 | function | saveSlackAppInput |
 | src/backend/app/slack/slack.ts | 63 | function | deleteSlackAccount |
-| src/backend/app/spending.ts | 12 | function | allSpending |
-| src/backend/app/spending.ts | 18 | function | saveSpendingEntry |
+| src/backend/app/spending.ts | 14 | function | allSpending |
+| src/backend/app/spending.ts | 31 | function | saveSpendingEntry |
 | src/backend/app/sync/engine.ts | 21 | interface | SyncRun |
 | src/backend/app/sync/engine.ts | 30 | interface | SyncStatus |
 | src/backend/app/sync/engine.ts | 46 | function | syncStatus |
@@ -301,7 +301,7 @@
 | src/backend/app/tools/files.ts | 34 | const | writeTool |
 | src/backend/app/tools/files.ts | 54 | const | editTool |
 | src/backend/app/tools/financial.ts | 22 | const | spendingListTool |
-| src/backend/app/tools/financial.ts | 66 | const | spendingUpsertTool |
+| src/backend/app/tools/financial.ts | 65 | const | spendingUpsertTool |
 | src/backend/app/tools/index.ts | 39 | const | BASIC_TOOLS |
 | src/backend/app/tools/index.ts | 45 | const | DEFERRED_TOOLS |
 | src/backend/app/tools/index.ts | 129 | const | TOOLS |
@@ -485,10 +485,11 @@
 | src/backend/storage/runs.ts | 21 | function | appendRunEvent |
 | src/backend/storage/runs.ts | 26 | function | listRunEvents |
 | src/backend/storage/spending.ts | 4 | interface | SpendingEntry |
-| src/backend/storage/spending.ts | 15 | function | listSpendingEntries |
-| src/backend/storage/spending.ts | 20 | function | insertSpendingEntry |
-| src/backend/storage/spending.ts | 35 | function | getSpendingEntry |
-| src/backend/storage/spending.ts | 41 | function | removeSpendingEntry |
+| src/backend/storage/spending.ts | 18 | function | localDate |
+| src/backend/storage/spending.ts | 25 | function | listSpendingEntries |
+| src/backend/storage/spending.ts | 31 | function | insertSpendingEntry |
+| src/backend/storage/spending.ts | 55 | function | getSpendingEntry |
+| src/backend/storage/spending.ts | 61 | function | removeSpendingEntry |
 | src/backend/storage/sync.ts | 11 | interface | PersonaRow |
 | src/backend/storage/sync.ts | 18 | interface | BotRow |
 | src/backend/storage/sync.ts | 29 | interface | NoteRow |
@@ -570,7 +571,7 @@
 | src/frontend/api/types.ts | 354 | interface | SlackConversation |
 | src/frontend/api/types.ts | 362 | interface | SlackMessage |
 | src/frontend/api/types.ts | 373 | interface | SpendingEntry |
-| src/frontend/api/types.ts | 383 | interface | NewSpendingEntry |
+| src/frontend/api/types.ts | 385 | interface | NewSpendingEntry |
 | src/frontend/features/agent/AgentCard.tsx | 19 | function | AgentCard |
 | src/frontend/features/agent/AgentHeader.tsx | 5 | function | AgentHeader |
 | src/frontend/features/agent/AgentList.tsx | 34 | function | AgentList |
@@ -659,7 +660,8 @@
 | src/frontend/features/slack/useSlack.ts | 72 | function | useConversations |
 | src/frontend/features/slack/useSlack.ts | 110 | function | useMessages |
 | src/frontend/features/slack/useSlack.ts | 149 | function | useThread |
-| src/frontend/features/spending/AddSpendingDialog.tsx | 8 | function | AddSpendingDialog |
+| src/frontend/features/spending/AddSpendingDialog.tsx | 8 | function | todayDate |
+| src/frontend/features/spending/AddSpendingDialog.tsx | 16 | function | AddSpendingDialog |
 | src/frontend/features/spending/SpendingCard.tsx | 10 | function | SpendingCard |
 | src/frontend/features/spending/useSpending.ts | 6 | function | useSpending |
 | src/frontend/features/tools/ToolsCard.tsx | 14 | function | ToolsCard |

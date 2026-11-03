@@ -377,6 +377,8 @@ export interface SpendingEntry {
   amount: number;
   // Empty when none was given.
   description: string;
+  // The day the entry is for, as YYYY-MM-DD.
+  entryDate: string;
   createdAt: number;
 }
 
@@ -385,4 +387,6 @@ export interface NewSpendingEntry {
   category: string;
   amount: number;
   description?: string;
+  // The day the entry is for, as YYYY-MM-DD. The form sends today's day unless the user picks another.
+  date?: string;
 }

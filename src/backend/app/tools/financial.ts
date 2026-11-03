@@ -21,7 +21,7 @@ function sumOf(entries: SpendingEntry[], kind: SpendingEntry["kind"]): number {
 
 export const spendingListTool: ToolSpec = {
   name: "spending_list",
-  guide: "Reads the spending entries: the income, expense, and balance totals, the total for each category, and the newest entries with their descriptions. Filter by category or kind. Use it when the user asks how much was spent or earned, or on what. It never changes an entry.",
+  guide: "Reads the spending entries: the income, expense, and balance totals, the total for each category, and the newest entries with their dates and descriptions. Filter by category or kind. Use it when the user asks how much was spent or earned, or on what. It never changes an entry.",
   description: "Read the spending entries: totals, totals per category, and the newest entries. Read-only.",
   inputSchema: {
     type: "object",
@@ -53,9 +53,8 @@ export const spendingListTool: ToolSpec = {
     const recent = [...entries]
       .slice(0, clampCount(count))
       .map((entry) => {
-        const date = new Date(entry.createdAt).toISOString().slice(0, 10);
         const note = entry.description ? ` | ${entry.description}` : "";
-        return `${entry.id} | ${date} | ${entry.kind} | ${entry.category} | ${entry.amount}${note}`;
+        return `${entry.id} | ${entry.entryDate} | ${entry.kind} | ${entry.category} | ${entry.amount}${note}`;
       });
 
     return ok([totals.join(" | "), "", "By category:", ...perCategory, "", "Newest entries:", ...recent].join("\n"));
@@ -65,7 +64,7 @@ export const spendingListTool: ToolSpec = {
 // Adds a spending entry, or changes one by its id. Agents only: bots read the entries and do not write them.
 export const spendingUpsertTool: ToolSpec = {
   name: "spending_upsert",
-  guide: "Adds a spending entry, or changes one when id is given. Use the id that spending_list or an earlier result gives. Give the kind (income or expense), the category, the amount above 0, and an optional description. Use it when the user reports money in or out, or asks to correct an entry. The result gives the entry's id.",
+  guide: "Adds a spending entry, or changes one when id is given. Use the id that spending_list or an earlier result gives. Give the kind (income or expense), the category, the amount above 0, and an optional description. The date is the day the money moved, as YYYY-MM-DD; leave it out for today. Use it when the user reports money in or out, or asks to correct an entry. The result gives the entry's id.",
   description: "Add a spending entry, or change one by id. Writes the spending entries.",
   inputSchema: {
     type: "object",
@@ -75,11 +74,12 @@ export const spendingUpsertTool: ToolSpec = {
       category: { type: "string", description: "A name already used, or a new one" },
       amount: { type: "number", description: "Above 0" },
       description: { type: "string", description: "Optional, 200 characters at most" },
+      date: { type: "string", description: "The day the entry is for, as YYYY-MM-DD. Leave out for today, or to keep an edited entry's day" },
     },
     required: ["kind", "category", "amount"],
   },
   async run(input) {
     const entry = saveSpendingEntry(input);
-    return ok(`Saved ${entry.id}: ${entry.kind} | ${entry.category} | ${entry.amount}${entry.description ? ` | ${entry.description}` : ""}`);
+    return ok(`Saved ${entry.id}: ${entry.kind} | ${entry.entryDate} | ${entry.category} | ${entry.amount}${entry.description ? ` | ${entry.description}` : ""}`);
   },
 };

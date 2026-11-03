@@ -223,9 +223,9 @@ Preact 11, Vite 8, Tailwind 4 (`@tailwindcss/vite`), daisyUI 5 (`themes: false`,
 | --- | --- | --- |
 | `SpendingCard.tsx` | `SpendingCard` | Glow green. Stats Income, Expense, Balance (income minus expense), then the entries. `Add entry` opens the dialog. Not `h-full`: it sits in the bottom grid. |
 | `useSpending.ts` | `useSpending` | `GET /api/spending` returns `{entries}`. `add(input)` posts and reloads. Its failure is thrown to the dialog. |
-| `AddSpendingDialog.tsx` | `AddSpendingDialog` | Form: Expense (default) or Income, category (datalist of the existing category names; a new name makes one), amount (`min 0`), description (optional, 200 characters). |
+| `AddSpendingDialog.tsx` | `AddSpendingDialog`, `todayDate()` | Form: Expense (default) or Income, date (`type=date`, starts as today in the browser's time zone and resets to today on close), category (datalist of the existing category names; a new name makes one), amount (`min 0`), description (optional, 200 characters). |
 
-- API: `GET /api/spending`, `POST /api/spending {kind, category, amount, description}`.
+- API: `GET /api/spending`, `POST /api/spending {kind, category, amount, description, date}`. The card's rows show each entry's `entryDate`.
 - Categories are the distinct names among the loaded entries.
 
 ## features/tools/

@@ -46,6 +46,23 @@ try {
   assert.equal(entries[2].category, "Food");
   assert.equal(entries[4].category, "Salary");
 
+  // The entry's day: today when none is given, the day given when one is, and an edit without a day keeps the entry's own day.
+  const { localDate, getSpendingEntry, insertSpendingEntry } = await import(`${DIST}storage/spending.js`);
+  assert.equal(salary.entryDate, localDate(Date.now()));
+  const picked = saveSpendingEntry({ kind: "expense", category: "Rent", amount: 100, date: "2026-03-01" });
+  assert.equal(picked.entryDate, "2026-03-01");
+  const edited = saveSpendingEntry({ id: picked.id, kind: "expense", category: "Rent", amount: 120 });
+  assert.equal(edited.entryDate, "2026-03-01");
+  assert.equal(getSpendingEntry(picked.id).amount, 120);
+  const moved = saveSpendingEntry({ id: picked.id, kind: "expense", category: "Rent", amount: 120, date: "2026-03-02" });
+  assert.equal(moved.entryDate, "2026-03-02");
+  // A day that does not exist, or is not written YYYY-MM-DD, is refused.
+  rejects({ kind: "expense", category: "x", amount: 1, date: "2026-02-30" }, "date must be a real day as YYYY-MM-DD");
+  rejects({ kind: "expense", category: "x", amount: 1, date: "03/01/2026" }, "date must be a real day as YYYY-MM-DD");
+  // A copy from a machine that predates the entry date gets the day it was saved.
+  insertSpendingEntry({ id: "old-copy", kind: "income", category: "Gift", amount: 5, description: "", entryDate: "", createdAt: new Date(2025, 11, 31, 10).getTime() });
+  assert.equal(getSpendingEntry("old-copy").entryDate, "2025-12-31");
+
   console.log("spending tests passed");
 } finally {
   rmSync(root, { recursive: true, force: true });
