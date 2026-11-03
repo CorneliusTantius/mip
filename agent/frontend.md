@@ -143,10 +143,10 @@ Preact 11, Vite 8, Tailwind 4 (`@tailwindcss/vite`), daisyUI 5 (`themes: false`,
 - `RoomDialog` API: `POST /api/rooms` or `PUT /api/rooms/:id` with `{name, botIds, masterBotId, collapseOthers}` (empty master sent as `null`); `DELETE /api/rooms/:id`.
 - `BotEditor` API: `POST /api/bots` or `PUT /api/bots/:id` with `{name, persona, providerId, model, thinking, color}`. A default model or thinking is sent as `""`. Provider, model, and thinking dropdowns: `OptionDropdown`; model is `searchable`.
 - `BotsDialog` API: `GET /api/providers` and `GET /api/bots` on open; `DELETE /api/bots/:id`. `BotProfileModal` API: `GET /api/providers` when a bot is shown.
-- `RoomTranscript`: `system` messages are centered lines. `user` messages are primary bubbles on the right. `bot` and `agent` replies are `Markdown`, with mentions as pills. A bot's bubble is `bot-bubble` and its name takes the bot color. With `collapseOthers`, a bot reply from a bot that is not `masterBotId` folds into a `details` with one line (80 characters); click opens it. Replies with tool calls get `ToolCallsButton`.
+- `RoomTranscript`: `system` messages are centered lines. `user` messages are primary bubbles on the right. `bot` and `agent` replies are `Markdown`, with mentions as pills. A bot's bubble is `bot-bubble` and its name takes the bot color. With `collapseOthers`, a bot reply from a bot that is not `masterBotId` folds into a `details` with one line (80 characters); click opens it. Replies with tool calls get `ToolCallsButton`. The log scrolls to a new message only while it is within 24 px of the end, or when the reader sent that message. `BotsCard` keys it by room, so each room starts at its end.
 - `BotEditor`: a new bot takes `nextBotColor(usedColors)`, the first color no other bot uses. Changing the provider clears model and thinking. Changing the model clears thinking. Color swatches are the 8 `BOT_COLORS`, with `aria-pressed`.
 - `RoomDialog`: removing a bot that is the master also clears the master.
-- `useRoom` drops the messages when the room changes, and ignores a response that arrives for a room no longer on screen.
+- `useRoom` drops the messages when the room changes, and ignores a response that arrives for a room no longer on screen. A poll with no new messages leaves the list as it was, so the transcript is not redrawn or scrolled every 1.5 s.
 - `BotsCard` owns the room draft, the manage flag, the profile bot, the edit target, and the room dialog state.
 
 ## features/email/

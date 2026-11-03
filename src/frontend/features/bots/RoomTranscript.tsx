@@ -24,10 +24,20 @@ export function RoomTranscript({
   onOpenBot: (bot: Bot) => void;
 }) {
   const log = useRef<HTMLDivElement>(null);
+  // Whether the log is at its end. A new message scrolls the log down only then, so a reader who scrolled up stays where they are.
+  const atEnd = useRef(true);
+  const last = messages[messages.length - 1];
 
+  // Follows a new message when the log is at its end, and always when the reader sent it.
   useEffect(() => {
-    log.current?.scrollTo({ top: log.current.scrollHeight });
-  }, [messages]);
+    const el = log.current;
+    if (el && (atEnd.current || last?.kind === "user")) el.scrollTo({ top: el.scrollHeight });
+  }, [last?.id]);
+
+  function trackEnd() {
+    const el = log.current;
+    if (el) atEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+  }
 
   // The reply as a bubble: a bot's or an agent's as Markdown, a person's as plain text, then its tool calls.
   function bubble(message: RoomMessage, bot: Bot | undefined) {
@@ -45,7 +55,7 @@ export function RoomTranscript({
   }
 
   return (
-    <div ref={log} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+    <div ref={log} onScroll={trackEnd} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
       {messages.length === 0 && <p className="m-auto text-sm opacity-60">{emptyText}</p>}
       {messages.map((message) => {
         if (message.kind === "system") {

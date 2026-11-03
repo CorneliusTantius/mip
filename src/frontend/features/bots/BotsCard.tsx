@@ -63,6 +63,7 @@ export function BotsCard() {
         )}
 
         <RoomTranscript
+          key={active?.id}
           messages={room.messages}
           bots={rooms.bots}
           masterBotId={active?.masterBotId}

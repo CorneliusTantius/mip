@@ -32,8 +32,11 @@ export function useRoom(roomId: string | undefined) {
       const data = await api.get<RoomState>(`/api/room?room=${encodeURIComponent(id)}&after=${lastId.current}`);
       if (current.current !== id) return;
       const first = lastId.current === 0;
-      if (data.messages.length > 0) lastId.current = data.messages[data.messages.length - 1].id;
-      setMessages((list) => (first ? data.messages : [...list, ...data.messages]));
+      // Only a poll that brings messages changes the list, so the transcript is not redrawn (and scrolled) on every empty poll.
+      if (data.messages.length > 0) {
+        lastId.current = data.messages[data.messages.length - 1].id;
+        setMessages((list) => (first ? data.messages : [...list, ...data.messages]));
+      }
       setBusy(data.busy);
       setSpeaking(data.speaking);
     } catch (err) {
