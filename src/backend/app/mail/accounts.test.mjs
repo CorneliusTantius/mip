@@ -54,6 +54,7 @@ try {
     mailbox: "INBOX",
     watch: { mode: "auto", pollSeconds: 60 },
     maxBytes: 20000,
+    smtp: { host: "smtp.example.test", port: 465, secure: true },
   });
   assert.equal(parsed.accounts[1].watch.pollSeconds, 15, "a poll below 15 seconds is raised to 15");
   assert.equal(parsed.accounts[1].secure, false);

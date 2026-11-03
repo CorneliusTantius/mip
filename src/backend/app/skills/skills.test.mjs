@@ -133,12 +133,12 @@ try {
   releaseRun(token);
   assert.equal(runContextForToken(token), undefined, "a released token opens nothing");
 
-  // The registry lists every tool with the kinds of run that may use it: agents get every tool but the bot-only ones. Bots get the memory, skill, search, room, and agent tools, and the mail, Slack, and spending reads.
+  // The registry lists every tool with the kinds of run that may use it: agents get every tool but the bot-only ones. Bots get the memory, skill, search, room, and agent tools, and the mail and Slack tools, and the spending reads.
   const described = describeTools();
   assert.equal(described.length, TOOLS.length);
-  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "slack_search", "slack_read", "slack_unread", "spending_list"];
+  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send", "spending_list"];
   assert.ok(described.filter((tool) => !botOnly.includes(tool.name)).every((tool) => tool.agent === true));
-  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["skill_search", "skill_read", "memory_search", "memory_read", "memory_edit", "skill_file", "tool_search", "tool_call", "room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "slack_search", "slack_read", "slack_unread", "spending_list"]);
+  assert.deepEqual(described.filter((tool) => tool.bot).map((tool) => tool.name), ["skill_search", "skill_read", "memory_search", "memory_read", "memory_edit", "skill_file", "tool_search", "tool_call", "room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send", "spending_list"]);
   assert.equal(described.find((tool) => tool.name === "skill_read").description, TOOLS.find((tool) => tool.name === "skill_read").description);
 
   // A folder in the registry that is not a valid skill is reported, not hidden.

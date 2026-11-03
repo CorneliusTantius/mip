@@ -275,7 +275,7 @@ Merge rules (`app/sync/merge.ts`):
 
 | path | format | mode | written by | synced |
 | --- | --- | --- | --- | --- |
-| `MIP_HOME/data/mail.json` | JSON `{accounts: {<id>: {label, host, port, secure, user, password, mailbox, watch, maxBytes}}}` | 600 (`writeFileSync` + `chmodSync`) | `app/mail/accounts.ts` (`saveMailAccount`, `removeMailAccount`, `writeMailAccounts`) | yes: `mail/<id>.json`, password included |
+| `MIP_HOME/data/mail.json` | JSON `{accounts: {<id>: {label, host, port, secure, user, password, mailbox, watch, maxBytes, smtp}}}` | 600 (`writeFileSync` + `chmodSync`) | `app/mail/accounts.ts` (`saveMailAccount`, `removeMailAccount`, `writeMailAccounts`) | yes: `mail/<id>.json`, password included |
 | `MIP_HOME/data/mail-cache.json` | JSON `{<accountId>: {uidValidity, messages}}`, headers only | 600 on create, no later chmod | `app/mail/cache.ts` (`saveMailbox`, `dropMailbox`); called from `app/mail/mail.ts` and `app/sync/snapshot.ts` | yes: `mail-cache/<accountId>.json` |
 | `MIP_HOME/data/slack.json` | JSON `{app?: {clientId, clientSecret}, accounts: {<teamId.userId>: {teamId, teamName, userId, userName, token}}}` | 600 (+ chmod) | `app/slack/config.ts` (`saveSlackApp`, `saveSlackAccount`, `removeSlackAccount`, `writeSlackState`) | yes: `slack-app/app.json`, `slack/<id>.json` |
 | `MIP_HOME/data/slack-cache.json` | JSON `{<key>: {at, value}}`. Keys: `conversations:<acct>`, `unread-messages:<acct>` (older files may hold `unread:<acct>`), `messages:<acct>:<channel>`, `replies:<acct>:<channel>:<thread>`, `users:<teamId>` | 600 on create | `app/slack/cache.ts` (`cached`, `setSlackEntry`, `dropSlackEntry`, `forgetCache`) | yes: `slack-cache/<encoded key>.json` |

@@ -1,5 +1,6 @@
 import { ImapFlow } from "imapflow";
 import { type ParsedMail, simpleParser } from "mailparser";
+import { AppError } from "../errors.js";
 import { type MailAccount } from "./accounts.js";
 import { type CachedMailbox } from "./cache.js";
 import { type MailHeader, headerOf } from "./messages.js";
@@ -91,6 +92,31 @@ export function fetchMessage(account: MailAccount, uid: number): Promise<{ heade
       const message = await client.fetchOne(String(uid), { uid: true, flags: true, envelope: true, source: true }, { uid: true });
       if (!message || !message.source) return undefined;
       return { header: headerOf(message), parsed: await simpleParser(message.source) };
+    } finally {
+      lock.release();
+    }
+  });
+}
+
+// The names a Trash folder goes by when the server does not mark one as Trash.
+const TRASH_NAMES = ["trash", "deleted items", "deleted messages", "bin"];
+
+// Moves one message to the account's Trash, where the user can still take it back. Nothing is erased. Returns false when the mailbox has no
+// message with that UID. A mailbox with no Trash folder is refused, since the message would have to be erased to be deleted.
+export function moveToTrash(account: MailAccount, uid: number): Promise<boolean> {
+  return inSession(account, async (client) => {
+    const folders = await client.list();
+    const trash =
+      folders.find((folder) => folder.specialUse === "\\Trash") ?? folders.find((folder) => TRASH_NAMES.includes(folder.path.toLowerCase()));
+    if (!trash) throw new AppError(409, `${account.label} has no Trash folder, so nothing was deleted.`);
+    const lock = await client.getMailboxLock(account.mailbox);
+    try {
+      const present = await client.search({ uid: String(uid) }, { uid: true });
+      if (!present || present.length === 0) return false;
+      const moved = await client.messageMove(String(uid), trash.path, { uid: true });
+      // The message was there a moment ago, so a refused move is the server's failure, not a missing message.
+      if (moved === false) throw new Error(`the server did not move message ${uid} to ${trash.path}`);
+      return true;
     } finally {
       lock.release();
     }

@@ -16,6 +16,13 @@ const DEFAULT_PORT = 993;
 
 export type MailWatchMode = "auto" | "idle" | "interval";
 
+// A mail server: its host, its port, and whether the connection is encrypted from the start (port 465) or upgraded to encrypted (port 587).
+export interface MailServer {
+  host: string;
+  port: number;
+  secure: boolean;
+}
+
 export interface MailAccount {
   id: string;
   label: string;
@@ -27,6 +34,25 @@ export interface MailAccount {
   mailbox: string;
   watch: { mode: MailWatchMode; pollSeconds: number };
   maxBytes: number;
+  // The server a message is sent through. The same login is used for it.
+  smtp: MailServer;
+}
+
+// The SMTP server of each provider the add form offers, by its IMAP host. Any other account sends through its IMAP host with imap. changed
+// to smtp., on the port that most servers use for encrypted sending.
+const SMTP_SERVERS: Record<string, MailServer> = {
+  "imap.gmail.com": { host: "smtp.gmail.com", port: 465, secure: true },
+  "imap.mail.me.com": { host: "smtp.mail.me.com", port: 587, secure: false },
+  "imap.fastmail.com": { host: "smtp.fastmail.com", port: 465, secure: true },
+  "outlook.office365.com": { host: "smtp.office365.com", port: 587, secure: false },
+};
+
+// The SMTP server an account sends through when mail.json does not name one.
+export function smtpFor(imapHost: string): MailServer {
+  const host = imapHost.trim().toLowerCase();
+  const known = SMTP_SERVERS[host];
+  if (known) return { ...known };
+  return { host: host.replace(/^imap\./, "smtp."), port: 465, secure: true };
 }
 
 // An account as the API returns it. The password is never included.
@@ -186,12 +212,13 @@ function parseAccount(id: string, entry: unknown): MailAccount {
   if (!ID.test(id)) throw new Error("the id must start with a letter or digit, then letters, digits, - or _, up to 32 characters");
   if (!isRecord(entry)) throw new Error("the entry must be an object");
   const user = text(entry.user, "user");
+  const host = text(entry.host, "host");
   const watch = entry.watch === undefined ? {} : entry.watch;
   if (!isRecord(watch)) throw new Error('"watch" must be an object');
   return {
     id,
     label: entry.label === undefined ? user : text(entry.label, "label"),
-    host: text(entry.host, "host"),
+    host,
     port: integer(entry.port, "port", DEFAULT_PORT, 1, 65535),
     secure: entry.secure === undefined ? true : bool(entry.secure, "secure"),
     user,
@@ -202,6 +229,18 @@ function parseAccount(id: string, entry: unknown): MailAccount {
       pollSeconds: Math.max(MIN_POLL_SECONDS, integer(watch.pollSeconds, "pollSeconds", DEFAULT_POLL_SECONDS, 1, 86_400)),
     },
     maxBytes: integer(entry.maxBytes, "maxBytes", DEFAULT_MAX_BYTES, 1000, 1_000_000),
+    smtp: entry.smtp === undefined ? smtpFor(host) : smtpOf(entry.smtp),
+  };
+}
+
+// The "smtp" of an entry. Its port defaults to 465 for an encrypted connection and 587 for an upgraded one.
+function smtpOf(value: unknown): MailServer {
+  if (!isRecord(value)) throw new Error('"smtp" must be an object');
+  const secure = value.secure === undefined ? true : bool(value.secure, "smtp.secure");
+  return {
+    host: text(value.host, "smtp.host"),
+    port: integer(value.port, "smtp.port", secure ? 465 : 587, 1, 65535),
+    secure,
   };
 }
 
@@ -217,6 +256,7 @@ function entryOf(account: MailAccount): Record<string, unknown> {
     mailbox: account.mailbox,
     watch: account.watch,
     maxBytes: account.maxBytes,
+    smtp: account.smtp,
   };
 }
 

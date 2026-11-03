@@ -118,7 +118,7 @@ const agentAskTool: ToolSpec = {
 const roomSearch = guarded(roomSearchTool);
 const agentsList = guarded(agentsListTool);
 const agentAsk = guarded(agentAskTool);
-// The bots' read tools for mail and Slack. Bots defer them, so they are found with tool_search and run with tool_call.
+// The bots' tools for mail and Slack, reads and the sends and deletes that act as the user. Bots defer them, so they are found with tool_search and run with tool_call.
 const SOCIAL_DEFERRED = SOCIAL_TOOLS.map(guarded);
 // The spending entries, read-only. Bots defer it, so they find it with tool_search.
 const FINANCIAL_DEFERRED = [spendingListTool].map(guarded);

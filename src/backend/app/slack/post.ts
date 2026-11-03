@@ -4,7 +4,8 @@ import { forgetCache } from "./cache.js";
 import { accountOf } from "./read.js";
 
 // Sending as the connected user. Slack posts the message under the user's name, so the caller must have asked for it: the card sends only
-// when the user presses Send. The answers this changes are dropped from the cache, so the next read shows the new message.
+// when the user presses Send, and a bot's slack_send only when its guide's condition holds. The answers this changes are dropped from the
+// cache, so the next read shows the new message.
 
 const CHANNEL_ID = /^[A-Z0-9]{1,32}$/;
 const THREAD_TS = /^\d+\.\d+$/;

@@ -433,7 +433,7 @@ Tests: `app/skills/format.test.mjs` (header and file rules) and `app/skills/skil
   - Agent run offers `AGENT_TOOLS` = `BASIC_TOOLS` + `SEARCH_TOOLS`. `BASIC_TOOLS` are `bash`, `read`, `edit`, `write`, `skill_search`, `skill_read`, `ask_user`.
   - Agent deferred list `AGENT_DEFERRED` = `DEFERRED_TOOLS` (`memory_search`, `memory_read`, `memory_edit`, `skill_file`) + `spending_upsert`, plus the connected MCP tools (`agentDeferredTools()`).
   - `SEARCH_TOOLS` are `tool_search` and `tool_call`.
-  - Bot turn: `BOT_TOOLS` offered directly. Deferred list `botDeferredTools()` = `SOCIAL_DEFERRED` (`mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unread`) + `spending_list` + connected MCP tools.
+  - Bot turn: `BOT_TOOLS` offered directly. Deferred list `botDeferredTools()` = `SOCIAL_DEFERRED` (`mail_list`, `mail_read`, `mail_send`, `mail_delete`, `slack_search`, `slack_read`, `slack_unread`, `slack_send`) + `spending_list` + connected MCP tools.
 - Prompt: `toolGuidesPrompt(offered)` lists each offered tool's guide. The `tool_search` guide tells the model that other tools exist.
 - `tool_search(query)` (`app/tools/search.ts`): `searchTools` scores each deferred tool. Each query word found in the name adds 2. Each found in the description adds 1. Best first, up to 8. An empty query lists the first 8. Output is each tool's name, description, guide, and inputs.
 - `tool_call(name, input)`: runs one tool from the run's deferred list only. Any other name, including offered tools, fails with "no deferred tool named ... Find it with tool_search first."
@@ -487,7 +487,7 @@ All agent-only (`BASIC_TOOLS`, flow 18). Bots do not have them.
 - Tests: `app/pi/pi-store.test.mjs` (stores, write order, import), `adapters/pi-signin.test.mjs` (sign-in), and the two-machine cases in `app/sync/sync.test.mjs`.
 
 ## 24. Mail over IMAP
-Card: `features/email/EmailCard.tsx`, `useMail.ts`, `AddMailAccountDialog.tsx`, `MailMessageDialog.tsx`. Backend: `app/mail/mail.ts` (orchestration), `accounts.ts` (`data/mail.json`), `imap.ts` (ImapFlow reads), `sessions.ts` (connections), `cache.ts` (`data/mail-cache.json`), `messages.ts` (headers and text).
+Card: `features/email/EmailCard.tsx`, `useMail.ts`, `AddMailAccountDialog.tsx`, `MailMessageDialog.tsx`. Backend: `app/mail/mail.ts` (orchestration), `accounts.ts` (`data/mail.json`), `imap.ts` (ImapFlow reads and the move to Trash), `smtp.ts` (nodemailer sends), `sessions.ts` (connections), `cache.ts` (`data/mail-cache.json`), `messages.ts` (headers and text).
 
 Accounts:
 - `GET /api/mail/accounts` → `{accounts, presets, problems}`. Presets: `gmail`, `icloud`, `fastmail`, `outlook` (port 993, TLS), and `other`. Passwords are never returned.
@@ -511,11 +511,11 @@ Failures: a read failure is 502 `Could not read <label>: <reason>`. The reason i
 
 Card: the list is re-read every `watch.pollSeconds` while an account is shown (`useMailbox`). "Load more" asks for 25 more. Opening a message shows it in `MailMessageDialog`.
 
-Bots (read-only, deferred, bot-only): `mail_list` (`account`, `count` up to 25, default 10) and `mail_read` (`account`, `uid`). They go through `listMailMessages` and `openMailMessage`. `account` may be left out when one account is connected. Agents do not have them.
+Bots (deferred, bot-only): `mail_list` (`account`, `count` up to 25, default 10) and `mail_read` (`account`, `uid`) read through `listMailMessages` and `openMailMessage`. `mail_send` (`to` and `cc` as lists or comma-separated text, `subject`, `text` up to 20,000 characters) sends through `sendMailMessage`: the message is checked first (at least one recipient, 20 addresses at most, a subject of 300 characters at most, one line), then sent from the account's own address by `sendThrough` (`smtp.ts`) with the account's login. `mail_delete` (`uid`) moves the message to the account's Trash through `trashMailMessage`, so nothing is erased. `account` may be left out when one account is connected. Agents do not have these tools.
 
 Sync: `data/mail.json` accounts sync to `mail/` (flow 15), with app passwords. `mail-cache.json` syncs to `mail-cache/`. When both sides changed an account, GitHub's copy wins. A `mail.json` entry that fails its checks stops the sync (409). `parseAccount` clamps `watch.pollSeconds` to at least 15 when a file is read. `watch.mode` is read and validated, and no backend code uses it.
 
-Tests: `app/mail/accounts.test.mjs`, `messages.test.mjs`, `mail.test.mjs` (against `fake-imap.test-support.mjs`), and `mail-sync.test.mjs`. A real mail server is not tested here.
+Tests: `app/mail/accounts.test.mjs`, `messages.test.mjs`, `mail.test.mjs` (against `fake-imap.test-support.mjs`), `mail-sync.test.mjs`, and `mail-write.test.mjs` (sends to `fake-smtp.test-support.mjs`, moves against the fake IMAP). A real mail server is not tested here.
 
 ## 25. Slack
 Card: `features/slack/SlackCard.tsx` (conversation list, transcript, composer, Accounts), `SlackDialog.tsx` (app setup and accounts), `SlackThreadDialog.tsx`, `useSlack.ts`. Backend: `app/slack/connect.ts` (OAuth and token), `config.ts` (`data/slack.json`), `api.ts` (Web API calls), `read.ts` (reads), `post.ts` (send), `cache.ts` (`data/slack-cache.json`), `slack.ts` (the settings view). Routes: `http/routes/slack.ts`, `http/slack-oauth.ts`.
@@ -550,7 +550,7 @@ Errors (`api.ts`): HTTP 429 gives 429 with `Retry-After`. A network failure give
 
 Cache keys: `conversations:<account>`, `messages:<account>:<channel>`, `replies:<account>:<channel>:<ts>`, `unread-messages:<account>`, `users:<team id>`. Time to live: conversations 10 min; messages, replies, and unread 2 min; users 24 h.
 
-Bots (read-only, deferred, bot-only): `slack_search` (`search.messages`, `count` up to 20, default 10, newest first) and `slack_read` (a channel id or a name, with optional `thread_ts`; 30 messages, or the last 100 replies). `slack_unread` (`unreadMessages`): the unread messages of the first 40 conversations, newest first, each with its conversation. `query` keeps the messages that contain all its words; `count` up to 30, default 10. It marks nothing read. `account` may be left out when one account is connected.
+Bots (deferred, bot-only): `slack_search` (`search.messages`, `count` up to 20, default 10, newest first) and `slack_read` (a channel id or a name, with optional `thread_ts`; 30 messages, or the last 100 replies). `slack_unread` (`unreadMessages`): the unread messages of the first 40 conversations, newest first, each with its conversation. `query` keeps the messages that contain all its words; `count` up to 30, default 10. It marks nothing read. `slack_send` (`channel` as an id or a name, `text`, optional `thread_ts`) posts through `sendMessage` as the connected user, with the same checks as the card: 4,000 characters at most. It is the one bot tool that posts. `account` may be left out when one account is connected.
 
 Sync: the app and accounts go to `slack-app/` and `slack/` (GitHub's copy wins on conflict). The Slack cache goes to `slack-cache/` (the newer read wins). A `slack.json` entry that fails its checks stops the sync (409).
 

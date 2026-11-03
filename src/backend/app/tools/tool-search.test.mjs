@@ -33,8 +33,8 @@ try {
     "tool_search",
     "tool_call",
   ]);
-  // A bot's deferred tools are the mail and Slack read tools, and the MCP tools, when any are connected.
-  assert.deepEqual(names(botDeferredTools()).slice(0, 4), ["mail_list", "mail_read", "slack_search", "slack_read"]);
+  // A bot's deferred tools are the mail and Slack tools, and the MCP tools, when any are connected.
+  assert.deepEqual(names(botDeferredTools()).slice(0, 8), ["mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send"]);
 
   // Search finds tools by the words of their names and descriptions. A query nothing matches finds nothing.
   assert.ok(names(searchTools(DEFERRED_TOOLS, "memory")).includes("memory_search"));
@@ -72,7 +72,7 @@ try {
   assert.equal(described.tool_call.load, "search");
   assert.equal(described.room_search.load, "basic");
   assert.equal(described.agent_ask.load, "basic");
-  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "slack_search", "slack_read", "slack_unread", "spending_list"];
+  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send", "spending_list"];
   assert.ok(describeTools().filter((tool) => !botOnly.includes(tool.name)).every((tool) => tool.agent === true));
   assert.deepEqual(describeTools().filter((tool) => tool.bot).map((tool) => tool.name), [
     "skill_search",
@@ -88,9 +88,12 @@ try {
     "agent_ask",
     "mail_list",
     "mail_read",
+    "mail_send",
+    "mail_delete",
     "slack_search",
     "slack_read",
     "slack_unread",
+    "slack_send",
     "spending_list",
   ]);
 

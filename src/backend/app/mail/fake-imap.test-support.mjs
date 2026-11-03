@@ -1,7 +1,8 @@
 // A small IMAP server for the mail tests and for a live check of the card. It speaks the commands imapflow sends to read a mailbox: the
-// greeting, CAPABILITY, ID, LOGIN, STATUS, EXAMINE and SELECT, FETCH with UID, FLAGS, ENVELOPE and BODY[], NOOP, and LOGOUT. It serves one
-// mailbox, INBOX, with the messages it is given. It records every body fetch, and it sets \Seen only for a fetch that is not BODY.PEEK,
-// as a real server does, so a test can check that reading does not mark a message read.
+// greeting, CAPABILITY, ID, LOGIN, LIST, STATUS, EXAMINE and SELECT, FETCH with UID, FLAGS, ENVELOPE and BODY[], SEARCH, NOOP, and LOGOUT. It
+// also moves a message with UID MOVE to a Trash folder, when it has one. It serves one mailbox, INBOX, with the messages it is given. It records
+// every body fetch, and it sets \Seen only for a fetch that is not BODY.PEEK, as a real server does, so a test can check that reading does
+// not mark a message read.
 import { createServer } from "node:net";
 
 const quote = (text) => `"${String(text).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
@@ -23,12 +24,14 @@ function envelopeOf(message) {
 }
 
 // Starts the server on a free local port, or on the port given. Returns the port, the body fetches so far, the flags of each message, and a
-// way to stop.
-export function startFakeImap({ user, password, messages, port = 0 }) {
+// way to stop. A server with trash false has no Trash folder, so a move to one is refused by the client.
+export function startFakeImap({ user, password, messages, port = 0, trash = true }) {
   const store = messages.map((message) => ({ ...message, flags: new Set(message.flags ?? []) }));
   const fetches = [];
   // The message sets each FETCH asked for, so a test can see which headers a sync read.
   const ranges = [];
+  // The messages moved to a folder, in the order they were moved.
+  const moves = [];
   const sockets = new Set();
   let connections = 0;
 
@@ -85,6 +88,16 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
       send(`${tag} OK [${command === "EXAMINE" ? "READ-ONLY" : "READ-WRITE"}] ${command} completed\r\n`);
     };
 
+    // Moves a message by its UID to the Trash folder, and removes it from INBOX, as a server does.
+    const move = (tag, uidText, destination) => {
+      const index = store.findIndex((message) => String(message.uid) === uidText);
+      if (index === -1) return send(`${tag} NO no such message\r\n`);
+      if (!trash || destination !== "Trash") return send(`${tag} NO [TRYCREATE] no such mailbox\r\n`);
+      moves.push({ uid: store[index].uid, to: destination });
+      store.splice(index, 1);
+      send(`* ${index + 1} EXPUNGE\r\n${tag} OK MOVE completed\r\n`);
+    };
+
     const handle = (line) => {
       const space = line.indexOf(" ");
       const tag = line.slice(0, space);
@@ -92,13 +105,23 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
       const args = line.slice(space + 1 + command.length + 1);
       switch (command.toUpperCase()) {
         case "CAPABILITY":
-          return send(`* CAPABILITY IMAP4rev1 LOGIN ID\r\n${tag} OK CAPABILITY completed\r\n`);
+          return send(`* CAPABILITY IMAP4rev1 LOGIN ID MOVE\r\n${tag} OK CAPABILITY completed\r\n`);
         case "ID":
           return send(`* ID ("name" "fake")\r\n${tag} OK ID completed\r\n`);
         case "NOOP":
           return send(`${tag} OK NOOP completed\r\n`);
-        case "LIST":
-          return send(`* LIST (\\HasNoChildren) "/" "INBOX"\r\n${tag} OK LIST completed\r\n`);
+        case "LIST": {
+          // A folder is listed when the pattern names it or is a wildcard, at the top level only: a folder has no children here. An empty
+          // pattern gives only the hierarchy delimiter, as a server does.
+          const reference = rest[0]?.replace(/^"|"$/g, "") ?? "";
+          const pattern = rest[1]?.replace(/^"|"$/g, "") ?? "";
+          if (pattern === "") return send(`* LIST (\\Noselect) "/" ""\r\n${tag} OK LIST completed\r\n`);
+          const folders = [{ name: "INBOX", attributes: "\\HasNoChildren" }];
+          if (trash) folders.push({ name: "Trash", attributes: "\\HasNoChildren \\Trash" });
+          const matched = folders.filter((folder) => reference === "" && (pattern === "*" || pattern === "%" || pattern === folder.name));
+          const lines = matched.map((folder) => `* LIST (${folder.attributes}) "/" "${folder.name}"\r\n`);
+          return send(`${lines.join("")}${tag} OK LIST completed\r\n`);
+        }
         case "LOGIN": {
           const [login, secret] = rest.map((token) => token.replace(/^"|"$/g, ""));
           if (login !== user || secret !== password) return send(`${tag} NO [AUTHENTICATIONFAILED] Invalid credentials\r\n`);
@@ -117,10 +140,13 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
           return fetch(tag, `${command} ${rest.join(" ")}`.replace(/^FETCH\s+/i, "FETCH "));
         case "UID":
           if (!selected) return send(`${tag} NO no mailbox selected\r\n`);
-          // Every UID in the mailbox, for a sync that looks for new and removed messages.
           if (rest[0]?.toUpperCase() === "SEARCH") {
-            return send(`* SEARCH ${store.map((message) => message.uid).join(" ")}\r\n${tag} OK SEARCH completed\r\n`);
+            // Every UID in the mailbox, for a sync that looks for new and removed messages. A UID criterion keeps only that UID.
+            const only = /UID\s+(\d+)\s*$/i.exec(args)?.[1];
+            const found = store.filter((message) => only === undefined || String(message.uid) === only);
+            return send(`* SEARCH ${found.map((message) => message.uid).join(" ")}\r\n${tag} OK SEARCH completed\r\n`);
           }
+          if (rest[0]?.toUpperCase() === "MOVE") return move(tag, rest[1], rest[2]?.replace(/^"|"$/g, ""));
           return fetch(tag, `UID ${rest.join(" ")}`);
         case "LOGOUT":
           send(`* BYE logging out\r\n${tag} OK LOGOUT completed\r\n`);
@@ -156,6 +182,10 @@ export function startFakeImap({ user, password, messages, port = 0 }) {
           for (const socket of sockets) socket.destroy();
         },
         flagsOf: (uid) => [...(store.find((message) => message.uid === uid)?.flags ?? [])],
+        // The messages moved to a folder so far, each with its UID and the folder it went to.
+        moved: () => [...moves],
+        // The UIDs still in INBOX, in the order the server keeps them.
+        uids: () => store.map((message) => message.uid),
         // Adds a message, as a new arrival does, and removes one, as an expunge does.
         add: (message) => store.push({ ...message, flags: new Set(message.flags ?? []) }),
         remove: (uid) => {

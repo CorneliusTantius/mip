@@ -9,17 +9,23 @@ import {
   readMailAccounts,
   removeMailAccount,
   saveMailAccount,
+  smtpFor,
   viewOf,
 } from "./accounts.js";
 import { dropMailbox, readMailCache, saveMailbox } from "./cache.js";
-import { LIST_LIMIT, checkAccount, fetchMessage, signInOnce, syncMailbox } from "./imap.js";
+import { LIST_LIMIT, checkAccount, fetchMessage, moveToTrash, signInOnce, syncMailbox } from "./imap.js";
 import { type MailHeader, type MailMessage, messageOf } from "./messages.js";
 import { closeMailSession } from "./sessions.js";
+import { type OutgoingMail, sendThrough } from "./smtp.js";
 
-// The mail accounts as the card and the API use them: adding, removing, testing, and reading. A saved account keeps one connection to its
-// server between reads, opened when it is first needed. A failure to reach the server is a 502 that says why.
+// The mail accounts as the card and the API use them: adding, removing, testing, reading, sending, and moving a message to Trash. A saved
+// account keeps one connection to its server between reads, opened when it is first needed. A failure to reach the server is a 502 that says why.
 
-const ADDRESS = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ADDRESS = /^[^\s@,<>"]+@[^\s@,<>"]+\.[^\s@,<>"]+$/;
+const MAX_RECIPIENTS = 20;
+const MAX_SUBJECT = 300;
+// shortcut: 20,000 characters per message, so a longer one is refused rather than cut; raise it if a long message is needed.
+const MAX_BODY = 20_000;
 
 export interface MailAccountsReply {
   accounts: MailAccountView[];
@@ -66,6 +72,7 @@ export async function addMailAccount(input: unknown): Promise<MailAccountView> {
     mailbox: "INBOX",
     watch: { mode: "auto", pollSeconds: 60 },
     maxBytes: 20_000,
+    smtp: smtpFor(host),
   };
   try {
     await signInOnce(account);
@@ -87,7 +94,7 @@ export async function deleteMailAccount(id: string): Promise<MailAccountsReply> 
 // Signs in to an account and counts its mailbox. A failure is a 502 with the reason.
 export async function testMailAccount(id: string): Promise<{ messages: number; unseen: number }> {
   const account = findAccount(id);
-  return reading(account, () => checkAccount(account));
+  return talking(account, "Could not read", () => checkAccount(account));
 }
 
 // The newest messages in an account's mailbox, newest first. The headers are kept, so a call fetches only what is new since the last one, and
@@ -100,7 +107,7 @@ export async function listMailMessages(
   const account = findAccount(id);
   const cached = readMailCache()[id];
   const want = count ?? Math.max(LIST_LIMIT, cached?.messages.length ?? 0);
-  const box = await reading(account, () => syncMailbox(account, cached, want));
+  const box = await talking(account, "Could not read", () => syncMailbox(account, cached, want));
   saveMailbox(id, box);
   return { mailbox: account.mailbox, messages: box.messages.slice(0, want), complete: box.messages.length < want };
 }
@@ -108,11 +115,33 @@ export async function listMailMessages(
 // One message, with its text cut to the account's limit. A UID the mailbox does not have is a 404.
 export async function openMailMessage(id: string, uidText: string): Promise<MailMessage> {
   const account = findAccount(id);
-  const uid = Number(uidText);
-  if (!Number.isInteger(uid) || uid < 1) throw new AppError(400, "The message id must be a positive whole number.");
-  const found = await reading(account, () => fetchMessage(account, uid));
+  const uid = uidOf(uidText);
+  const found = await talking(account, "Could not read", () => fetchMessage(account, uid));
   if (!found) throw new AppError(404, `No message ${uid} in ${account.label}.`);
   return messageOf(found.header, found.parsed, account.maxBytes);
+}
+
+// Sends a new message from an account's own address, through the account's SMTP server. The message is checked before the server is asked, so
+// a wrong address or an empty subject sends nothing. Returns the Message-ID the message was sent with.
+export async function sendMailMessage(id: string, input: unknown): Promise<{ messageId: string }> {
+  const account = findAccount(id);
+  const mail = outgoingOf(input);
+  const messageId = await talking(account, "Could not send from", () => sendThrough(account, mail));
+  return { messageId };
+}
+
+// Moves one message to the account's Trash, where the user can still take it back. Nothing is erased. A UID the mailbox does not have is a 404.
+export async function trashMailMessage(id: string, uidText: string): Promise<{ uid: number }> {
+  const account = findAccount(id);
+  const uid = uidOf(uidText);
+  const moved = await talking(account, "Could not delete from", () => moveToTrash(account, uid));
+  if (!moved) throw new AppError(404, `No message ${uid} in ${account.label}.`);
+  // The message is taken out of the kept headers at once, so the next list does not show it until the mailbox is read again.
+  const cached = readMailCache()[id];
+  if (cached) {
+    saveMailbox(id, { uidValidity: cached.uidValidity, messages: cached.messages.filter((message) => message.uid !== uid) });
+  }
+  return { uid };
 }
 
 function findAccount(id: string): MailAccount {
@@ -121,13 +150,46 @@ function findAccount(id: string): MailAccount {
   return account;
 }
 
-// Runs one read against an account's server. A failure is reported with the account's label, never with its password.
-async function reading<T>(account: MailAccount, work: () => Promise<T>): Promise<T> {
+// A message UID as the routes and tools name it: a positive whole number.
+function uidOf(text: string): number {
+  const uid = Number(text);
+  if (!Number.isInteger(uid) || uid < 1) throw new AppError(400, "The message id must be a positive whole number.");
+  return uid;
+}
+
+// The message a caller asks to send, checked. Recipients may come as a list or as one comma-separated text.
+function outgoingOf(input: unknown): OutgoingMail {
+  const body = asRecord(input);
+  const to = addressesOf(body.to);
+  const cc = addressesOf(body.cc);
+  if (to.length === 0) throw new AppError(400, "Name at least one recipient.");
+  if (to.length + cc.length > MAX_RECIPIENTS) throw new AppError(400, `A message can go to ${MAX_RECIPIENTS} addresses at most.`);
+  // A line break in a subject would start a new header, so each run of whitespace is read as one space.
+  const subject = String(body.subject ?? "").replace(/\s+/g, " ").trim();
+  if (!subject) throw new AppError(400, "Write a subject.");
+  if (subject.length > MAX_SUBJECT) throw new AppError(400, `A subject can be ${MAX_SUBJECT} characters at most.`);
+  const text = String(body.text ?? "").trim();
+  if (!text) throw new AppError(400, "Write the message.");
+  if (text.length > MAX_BODY) throw new AppError(400, `A message can be ${MAX_BODY} characters at most.`);
+  return { to, cc, subject, text };
+}
+
+// The addresses in a list, or in one comma-separated text. Each one must look like an address.
+function addressesOf(value: unknown): string[] {
+  const parts = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+  const addresses = parts.map((part) => String(part ?? "").trim()).filter(Boolean);
+  const bad = addresses.find((address) => !ADDRESS.test(address));
+  if (bad) throw new AppError(400, `"${bad}" is not an email address.`);
+  return addresses;
+}
+
+// Runs one call to an account's server. A failure is reported with what was being done and the account's label, never with its password.
+async function talking<T>(account: MailAccount, doing: string, work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (err) {
     if (err instanceof AppError) throw err;
-    throw new AppError(502, `Could not read ${account.label}: ${reasonOf(err)}`);
+    throw new AppError(502, `${doing} ${account.label}: ${reasonOf(err)}`);
   }
 }
 

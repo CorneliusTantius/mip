@@ -1,13 +1,15 @@
 import type { ToolSpec } from "../../adapters/contract.js";
 import { type MailAccount, readMailAccounts } from "../mail/accounts.js";
-import { listMailMessages, openMailMessage } from "../mail/mail.js";
+import { listMailMessages, openMailMessage, sendMailMessage, trashMailMessage } from "../mail/mail.js";
 import { slackCall } from "../slack/api.js";
+import { sendMessage } from "../slack/post.js";
 import { type SlackAccount, readSlackConfig } from "../slack/config.js";
 import { listConversations, listMessages, listReplies, namesOf, resolveMentions, unreadMessages } from "../slack/read.js";
 import { ok } from "./result.js";
 
-// Read-only tools for bots over the connected mail and Slack accounts. They never send, mark mail read, or change anything. What they read
-// goes to the model, so a bot sees the mail or messages it asks for. Sending is a separate, approved step and is not offered here.
+// Tools for bots over the connected mail and Slack accounts. The read tools never change anything. The send and delete tools act as the
+// connected user: they send mail from the account's address, move mail to its Trash, and post Slack messages under the user's name. Each of
+// those says in its guide when a bot may use it. What a tool reads goes to the model, so a bot sees the mail or messages it asks for.
 
 const MAX_MAIL = 25;
 const MAX_SEARCH = 20;
@@ -35,6 +37,17 @@ function slackAccountFor(name: unknown): SlackAccount {
   );
   if (!found) throw new Error(`Name the Slack account. Connected: ${accounts.map((account) => account.userName).join(", ") || "none"}.`);
   return found;
+}
+
+// The conversation id a tool names: an id as it is, or the name of one of the account's conversations, such as general, or a person's name
+// for a direct message.
+async function channelIdOf(account: SlackAccount, channel: unknown): Promise<string> {
+  const text = String(channel ?? "").trim();
+  if (/^[A-Z0-9]{1,32}$/.test(text)) return text;
+  const name = text.replace(/^#/, "").toLowerCase();
+  const match = (await listConversations(account.id)).find((conversation) => conversation.name.toLowerCase() === name);
+  if (!match) throw new Error(`No conversation called "${channel}" for this account.`);
+  return match.id;
 }
 
 // A text on one line, cut when it is long.
@@ -92,6 +105,47 @@ export const mailReadTool: ToolSpec = {
   },
 };
 
+export const mailSendTool: ToolSpec = {
+  name: "mail_send",
+  guide: "Sends a new email from a connected mail account's own address, to the recipients and with the subject and text given. It is sent at once and cannot be unsent. Use it only when the user asks you to send that email, with the recipients, subject, and text they gave. Do not send mail the user has not asked for, and do not make up a recipient.",
+  description: "Send a new email from a connected mail account. It is sent at once, so use it only when the user asks for that email.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      account: { type: "string", description: "The mail account's label or address. Can be left out when only one account is connected" },
+      to: { type: "array", items: { type: "string" }, description: "The recipients' email addresses" },
+      cc: { type: "array", items: { type: "string" }, description: "Addresses to copy. Can be left out" },
+      subject: { type: "string", description: "The subject line" },
+      text: { type: "string", description: "The message as plain text. At most 20,000 characters" },
+    },
+    required: ["to", "subject", "text"],
+  },
+  async run({ account, to, cc, subject, text }) {
+    const found = mailAccountFor(account);
+    await sendMailMessage(found.id, { to, cc, subject, text });
+    return ok(`Sent "${oneLine(String(subject ?? ""))}" from ${found.label}.`);
+  },
+};
+
+export const mailDeleteTool: ToolSpec = {
+  name: "mail_delete",
+  guide: "Moves one mail message to the Trash of its account, by its UID from mail_list. Nothing is erased: the user can take the message back from the Trash. Use it only when the user asks you to delete that message. Do not delete mail you were not asked to delete.",
+  description: "Move one mail message to the account's Trash, by its UID. Nothing is erased. Use it only when asked.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      account: { type: "string", description: "The mail account's label or address. Can be left out when only one account is connected" },
+      uid: { type: "number", description: "The message's UID, from mail_list" },
+    },
+    required: ["uid"],
+  },
+  async run({ account, uid }) {
+    const found = mailAccountFor(account);
+    const moved = await trashMailMessage(found.id, String(uid));
+    return ok(`Moved message ${moved.uid} in ${found.label} to the Trash.`);
+  },
+};
+
 export const slackSearchTool: ToolSpec = {
   name: "slack_search",
   guide: "Searches the Slack messages the connected account can see, with Slack's search words (such as in:#channel or from:@name). Each result shows its channel and author. Use it to find a message by its words; read the conversation with slack_read.",
@@ -141,13 +195,7 @@ export const slackReadTool: ToolSpec = {
   },
   async run({ account, channel, thread_ts }) {
     const found = slackAccountFor(account);
-    let channelId = String(channel ?? "").trim();
-    if (!/^[A-Z0-9]{1,32}$/.test(channelId)) {
-      const name = channelId.replace(/^#/, "").toLowerCase();
-      const match = (await listConversations(found.id)).find((conversation) => conversation.name.toLowerCase() === name);
-      if (!match) throw new Error(`No conversation called "${channel}" for this account.`);
-      channelId = match.id;
-    }
+    const channelId = await channelIdOf(found, channel);
     const messages = thread_ts
       ? (await listReplies(found.id, channelId, String(thread_ts))).slice(-MAX_READ)
       : (await listMessages(found.id, channelId)).slice(0, MAX_READ).reverse();
@@ -188,5 +236,36 @@ export const slackUnreadTool: ToolSpec = {
   },
 };
 
-// The read tools for bots. They are deferred: a bot finds them with tool_search and runs them with tool_call.
-export const SOCIAL_TOOLS: ToolSpec[] = [mailListTool, mailReadTool, slackSearchTool, slackReadTool, slackUnreadTool];
+export const slackSendTool: ToolSpec = {
+  name: "slack_send",
+  guide: "Posts a message to a Slack conversation as the connected user, so it shows under their name. The conversation is a channel id, a channel's name such as general, or a person's name for a direct message. Give thread_ts to reply in a thread. It is posted at once and cannot be unsent here. Use it only when the user asks you to post that message, with the words they gave.",
+  description: "Post a message to a Slack conversation as the connected user, under their name. It is posted at once, so use it only when asked.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      account: { type: "string", description: "The Slack account's name or workspace. Can be left out when only one account is connected" },
+      channel: { type: "string", description: "The conversation: its id (C…), its name such as general, or a person's name for a direct message" },
+      text: { type: "string", description: "The message. At most 4,000 characters" },
+      thread_ts: { type: "string", description: "The parent message's timestamp, to reply in that thread. Can be left out" },
+    },
+    required: ["channel", "text"],
+  },
+  async run({ account, channel, text, thread_ts }) {
+    const found = slackAccountFor(account);
+    const channelId = await channelIdOf(found, channel);
+    const sent = await sendMessage(found.id, channelId, String(text ?? ""), thread_ts ? String(thread_ts) : undefined);
+    return ok(`Posted to ${String(channel).trim()} as ${found.userName}. Timestamp ${sent.ts}.`);
+  },
+};
+
+// The tools for bots over mail and Slack. They are deferred: a bot finds them with tool_search and runs them with tool_call.
+export const SOCIAL_TOOLS: ToolSpec[] = [
+  mailListTool,
+  mailReadTool,
+  mailSendTool,
+  mailDeleteTool,
+  slackSearchTool,
+  slackReadTool,
+  slackUnreadTool,
+  slackSendTool,
+];

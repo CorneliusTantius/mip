@@ -37,6 +37,7 @@ Backend tests. Run `npm run build:backend` first: they import the compiled modul
     node src/backend/app/mail/accounts.test.mjs
     node src/backend/app/mail/mail-sync.test.mjs
     node src/backend/app/mail/mail.test.mjs
+    node src/backend/app/mail/mail-write.test.mjs
     node src/backend/app/mail/messages.test.mjs
     node src/backend/app/mcp/mcp-oauth.test.mjs
     node src/backend/app/mcp/mcp.test.mjs
@@ -75,7 +76,7 @@ Frontend tests. No build: they import the `.ts` source directly.
     node src/frontend/ui/links.test.mjs
     node src/frontend/ui/markdown.test.mjs
 
-- 41 test files in total. `src/backend/app/mail/fake-imap.test-support.mjs` is a helper that `mail.test.mjs` and `mail-sync.test.mjs` import. Nothing runs it directly.
+- 42 test files in total. `src/backend/app/mail/fake-imap.test-support.mjs` (used by `mail.test.mjs`, `mail-sync.test.mjs`, and `mail-write.test.mjs`) and `fake-smtp.test-support.mjs` (used by `mail-write.test.mjs`) are helpers. Nothing runs them directly.
 - Backend tests that touch the database or the data folder set `MIP_HOME` to a temporary folder before they load modules. These six do not set it: `adapters/pi-signin`, `app/mail/messages`, `app/room/engine`, `app/skills/format`, `app/sync/github`, `app/sync/merge`.
 - Runtime: Node 26 here (`node --version` gives v26.13.0). `package.json` `engines` says `>=20`, which is lower than `node:sqlite` (used by `storage/db.ts`) needs.
 

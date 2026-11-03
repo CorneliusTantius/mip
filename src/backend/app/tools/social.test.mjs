@@ -1,5 +1,6 @@
-// Checks the read tools for bots over mail and Slack: they are deferred for bots (found with tool_search), not offered to agents, and they refuse
-// an account that is not connected before any call reaches a server. Run after a build: node src/backend/app/tools/social.test.mjs
+// Checks the tools for bots over mail and Slack: they are deferred for bots (found with tool_search), not offered to agents, and they refuse an
+// account that is not connected before any call reaches a server. The read tools change nothing; the send and delete tools post or move one
+// item, and a Slack post goes to the right conversation. Run after a build: node src/backend/app/tools/social.test.mjs
 // It sets MIP_HOME to a temporary folder before the modules load, so no real config is touched.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -16,19 +17,21 @@ try {
   const registry = await import(`${DIST}app/tools/index.js`);
   const social = await import(`${DIST}app/tools/social.js`);
   paths.ensureMipDirs();
-  const names = ["mail_list", "mail_read", "slack_search", "slack_read", "slack_unread"];
+  const names = ["mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send"];
+  const WRITE_TOOLS = ["mail_send", "mail_delete", "slack_send"];
 
-  // 1. Bots find the read tools through tool_search. Agents do not get them.
+  // 1. Bots find these tools through tool_search. Agents do not get them.
   const bot = registry.botDeferredTools().map((tool) => tool.name);
   for (const name of names) assert.ok(bot.includes(name), `${name} is deferred for bots`);
   const agent = registry.agentDeferredTools().map((tool) => tool.name);
   for (const name of names) assert.ok(!agent.includes(name), `${name} is not given to agents`);
   assert.ok(registry.describeTools().find((tool) => tool.name === "slack_read").bot, "the Tools card shows them for bots");
 
-  // 2. Each one has a description and a guide, and none of them sends or changes anything.
+  // 2. Each one has a description and a guide. The three that send or delete say when a bot may use them; the others change nothing.
   for (const tool of social.SOCIAL_TOOLS) {
     assert.ok(tool.description.length > 0 && tool.guide.length > 0, `${tool.name} is described`);
-    assert.ok(!/send|post|delete|mark/i.test(tool.name), `${tool.name} is read-only by name`);
+    if (WRITE_TOOLS.includes(tool.name)) assert.match(tool.guide, /only when the user asks/, `${tool.name} says when to use it`);
+    else assert.ok(!/send|post|delete|mark/i.test(tool.name), `${tool.name} is read-only by name`);
   }
 
   // 3. With no account connected, a tool that needs one refuses before it calls anything.
@@ -37,9 +40,15 @@ try {
   const noMail = await tool("mail_list").run({}, {});
   assert.equal(noMail.isError, true);
   assert.match(noMail.text, /Name the mail account/);
+  const noSend = await tool("mail_send").run({ to: ["bob@example.test"], subject: "Hi", text: "Body" }, {});
+  assert.equal(noSend.isError, true);
+  assert.match(noSend.text, /Name the mail account/);
   const noSlack = await tool("slack_read").run({ channel: "general" }, {});
   assert.equal(noSlack.isError, true);
   assert.match(noSlack.text, /Name the Slack account/);
+  const noPost = await tool("slack_send").run({ channel: "general", text: "Hi" }, {});
+  assert.equal(noPost.isError, true);
+  assert.match(noPost.text, /Name the Slack account/);
 
   // 4. slack_unread lists the unread messages of the connected account, newest first, without the user's own, and asks Slack only to read.
   // Slack is faked: fetch answers the methods the tool uses, and every call is recorded.
@@ -90,7 +99,45 @@ try {
     globalThis.fetch = realFetch;
   }
 
-  console.log("social read tool tests passed");
+  // 5. slack_send posts as the connected user, to a conversation named by its id or by its name, and a reply goes to its thread. A message that
+  // is empty is refused, and a conversation that is not the user's is refused, before anything is posted.
+  const sendFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const method = String(url).split("/").pop();
+    const params = Object.fromEntries(new URLSearchParams(String(init.body)));
+    calls.push({ method, params });
+    const replies = {
+      "users.list": { ok: true, members: [] },
+      "users.conversations": { ok: true, channels: [{ id: "C1", name: "general" }] },
+      "chat.postMessage": { ok: true, ts: "1700000900.000500" },
+    };
+    return new Response(JSON.stringify(replies[method]), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  try {
+    const send = tool("slack_send");
+    const posted = await send.run({ channel: "#general", text: "Deploy is done" }, {});
+    assert.equal(posted.isError, false);
+    assert.equal(posted.text, "Posted to #general as Me. Timestamp 1700000900.000500.");
+    const first = calls.filter((call) => call.method === "chat.postMessage").at(-1);
+    assert.deepEqual([first.params.channel, first.params.text], ["C1", "Deploy is done"]);
+    assert.equal(first.params.thread_ts, undefined, "a message with no thread is not a reply");
+
+    const reply = await send.run({ channel: "C1", text: "Thanks", thread_ts: "1700000300.000200" }, {});
+    assert.equal(reply.isError, false);
+    assert.equal(calls.filter((call) => call.method === "chat.postMessage").at(-1).params.thread_ts, "1700000300.000200");
+
+    const empty = await send.run({ channel: "general", text: "   " }, {});
+    assert.equal(empty.isError, true);
+    assert.match(empty.text, /Write a message first/);
+    const unknown = await send.run({ channel: "nowhere", text: "Hi" }, {});
+    assert.equal(unknown.isError, true);
+    assert.match(unknown.text, /No conversation called "nowhere"/);
+    assert.equal(calls.filter((call) => call.method === "chat.postMessage").length, 2, "a refused message is not posted");
+  } finally {
+    globalThis.fetch = sendFetch;
+  }
+
+  console.log("social tool tests passed");
 } finally {
   rmSync(root, { recursive: true, force: true });
 }
