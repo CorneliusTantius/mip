@@ -1,5 +1,5 @@
 // Checks Pi's credential and model stores: reads, writes, the order of writes for one provider, and the one-time import of Pi's auth file.
-// Run after a build: node src/backend/app/pi/pi-store.test.mjs. It sets MIP_HOME to a temporary folder before the modules load, and
+// Run after a build: node src/backend/app/pi/pi-store.test.mjs. It sets HOME to a temporary folder before the modules load, and
 // writes the auth file to a temporary folder, so the real ~/.pi is never read.
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-pi-store-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const store = await import(`${DIST}app/pi/store.js`);

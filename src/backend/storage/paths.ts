@@ -2,8 +2,8 @@ import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-// Everything mip stores lives under one folder. Set MIP_HOME to move it.
-export const MIP_HOME = process.env.MIP_HOME ?? join(homedir(), ".mip");
+// Everything mip stores lives under one folder, ~/.mip.
+export const MIP_HOME = join(homedir(), ".mip");
 export const DATA_DIR = join(MIP_HOME, "data");
 // This installation's device ID, for providers that identify each install. It stays on this machine.
 export const DEVICE_ID_FILE = join(DATA_DIR, "device-id");

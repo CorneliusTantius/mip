@@ -1,6 +1,6 @@
 // Runs the GitHub sync end to end, with two machines and local bare repos in place of GitHub. Run after a build:
 //   node src/backend/app/sync/sync.test.mjs
-// Each machine is a separate Node process with its own MIP_HOME, so each has its own database, as on two real machines.
+// Each machine is a separate Node process with its own HOME (so its own ~/.mip), so each has its own database, as on two real machines.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -35,7 +35,7 @@ function run() {
       console.log(JSON.stringify(result ?? null));
     `;
     const stdout = execFileSync(process.execPath, ["--input-type=module", "-e", code], {
-      env: { ...process.env, MIP_HOME: home },
+      env: { ...process.env, HOME: home },
       encoding: "utf8",
     });
     return JSON.parse(stdout.trim().split("\n").pop());
@@ -154,7 +154,7 @@ function run() {
     return await engine.syncWith(remote);
   `, legacyRepo);
   moveFolder(legacyRepo.url, "agents", "chats");
-  const baseFile = join(e, "sync", "base.json");
+  const baseFile = join(e, ".mip", "sync", "base.json");
   const saved = JSON.parse(readFileSync(baseFile, "utf8"));
   saved.snapshot.chats = saved.snapshot.agents;
   delete saved.snapshot.agents;

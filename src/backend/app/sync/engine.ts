@@ -109,9 +109,9 @@ export async function syncWith(remote: { url: string; env: NodeJS.ProcessEnv; re
     const remoteState = readTree();
     const base = readBase(remote.repo);
     const local = readLocal();
-    // A database that is empty while the last sync had data is probably a wrong MIP_HOME. Refuse rather than delete everything on GitHub.
+    // A database that is empty while the last sync had data is probably a wrong data folder. Refuse rather than delete everything on GitHub.
     if (isEmptySnapshot(local) && !isEmptySnapshot(base)) {
-      throw new AppError(409, "This database is empty, but the last sync had data. Nothing was changed. Check MIP_HOME first.");
+      throw new AppError(409, "This database is empty, but the last sync had data. Nothing was changed. Check ~/.mip first.");
     }
     const { merged, notes } = mergeSnapshots(base, local, remoteState);
     applySnapshot(local, merged);

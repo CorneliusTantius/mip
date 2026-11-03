@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Starts mip in the background and gives the terminal back. npm start builds first, then runs the server.
-# Output goes to $MIP_HOME/run.log. The process group id is in $MIP_HOME/run.pid. Stop mip with: kill -- -<pid>
+# Output goes to ~/.mip/run.log. The process group id is in ~/.mip/run.pid. Stop mip with: kill -- -<pid>
 set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$0")")"
 
-MIP_HOME="${MIP_HOME:-$HOME/.mip}"
+MIP_HOME="$HOME/.mip"
 PORT="${MIP_PORT:-3000}"
 URL="http://127.0.0.1:$PORT"
 LOG_FILE="$MIP_HOME/run.log"

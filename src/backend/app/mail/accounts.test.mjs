@@ -1,6 +1,6 @@
 // Checks the mail accounts file: which entries load, their defaults and limits, the ids, that a save keeps what the app does not load, that a
 // password never leaves the file, and that the file is readable only by this user. Run after a build: node src/backend/app/mail/accounts.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load, so no real config is touched.
+// It sets HOME to a temporary folder before the modules load, so no real config is touched.
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-mail-accounts-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const paths = await import(`${DIST}storage/paths.js`);

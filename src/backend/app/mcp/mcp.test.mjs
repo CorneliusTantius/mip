@@ -1,7 +1,7 @@
 // Checks the MCP servers: the config file's rules, each server's connection state, the tools that run through a server, how agents
 // find them, and the reload. A small fake stdio server stands in for a real one.
 // Run after a build: node src/backend/app/mcp/mcp.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load, so no real config or server is touched.
+// It sets HOME to a temporary folder before the modules load, so no real config or server is touched.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-mcp-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 // Two tools: "echo" returns its text, and "fail" returns a failed result.
 const FAKE_SERVER = `

@@ -48,7 +48,7 @@ App: `app/agents.ts`.
 - `Message` (in `messages`): `{role, text, tools: string[], calls: ToolCall[], error, ask}`. `ToolCall`: `{name, input (JSON text), output (null if the run ended first), isError}`.
 - PATCH applies fields in order: title, openToBots, then model and thinking. There is no transaction, so a 400 on a later field leaves earlier fields saved.
 - `model` is checked against `findProvider(providerId).models()` at request time. If `model` changes and `thinking` is not sent, a thinking level the new model does not list is cleared silently.
-- DELETE removes the agent, its messages, runs, run events, and `MIP_HOME/workspaces/<agentId>`. Provider session files are kept.
+- DELETE removes the agent, its messages, runs, run events, and `~/.mip/workspaces/<agentId>`. Provider session files are kept.
 - Persona is fixed at creation. There is no API to change it.
 
 ## Runs — `routes/runs.ts`
@@ -127,11 +127,11 @@ App: `app/repos.ts`.
 | POST | /api/repos | yes | `url` string (trimmed; a link with no scheme such as `github.com/owner/repo` gets `https://`) | 202 `Repo` with `status: "cloning"` (no `branch` or `copies` keys) | 400 "paste a git clone link, such as github.com/owner/repo"; 400 `can't use "<name>" as a folder name`; 409 `a repository called "<name>" is already here` |
 | POST | /api/repos/pull | yes | — | 200 `{results: {id, name, ok, message}[]}`, one per ready repo | — (a failed pull is `ok: false` with git's message) |
 | DELETE | /api/repos/:repoId | no | — | 200 `{ok: true}`; removes the master clone folder | 404 "no such repository"; 409 `<name> is still cloning` |
-| POST | /api/repos/:repoId/copies | yes | `agentId` string | 201 `{ok: true}`; clones into `MIP_HOME/workspaces/<agentId>/<name>` | 404 "no such repository"; 404 "no such agent"; 409 `<name> isn't ready yet`; 409 `this agent already has <name>`; 500 git's message (partial copy removed) |
+| POST | /api/repos/:repoId/copies | yes | `agentId` string | 201 `{ok: true}`; clones into `~/.mip/workspaces/<agentId>/<name>` | 404 "no such repository"; 404 "no such agent"; 409 `<name> isn't ready yet`; 409 `this agent already has <name>`; 500 git's message (partial copy removed) |
 
 - `Repo`: `{id, name, url, status, error}`. `status` is `"cloning"`, `"ready"` or `"error"`. `name` is the last path segment of the link without `.git`.
 - `branch`: the checked-out branch. `"detached"` when HEAD is detached. Null when not ready or unknown.
-- Clones run in the background into `MIP_HOME/repos/<name>`. A failed clone removes its folder and sets `status: "error"`.
+- Clones run in the background into `~/.mip/repos/<name>`. A failed clone removes its folder and sets `status: "error"`.
 - Pull is `git pull --ff-only`. Agents' copies are not pulled.
 - A copy's `origin` is the real link, not the master clone. Deleting the master does not affect copies.
 - `copies` lists agents whose workspace has `<name>/.git`.
@@ -183,12 +183,12 @@ App: `app/system.ts`.
 | POST | /api/system/restart | yes | body ignored | 202 `{restarting: true}` | 415 |
 
 - `update` does not install or build. The checkout root is three folders above `dist/backend/app/system.js`.
-- `restart`: the reply is sent, then `process.exit(0)` runs 300 ms later. A detached `sh` waits for that PID to exit. It runs `npm install && npm run build` (output appended to `MIP_HOME/restart.log`) and then `exec`s `node dist/backend/http/server.js`. It starts the server even if install or build failed.
+- `restart`: the reply is sent, then `process.exit(0)` runs 300 ms later. A detached `sh` waits for that PID to exit. It runs `npm install && npm run build` (output appended to `~/.mip/restart.log`) and then `exec`s `node dist/backend/http/server.js`. It starts the server even if install or build failed.
 
 ## Skills — `routes/skills.ts`
 App: `app/skills/registry.ts` (reads), `create.ts`, `imports.ts`, `format.ts` (rules).
 
-Installed skills are folders `MIP_HOME/skills/<name>/` with a `SKILL.md`. Its `---` header holds `name:` and `description:` lines. Staged imports sit in `MIP_HOME/skills/.staging/<id>/` and are not listed. A folder that is not a valid skill is listed under `problems`, not hidden.
+Installed skills are folders `~/.mip/skills/<name>/` with a `SKILL.md`. Its `---` header holds `name:` and `description:` lines. Staged imports sit in `~/.mip/skills/.staging/<id>/` and are not listed. A folder that is not a valid skill is listed under `problems`, not hidden.
 
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
@@ -263,14 +263,14 @@ GitHub sync (Settings → Sync). The account is the one the GitHub CLI (`gh`) is
 - `login`: the account chosen with `PUT /api/sync/account` if gh still has it, else gh's active account, else the first. Null when gh has none.
 - `repo`: `<login>/dotmip`.
 - `error`: why gh has no account (gh missing, or not signed in). Null when there are accounts.
-- `lastSync`: `{at, ok, message, pulled, pushed, notes}`. Failures inside the background run are stored here with `ok: false`, not returned by POST. Examples: "… is public. Make it private, then sync again." (repo public), "This database is empty, but the last sync had data. Nothing was changed. Check MIP_HOME first." (empty local database), "GitHub changed during the sync. Sync again." (push rejected three times).
+- `lastSync`: `{at, ok, message, pulled, pushed, notes}`. Failures inside the background run are stored here with `ok: false`, not returned by POST. Examples: "… is public. Make it private, then sync again." (repo public), "This database is empty, but the last sync had data. Nothing was changed. Check ~/.mip first." (empty local database), "GitHub changed during the sync. Sync again." (push rejected three times).
 - A sync that would delete everything on GitHub because the local database is empty is refused.
-- The chosen login is kept in `MIP_HOME/sync/state.json`. The merge base is kept in `MIP_HOME/sync/base.json`.
+- The chosen login is kept in `~/.mip/sync/state.json`. The merge base is kept in `~/.mip/sync/base.json`.
 
 ## MCP servers — `routes/mcp-servers.ts`
 App: `app/mcp/manager.ts` (connections, status, sign-in), `app/mcp/servers.ts` (add, remove), `app/mcp/config.ts` (mcp.json).
 
-Servers are the entries under `mcpServers` in `MIP_HOME/data/mcp.json` (`MCP_CONFIG_FILE`). They connect after the server starts listening and again on each reload.
+Servers are the entries under `mcpServers` in `~/.mip/data/mcp.json` (`MCP_CONFIG_FILE`). They connect after the server starts listening and again on each reload.
 
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
@@ -294,7 +294,7 @@ Servers are the entries under `mcpServers` in `MIP_HOME/data/mcp.json` (`MCP_CON
 ## Mail accounts — `routes/mail.ts`
 App: `app/mail/mail.ts` (routes' logic), `accounts.ts` (mail.json), `imap.ts` (IMAP), `messages.ts` (shapes).
 
-IMAP accounts are in `MIP_HOME/data/mail.json` (`MAIL_CONFIG_FILE`), with app passwords. Header cache: `MIP_HOME/data/mail-cache.json`.
+IMAP accounts are in `~/.mip/data/mail.json` (`MAIL_CONFIG_FILE`), with app passwords. Header cache: `~/.mip/data/mail-cache.json`.
 
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |
@@ -316,7 +316,7 @@ IMAP accounts are in `MIP_HOME/data/mail.json` (`MAIL_CONFIG_FILE`), with app pa
 ## Slack — `routes/slack.ts`
 App: `app/slack/slack.ts` (state), `connect.ts` (sign-in), `read.ts` (reads), `post.ts` (send), `api.ts` (Slack calls and errors), `config.ts` (slack.json), `cache.ts` (cache).
 
-The Slack app and connected users are in `MIP_HOME/data/slack.json` (`SLACK_CONFIG_FILE`). Each account holds a user token (`xoxp-`). Cache: `MIP_HOME/data/slack-cache.json`. Reads use the connected user's token, so they show what that user sees.
+The Slack app and connected users are in `~/.mip/data/slack.json` (`SLACK_CONFIG_FILE`). Each account holds a user token (`xoxp-`). Cache: `~/.mip/data/slack-cache.json`. Reads use the connected user's token, so they show what that user sees.
 
 | method | path | JSON | reads | reply | errors |
 | --- | --- | --- | --- | --- | --- |

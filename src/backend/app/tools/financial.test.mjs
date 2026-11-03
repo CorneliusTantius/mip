@@ -1,5 +1,5 @@
 // Checks the spending tool: totals, the per-category lines, the newest entries, and the filters by category and kind. Run after a build:
-// node src/backend/app/tools/financial.test.mjs. It sets MIP_HOME to a temporary folder before the modules load.
+// node src/backend/app/tools/financial.test.mjs. It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-financial-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const { saveSpendingEntry } = await import(`${DIST}app/spending.js`);

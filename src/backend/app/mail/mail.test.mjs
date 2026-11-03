@@ -2,7 +2,7 @@
 // messages come first, reading a message does not mark it read, a server that cannot be reached is a 502 that never shows the password,
 // reads share one connection, a dropped connection is replaced, an idle connection is closed, and removing an account closes its
 // connection. Run after a build: node src/backend/app/mail/mail.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load, so no real config is touched.
+// It sets HOME to a temporary folder before the modules load, so no real config is touched.
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,7 +12,7 @@ import { startFakeImap } from "./fake-imap.test-support.mjs";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-mail-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const fake = await startFakeImap({

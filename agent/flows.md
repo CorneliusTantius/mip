@@ -2,7 +2,7 @@
 
 Each flow gives its entry point, its steps in order with the function and file that do each step, what it writes, what it returns or emits, and what fails. Routes and status codes are in `api.md`. Tables are in `data-model.md`. Module roles are in `backend.md` and `frontend.md`.
 
-Paths are under `src/` unless shown otherwise. Data paths are under `MIP_HOME` (default `~/.mip`, set by `MIP_HOME`): `data/` holds `mip.db`, `mcp.json`, `mail.json`, `mail-cache.json`, `slack.json`, `slack-cache.json`, `device-id`, and `pi/`. Directly under `MIP_HOME`: `sessions/claude`, `sessions/pi`, `workspaces/<agentId>`, `repos`, `skills`, `sync`, and `restart.log`.
+Paths are under `src/` unless shown otherwise. Data paths are under `~/.mip`: `data/` holds `mip.db`, `mcp.json`, `mail.json`, `mail-cache.json`, `slack.json`, `slack-cache.json`, `device-id`, and `pi/`. Directly under `~/.mip`: `sessions/claude`, `sessions/pi`, `workspaces/<agentId>`, `repos`, `skills`, `sync`, and `restart.log`.
 
 ## 1. Server start
 Entry: `node dist/backend/http/server.js`. `npm start` builds first. `npm run serve` does not.
@@ -25,7 +25,7 @@ Then `backend/http/server.ts` runs:
 
 Gotchas:
 - A database that cannot be opened throws at import. The process exits before `listen`.
-- Every data path follows `MIP_HOME`. Nothing else reads it.
+- Every data path is built from `MIP_HOME` in `storage/paths.ts`. Nothing else reads it.
 
 ## 2. Request handling
 Entry: every request reaches `handle` (`backend/http/server.ts`). Order:
@@ -341,7 +341,7 @@ Run:
 `syncWith(remote)`, up to 3 attempts:
 1. `fetchRepo` (`app/sync/repo.ts`): clones `sync/dotmip` when the URL changed, otherwise `fetch --prune`. Checks out `origin/main`. An empty remote gets HEAD set to `main`.
 2. `readTree()` reads the repo's folders. `readBase` reads `sync/base.json`. A base saved for another repo is ignored. `readLocal()` (`app/sync/snapshot.ts`) reads the database and config files.
-3. Empty local database with a non-empty base: 409 "This database is empty, but the last sync had data. Nothing was changed. Check MIP_HOME first." Nothing changes.
+3. Empty local database with a non-empty base: 409 "This database is empty, but the last sync had data. Nothing was changed. Check ~/.mip first." Nothing changes.
 4. `mergeSnapshots(base, local, remote)` (`app/sync/merge.ts`), per record:
    - Changed on one side only: that side wins.
    - Changed on both sides: the rules below.
@@ -418,7 +418,7 @@ The `/` command: `withSkillCommand` (`app/skills/registry.ts`) runs in `execute`
 
 Other providers: Claude runs with `--disable-slash-commands`. Pi runs with `noSkills: true`. Neither reads its own skill folders.
 
-Tests: `app/skills/format.test.mjs` (header and file rules) and `app/skills/skills.test.mjs` (import, refusals, search, `/name`, tools, removal). Both use a temporary `MIP_HOME`.
+Tests: `app/skills/format.test.mjs` (header and file rules) and `app/skills/skills.test.mjs` (import, refusals, search, `/name`, tools, removal). Both use a temporary `HOME`.
 
 ## 17. Tool calls
 - Recording: `execute` in `app/runs.ts` keeps a `ToolCallLog` (`app/tools/calls.ts`). `tool_call` starts a call with its input as JSON. `tool_result` attaches output and the error flag by call id. Text over 8000 characters is cut with `… (<n> more characters)`. The reply saves `messages.calls`. Room turns do the same in `room.ts` (`room_messages.calls`).
@@ -474,7 +474,7 @@ All agent-only (`BASIC_TOOLS`, flow 18). Bots do not have them.
 - OAuth (`app/mcp/manager.ts`, `http/mcp-oauth.ts`): an http entry with `oauth` uses `@earendil-works/pi-mcp/oauth`. Its redirect URL is `http://127.0.0.1:3000/api/mcp/oauth/callback`, client name `mip`. Without tokens the server ends in `sign-in` with `signInUrl`. The browser returns to the callback. `completeSignIn` matches the state (400 when no server is waiting), exchanges the code (`authorizeMcp`, 502 on failure), and reconnects. Tokens are saved in the server's `mcp.json` entry through `saveSignIn`. The library refreshes expired tokens.
 - Bots: a bot turn takes `botDeferredTools()`. Its `tool_search` and `tool_call` reach the MCP tools too.
 - Sync: `mcp/<name>.json` in the dotmip repo, tokens included (flow 15). A sync that changes the servers rewrites `mcp.json` and reconnects in the background.
-- Tests: `app/mcp/mcp.test.mjs` (a fake stdio server, temporary `MIP_HOME`) and `app/mcp/mcp-oauth.test.mjs` (a fake OAuth server through sign-in, reload with saved tokens, add and remove).
+- Tests: `app/mcp/mcp.test.mjs` (a fake stdio server, temporary `HOME`) and `app/mcp/mcp-oauth.test.mjs` (a fake OAuth server through sign-in, reload with saved tokens, add and remove).
 
 ## 23. Pi's config
 - Location: `PI_AGENT_DIR` = `data/pi` (set in `PiProvider`'s constructor). Pi's `settings.json` and `models.json` live there. Only the names in `PI_CONFIG_FILES` are read or written (`storage/pi.ts`).
@@ -572,7 +572,7 @@ Entry: the Settings update tab (`features/settings/UpdateTab.tsx`).
 - `POST /api/system/restart` (JSON) → 202 `{restarting: true}`. `restartMip` starts a detached `sh` that:
   1. waits for this process to exit,
   2. changes to the repo root,
-  3. runs `npm install && npm run build`, appending output to `MIP_HOME/restart.log`,
+  3. runs `npm install && npm run build`, appending output to `~/.mip/restart.log`,
   4. runs `exec node dist/backend/http/server.js`, appending output to the same log.
   This process calls `process.exit(0)` 300 ms later. The server starts even when install or build fails.
 - The dashboard checks again after a delay, so the restarted server is found.

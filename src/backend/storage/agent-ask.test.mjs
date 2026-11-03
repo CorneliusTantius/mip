@@ -1,6 +1,6 @@
 // Checks what a question and an agent's bot switch keep: a reply stores its question, the switch is saved, and GitHub sync reads and writes
 // both, with an older record that has neither read as no question and a closed agent. Run after a build:
-// node src/backend/storage/agent-ask.test.mjs. It sets MIP_HOME to a temporary folder before the modules load.
+// node src/backend/storage/agent-ask.test.mjs. It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-agent-ask-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const { insertAgent, addMessage, listMessages, getAgent, setAgentOpenToBots } = await import(`${DIST}storage/agents.js`);

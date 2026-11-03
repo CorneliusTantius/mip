@@ -1,7 +1,7 @@
 // Checks the MCP servers that sign in with OAuth, and adding and removing servers. A server waiting for sign-in shows its link. The callback
 // finishes the sign-in, the tokens are kept in mcp.json, the server connects and runs its tool, and a reload uses the saved tokens. A fake
 // OAuth server stands in for a real one. Run after a build: node src/backend/app/mcp/mcp-oauth.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load, so no real config or server is touched.
+// It sets HOME to a temporary folder before the modules load, so no real config or server is touched.
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-mcp-oauth-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 const readBody = async (req) => {
   let body = "";

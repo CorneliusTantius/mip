@@ -3,7 +3,7 @@
 // never shows the password. Deleting moves a message to the Trash, where it can be taken back, and is refused when the account has no Trash.
 // An account with no "smtp" in mail.json sends through the SMTP server worked out from its IMAP host. Run after a build:
 // node src/backend/app/mail/mail-write.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load, so no real config is touched.
+// It sets HOME to a temporary folder before the modules load, so no real config is touched.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,7 +14,7 @@ import { startFakeSmtp } from "./fake-smtp.test-support.mjs";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-mail-write-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 const USER = "ann@example.test";
 const messages = [

@@ -1,6 +1,6 @@
 // Checks the Slack answer cache: a value inside its time to live is not loaded again, a forced read loads again, a failed load keeps nothing, and
 // forgetting drops a prefix. Run after a build: node src/backend/app/slack/cache.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load, so no real cache is touched.
+// It sets HOME to a temporary folder before the modules load, so no real cache is touched.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-slack-cache-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const paths = await import(`${DIST}storage/paths.js`);

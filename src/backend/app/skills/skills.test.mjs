@@ -1,6 +1,6 @@
 // Checks the skill registry end to end: review before install, refusals, search, the /name command, the skill tools, and the tool lists.
 // Run after a build: node src/backend/app/skills/skills.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load, so the real skills folder is not touched.
+// It sets HOME to a temporary folder before the modules load, so the real skills folder is not touched.
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-skills-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const { confirmImport, discardImport, stageImport } = await import(`${DIST}app/skills/imports.js`);

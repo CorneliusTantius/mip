@@ -1,6 +1,6 @@
 # Data model
 
-Two stores: the SQLite file `MIP_HOME/data/mip.db`, and plain files under `MIP_HOME`. `MIP_HOME` is the env var `MIP_HOME` (default `~/.mip`), set in `storage/paths.ts`. Process and folder layout: `architecture.md`. The sync run: `flows.md`.
+Two stores: the SQLite file `~/.mip/data/mip.db`, and plain files under `~/.mip`. The folder is the constant `MIP_HOME` in `storage/paths.ts`. Process and folder layout: `architecture.md`. The sync run: `flows.md`.
 
 "Owner" = the storage module whose functions hold the SQL for a table. Other modules write a table only through those functions, except where the summary says otherwise: `storage/db.ts` and `storage/sync.ts` (and `app/sync/snapshot.ts`) write several tables.
 
@@ -8,7 +8,7 @@ Two stores: the SQLite file `MIP_HOME/data/mip.db`, and plain files under `MIP_H
 
 ## SQLite
 
-- File: `MIP_HOME/data/mip.db`, opened once in `storage/db.ts` with `DatabaseSync` (`node:sqlite`). `chmodSync(..., 0o600)` runs right after open, so a new file is briefly created with the umask mode.
+- File: `~/.mip/data/mip.db`, opened once in `storage/db.ts` with `DatabaseSync` (`node:sqlite`). `chmodSync(..., 0o600)` runs right after open, so a new file is briefly created with the umask mode.
 - No `PRAGMA` is set. Journal is SQLite's default rollback journal (`mip.db-journal` exists only during a write).
 - No `FOREIGN KEY`, `REFERENCES`, `ON DELETE`, or `CHECK` anywhere. Every link between tables (`messages.agent_id`, `runs.agent_id`, `room_bots`, `rooms.master_bot_id`, `room_messages.bot_id`, ...) is enforced in app code or not at all.
 - Explicit index: only `room_messages_room (room_id, id)`. Other indexes are the implicit ones of `PRIMARY KEY` and `UNIQUE`. `messages` and `runs` have no index on `agent_id`.
@@ -220,7 +220,7 @@ Outside `db.ts`: `app/personas.ts` inserts the built-in `default` persona when m
 
 ## Synced data (dotmip repo)
 
-`app/sync/snapshot.ts` reads and applies these parts. `app/sync/repo.ts` maps them to files in `MIP_HOME/sync/dotmip/`. `app/sync/merge.ts` merges them. Run steps: `flows.md`.
+`app/sync/snapshot.ts` reads and applies these parts. `app/sync/repo.ts` maps them to files in `~/.mip/sync/dotmip/`. `app/sync/merge.ts` merges them. Run steps: `flows.md`.
 
 | part | source | dotmip path | change time | both sides edited |
 | --- | --- | --- | --- | --- |
@@ -246,7 +246,7 @@ Merge rules (`app/sync/merge.ts`):
 - The base is `sync/base.json`: the snapshot both sides last agreed on, for this repo. A record that changed on one side only takes that side's version. A removal against an edit keeps the edit.
 - A removal the database refuses leaves the record in place: `removePersonaRow` (the `is_default` persona, or one an agent uses), `removeAgentRow` (an agent with a running run), `removeRoomRow` (the last room). Other removals always apply.
 - Messages and room messages are only added by sync. They leave the database only with their agent or room.
-- `syncWith` refuses to run when the local database is empty and the base has data (wrong `MIP_HOME`).
+- `syncWith` refuses to run when the local database is empty and the base has data (wrong `~/.mip`).
 - Not synced: `runs`, `run_events`, `repos`, `pi_state`, `personas.is_default`, `agents.provider_session_id`, `agents.updated_at`, `messages.id`, `messages.calls`, `room_messages.id`, `room_messages.calls`, `bots.id`, `notes.id`, `runs.id`, and the `created_at` columns of personas, bots, and rooms. Also skills, workspaces, `sessions/`, and `device-id`.
 - A synced agent has no `provider_session_id` on the other machine, so its provider starts a new conversation there.
 - `messages` identity: `created_at:role:sha1(text)[0:12]`. `room_messages` identity: `room:created_at:kind:authorName:digest`. Two copies match only when `created_at` is equal, so a synced copy keeps the original `created_at`.
@@ -275,25 +275,25 @@ Merge rules (`app/sync/merge.ts`):
 
 | path | format | mode | written by | synced |
 | --- | --- | --- | --- | --- |
-| `MIP_HOME/data/mail.json` | JSON `{accounts: {<id>: {label, host, port, secure, user, password, mailbox, watch, maxBytes, smtp}}}` | 600 (`writeFileSync` + `chmodSync`) | `app/mail/accounts.ts` (`saveMailAccount`, `removeMailAccount`, `writeMailAccounts`) | yes: `mail/<id>.json`, password included |
-| `MIP_HOME/data/mail-cache.json` | JSON `{<accountId>: {uidValidity, messages}}`, headers only | 600 on create, no later chmod | `app/mail/cache.ts` (`saveMailbox`, `dropMailbox`); called from `app/mail/mail.ts` and `app/sync/snapshot.ts` | yes: `mail-cache/<accountId>.json` |
-| `MIP_HOME/data/slack.json` | JSON `{app?: {clientId, clientSecret}, accounts: {<teamId.userId>: {teamId, teamName, userId, userName, token}}}` | 600 (+ chmod) | `app/slack/config.ts` (`saveSlackApp`, `saveSlackAccount`, `removeSlackAccount`, `writeSlackState`) | yes: `slack-app/app.json`, `slack/<id>.json` |
-| `MIP_HOME/data/slack-cache.json` | JSON `{<key>: {at, value}}`. Keys: `conversations:<acct>`, `unread-messages:<acct>` (older files may hold `unread:<acct>`), `messages:<acct>:<channel>`, `replies:<acct>:<channel>:<thread>`, `users:<teamId>` | 600 on create | `app/slack/cache.ts` (`cached`, `setSlackEntry`, `dropSlackEntry`, `forgetCache`) | yes: `slack-cache/<encoded key>.json` |
-| `MIP_HOME/data/mcp.json` | JSON `{mcpServers: {<name>: {type: "stdio", command, args, env} or {type: "http", url, headers, oauth?}}}` | 600 (+ chmod) | `app/mcp/config.ts` (`editMcpFile`, `writeMcpConfigText`); `app/mcp/servers.ts`; `app/mcp/manager.ts` (`saveSignIn`); `app/sync/snapshot.ts` | yes: `mcp/<name>.json`, env, headers, and OAuth tokens included |
-| `MIP_HOME/data/device-id` | text: one UUID and a newline | default | `app/installation.ts` `installationId` (made on first use; replaced when the saved text is not a UUID) | no |
-| `MIP_HOME/data/pi/` | Pi's agent folder (`PI_AGENT_DIR`, set as `PI_CODING_AGENT_DIR` in `adapters/pi.ts`): `settings.json`, `models.json` | default | Pi; `storage/pi.ts` `writePiConfigFile`, `removePiConfigFile` when sync applies them | yes: `pi-files/` |
-| `MIP_HOME/data/mip.db-journal` | SQLite rollback journal | SQLite's | SQLite, during a write transaction only | no |
-| `MIP_HOME/sessions/claude/` | Claude CLI config folder (`CLAUDE_CONFIG_DIR`): login and CLI state | default | the CLI; `adapters/claude-cli.ts` `cliEnv` sets the variable from `configDir` (`app/providers.ts`) | no |
-| `MIP_HOME/sessions/pi/` | Pi session files | default | Pi, through `SessionManager` in `adapters/pi.ts` (`sessionDir` from `app/providers.ts`) | no |
-| `MIP_HOME/repos/<name>/` | git master clone | default | `app/repos.ts` (`addRepo` clones; `removeRepo` deletes; `pullAllRepos` pulls) | no |
-| `MIP_HOME/workspaces/<agentId>/` | an agent's files, and `<name>/` repo copies whose origin is the real link | default | agent file tools (`app/tools/files.ts`, inside `inWorkspace`); `copyRepoToAgent` (`app/repos.ts`). Created by `workspaceFor`, deleted by `removeWorkspace` (`app/tools/workspace.ts`) | no |
-| `MIP_HOME/skills/<name>/` | installed skill: `SKILL.md`, text files, and `.mip-source.json` for imports only (`{source, sha256, stagedAt}`) | default | `app/skills/imports.ts` `confirmImport` (renames the staged folder); `app/skills/create.ts` `createSkill` (writes `SKILL.md` only). Removed by `removeSkill` (`app/skills/registry.ts`) | no |
-| `MIP_HOME/skills/.staging/<uuid>/` | an import not yet confirmed | default | `app/skills/imports.ts` `stageImport`. Removed by `discardImport`, or by `clearStale` after 24 hours | no |
-| `MIP_HOME/sync/base.json` | JSON `{repo, snapshot}`: the last agreed snapshot. It holds every synced record, secrets included | default | `app/sync/engine.ts` `writeBase` | no |
-| `MIP_HOME/sync/state.json` | JSON `{account, lastSync}`: the chosen gh login and the last run | default | `app/sync/engine.ts` `writeState` | no |
-| `MIP_HOME/sync/dotmip/` | git clone of `<login>/dotmip`, a private GitHub repo: one JSON file per record, plus `rooms.json`, `room.json`, `README.md` | default | `app/sync/repo.ts` `writeTree`, `commitAndPush`. Remote URL has no token: `authEnv` passes it per git call | the synced copy, with secrets in plain JSON |
-| `MIP_HOME/restart.log` | output of the restart shell: install, build, then the server | default | the detached shell built in `app/system.ts` `restartMip` (`>>` redirects) | no |
-| `~/.pi/agent/auth.json` (outside `MIP_HOME`) | Pi's old credentials file | never written by mip | read once by `app/pi/store.ts` `importLegacyPiAuth` into `pi_credentials` | no |
+| `~/.mip/data/mail.json` | JSON `{accounts: {<id>: {label, host, port, secure, user, password, mailbox, watch, maxBytes, smtp}}}` | 600 (`writeFileSync` + `chmodSync`) | `app/mail/accounts.ts` (`saveMailAccount`, `removeMailAccount`, `writeMailAccounts`) | yes: `mail/<id>.json`, password included |
+| `~/.mip/data/mail-cache.json` | JSON `{<accountId>: {uidValidity, messages}}`, headers only | 600 on create, no later chmod | `app/mail/cache.ts` (`saveMailbox`, `dropMailbox`); called from `app/mail/mail.ts` and `app/sync/snapshot.ts` | yes: `mail-cache/<accountId>.json` |
+| `~/.mip/data/slack.json` | JSON `{app?: {clientId, clientSecret}, accounts: {<teamId.userId>: {teamId, teamName, userId, userName, token}}}` | 600 (+ chmod) | `app/slack/config.ts` (`saveSlackApp`, `saveSlackAccount`, `removeSlackAccount`, `writeSlackState`) | yes: `slack-app/app.json`, `slack/<id>.json` |
+| `~/.mip/data/slack-cache.json` | JSON `{<key>: {at, value}}`. Keys: `conversations:<acct>`, `unread-messages:<acct>` (older files may hold `unread:<acct>`), `messages:<acct>:<channel>`, `replies:<acct>:<channel>:<thread>`, `users:<teamId>` | 600 on create | `app/slack/cache.ts` (`cached`, `setSlackEntry`, `dropSlackEntry`, `forgetCache`) | yes: `slack-cache/<encoded key>.json` |
+| `~/.mip/data/mcp.json` | JSON `{mcpServers: {<name>: {type: "stdio", command, args, env} or {type: "http", url, headers, oauth?}}}` | 600 (+ chmod) | `app/mcp/config.ts` (`editMcpFile`, `writeMcpConfigText`); `app/mcp/servers.ts`; `app/mcp/manager.ts` (`saveSignIn`); `app/sync/snapshot.ts` | yes: `mcp/<name>.json`, env, headers, and OAuth tokens included |
+| `~/.mip/data/device-id` | text: one UUID and a newline | default | `app/installation.ts` `installationId` (made on first use; replaced when the saved text is not a UUID) | no |
+| `~/.mip/data/pi/` | Pi's agent folder (`PI_AGENT_DIR`, set as `PI_CODING_AGENT_DIR` in `adapters/pi.ts`): `settings.json`, `models.json` | default | Pi; `storage/pi.ts` `writePiConfigFile`, `removePiConfigFile` when sync applies them | yes: `pi-files/` |
+| `~/.mip/data/mip.db-journal` | SQLite rollback journal | SQLite's | SQLite, during a write transaction only | no |
+| `~/.mip/sessions/claude/` | Claude CLI config folder (`CLAUDE_CONFIG_DIR`): login and CLI state | default | the CLI; `adapters/claude-cli.ts` `cliEnv` sets the variable from `configDir` (`app/providers.ts`) | no |
+| `~/.mip/sessions/pi/` | Pi session files | default | Pi, through `SessionManager` in `adapters/pi.ts` (`sessionDir` from `app/providers.ts`) | no |
+| `~/.mip/repos/<name>/` | git master clone | default | `app/repos.ts` (`addRepo` clones; `removeRepo` deletes; `pullAllRepos` pulls) | no |
+| `~/.mip/workspaces/<agentId>/` | an agent's files, and `<name>/` repo copies whose origin is the real link | default | agent file tools (`app/tools/files.ts`, inside `inWorkspace`); `copyRepoToAgent` (`app/repos.ts`). Created by `workspaceFor`, deleted by `removeWorkspace` (`app/tools/workspace.ts`) | no |
+| `~/.mip/skills/<name>/` | installed skill: `SKILL.md`, text files, and `.mip-source.json` for imports only (`{source, sha256, stagedAt}`) | default | `app/skills/imports.ts` `confirmImport` (renames the staged folder); `app/skills/create.ts` `createSkill` (writes `SKILL.md` only). Removed by `removeSkill` (`app/skills/registry.ts`) | no |
+| `~/.mip/skills/.staging/<uuid>/` | an import not yet confirmed | default | `app/skills/imports.ts` `stageImport`. Removed by `discardImport`, or by `clearStale` after 24 hours | no |
+| `~/.mip/sync/base.json` | JSON `{repo, snapshot}`: the last agreed snapshot. It holds every synced record, secrets included | default | `app/sync/engine.ts` `writeBase` | no |
+| `~/.mip/sync/state.json` | JSON `{account, lastSync}`: the chosen gh login and the last run | default | `app/sync/engine.ts` `writeState` | no |
+| `~/.mip/sync/dotmip/` | git clone of `<login>/dotmip`, a private GitHub repo: one JSON file per record, plus `rooms.json`, `room.json`, `README.md` | default | `app/sync/repo.ts` `writeTree`, `commitAndPush`. Remote URL has no token: `authEnv` passes it per git call | the synced copy, with secrets in plain JSON |
+| `~/.mip/restart.log` | output of the restart shell: install, build, then the server | default | the detached shell built in `app/system.ts` `restartMip` (`>>` redirects) | no |
+| `~/.pi/agent/auth.json` (outside `~/.mip`) | Pi's old credentials file | never written by mip | read once by `app/pi/store.ts` `importLegacyPiAuth` into `pi_credentials` | no |
 
 `storage/paths.ts` defines the constants for `DATA_DIR`, `DEVICE_ID_FILE`, `MCP_CONFIG_FILE`, `MAIL_CONFIG_FILE`, `MAIL_CACHE_FILE`, `SLACK_CONFIG_FILE`, `SLACK_CACHE_FILE`, `SESSIONS_DIR`, `REPOS_DIR`, `SYNC_DIR`, `SKILLS_DIR`, and `PI_AGENT_DIR`. `ensureMipDirs` creates `data/`, `repos/`, `data/pi/`, `sessions/claude/`, and `sessions/pi/`. `workspaces/` and `restart.log` are not in `paths.ts`.
 

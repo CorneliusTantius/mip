@@ -1,6 +1,6 @@
 // Checks tool guides: every tool has its own guide, offered guides go into the system prompt, deferred guides come back with
 // tool_search, and the built-in persona no longer carries tool guidance. Run after a build: node src/backend/app/tools/guides.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load.
+// It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-guides-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const { AGENT_DEFERRED, AGENT_TOOLS, botDeferredTools, BOT_TOOLS, TOOLS, describeTools, toolGuidesPrompt } = await import(`${DIST}app/tools/index.js`);

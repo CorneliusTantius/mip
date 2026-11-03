@@ -10,7 +10,7 @@
   5. JSON check: a `POST`, `PUT`, or `PATCH` to the API without `Content-Type: application/json` gets 415.
   6. The JSON API: routes from `http/routes/index.ts`. No match: 404 `{"error":"not found"}`.
 - A thrown `AppError` answers with its status. Any other error answers 500. Both bodies are `{"error": message}`.
-- Restart (`POST /api/system/restart`, 202): `restartMip()` in `app/system.ts` replies, then the process exits after 300 ms. A detached `sh -c` script waits for that PID, runs `npm install && npm run build` in the checkout, appends the output to `MIP_HOME/restart.log`, then `exec node dist/backend/http/server.js`. The server starts even when install or build fails.
+- Restart (`POST /api/system/restart`, 202): `restartMip()` in `app/system.ts` replies, then the process exits after 300 ms. A detached `sh -c` script waits for that PID, runs `npm install && npm run build` in the checkout, appends the output to `~/.mip/restart.log`, then `exec node dist/backend/http/server.js`. The server starts even when install or build fails.
 - Update (`POST /api/system/update`, 200): `pullLatest()` in `app/system.ts` runs `git -C <checkout> pull --ff-only`. The new code runs after a restart.
 - Dev: `npm run dev:frontend` runs Vite on port 5173 (`src/frontend/vite.config.ts`). It proxies `/api` to `127.0.0.1:3000`, so the server must run separately.
 
@@ -25,19 +25,18 @@ Pi runs in-process (`@earendil-works/pi-coding-agent`), so it starts no child pr
 | `gh` | `app/sync/github.ts` (`execFile`) | `gh auth status --hostname github.com` (accounts), `gh auth token --hostname github.com --user <login>` (token) |
 | `sh -c` | `app/system.ts` | the detached restart script |
 
-- `cliEnv` (`adapters/claude-cli.ts`) copies the environment, deletes `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` so the CLI uses the subscription login, and sets `CLAUDE_CONFIG_DIR` to `MIP_HOME/sessions/claude`.
+- `cliEnv` (`adapters/claude-cli.ts`) copies the environment, deletes `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` so the CLI uses the subscription login, and sets `CLAUDE_CONFIG_DIR` to `~/.mip/sessions/claude`.
 - The GitHub REST API (`https://api.github.com`) is called with `fetch` from `app/sync/github.ts`, not through a child process.
 
 ## Configuration
 | variable | read in | default | effect |
 | --- | --- | --- | --- |
 | `MIP_PORT` | `app/config.ts` | `3000` | port of the server and dashboard |
-| `MIP_HOME` | `storage/paths.ts` | `~/.mip` | root of all data (see "Where data lives") |
 | `MIP_SLACK_REDIRECT_URI` | `app/slack/connect.ts` | `http://127.0.0.1:<MIP_PORT>/api/slack/oauth/callback` | redirect address sent to Slack |
 | `CLAUDE_BIN` | `adapters/claude-cli.ts` | `claude` | path or name of the Claude CLI binary |
 
 - `HOST` is the constant `"127.0.0.1"` in `app/config.ts`. It is not configurable.
-- Set by the app, not read from the environment: `PI_CODING_AGENT_DIR` (set to `MIP_HOME/data/pi` when `PiProvider` is built, `app/providers.ts`), `CLAUDE_CONFIG_DIR` (passed to the CLI), `GIT_TERMINAL_PROMPT=0` (passed to git).
+- Set by the app, not read from the environment: `PI_CODING_AGENT_DIR` (set to `~/.mip/data/pi` when `PiProvider` is built, `app/providers.ts`), `CLAUDE_CONFIG_DIR` (passed to the CLI), `GIT_TERMINAL_PROMPT=0` (passed to git).
 
 ## Layers
 Import direction: `http → app → adapters | storage`, and `storage/*` → `storage/db.ts` → `storage/paths.ts`. Checked against the real imports.
@@ -64,7 +63,7 @@ Import direction: `http → app → adapters | storage`, and `storage/*` → `st
 - Generated files (`symbols.md`, `imports.md`) are rebuilt by `node agent/gen-index.mjs`. Line numbers live only there.
 
 ## Where data lives
-Everything is under `MIP_HOME` (`storage/paths.ts`). Paths below are relative to it. "Synced" means `app/sync/snapshot.ts` sends the data to the private `dotmip` repo.
+Everything is under `~/.mip` (`storage/paths.ts`, constant `MIP_HOME`). Paths below are relative to it. "Synced" means `app/sync/snapshot.ts` sends the data to the private `dotmip` repo.
 
 | path | contents | written by | synced |
 | --- | --- | --- | --- |

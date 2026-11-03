@@ -1,6 +1,6 @@
 // Checks this installation's device ID: it is made once and kept in the data folder, a new run of the app reads it back, and a saved
 // value that is not a UUID is replaced. Run after a build: node src/backend/app/installation.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load.
+// It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-installation-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 try {

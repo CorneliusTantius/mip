@@ -1,6 +1,6 @@
 // Checks rooms: making and renaming them, their names and bots, a deleted bot leaving its rooms, messages staying in their room,
 // and the last room being kept. Run after a build: node src/backend/app/room/rooms.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load.
+// It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-rooms-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 // The error a call throws, or undefined when it does not throw.
 function thrown(call) {

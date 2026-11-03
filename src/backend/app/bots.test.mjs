@@ -1,5 +1,5 @@
 // Checks the bot colors: the palette the server accepts, the first free color a new bot takes, and that the frontend and the
-// stylesheet know every color. Run after a build: node src/backend/app/bots.test.mjs. It sets MIP_HOME to a temporary folder.
+// stylesheet know every color. Run after a build: node src/backend/app/bots.test.mjs. It sets HOME to a temporary folder.
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -8,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-bots-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const colors = await import(`${DIST}storage/bot-colors.js`);

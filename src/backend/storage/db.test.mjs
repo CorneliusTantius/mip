@@ -1,5 +1,5 @@
 // Checks the rename from chats to agents on a database made before it: its rows, messages, and runs keep their data, and the old per-agent and per-bot skill lists are dropped.
-// Run after a build: node src/backend/storage/db.test.mjs. It sets MIP_HOME to a temporary folder before the modules load.
+// Run after a build: node src/backend/storage/db.test.mjs. It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,12 +9,12 @@ import { DatabaseSync } from "node:sqlite";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-db-"));
-process.env.MIP_HOME = join(root, "mip-home");
-mkdirSync(join(process.env.MIP_HOME, "data"), { recursive: true });
+process.env.HOME = join(root, "home");
+mkdirSync(join(process.env.HOME, ".mip", "data"), { recursive: true });
 
 try {
   // A database as the code left it before the rename: sessions tables with session_id columns.
-  const old = new DatabaseSync(join(process.env.MIP_HOME, "data", "mip.db"));
+  const old = new DatabaseSync(join(process.env.HOME, ".mip", "data", "mip.db"));
   old.exec(`
     CREATE TABLE sessions (id TEXT PRIMARY KEY, provider_id TEXT NOT NULL, provider_session_id TEXT, title TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL);
     CREATE TABLE messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, role TEXT NOT NULL, text TEXT NOT NULL, tools TEXT NOT NULL DEFAULT '[]', error TEXT, created_at INTEGER NOT NULL);
@@ -49,7 +49,7 @@ try {
   assert.equal(agents.listMessages("a1")[0].text, "hello");
   assert.equal(runs.getRun("r1").status, "done");
   // The skill lists are gone: the old table was dropped, and nothing is left under either name.
-  const check = new DatabaseSync(join(process.env.MIP_HOME, "data", "mip.db"));
+  const check = new DatabaseSync(join(process.env.HOME, ".mip", "data", "mip.db"));
   assert.deepEqual(check.prepare("SELECT name FROM sqlite_master WHERE name IN ('skill_enablements', 'bot_skill_enablements')").all(), []);
   check.close();
   assert.deepEqual(Object.fromEntries(bots.listBots().map((bot) => [bot.name, bot.color])), { Freya: "frost", Thorin: "orange" });

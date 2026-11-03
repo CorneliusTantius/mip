@@ -45,7 +45,6 @@ Both run git and npm on this machine, so the server accepts them only as JSON re
 | `CLAUDE_BIN` | `claude` | Path to the `claude` binary |
 | `MIP_PORT` | `3000` | Dashboard port, on 127.0.0.1 only |
 | `MIP_SLACK_REDIRECT_URI` | `http://127.0.0.1:3000/api/slack/oauth/callback` | The address Slack returns to. Slack's docs ask for HTTPS, so if Slack refuses the default, set a public HTTPS address that reaches this server (a tunnel or nginx), ending in `/api/slack/oauth/callback` |
-| `MIP_HOME` | `~/.mip` | Where mip keeps its data (see Storage) |
 
 The Claude CLI runs without `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so it uses your subscription login. Don't add `--bare` to the CLI call: it ignores subscription login. Pi keeps its credentials and settings in mip's data folder, `~/.mip/data`: credentials in the database, and `settings.json` and `models.json` in `data/pi/`. On the first start, mip copies the credentials from `~/.pi/agent/auth.json` once, and leaves that file as it is.
 
@@ -256,7 +255,7 @@ All routes are on the dashboard port. Requests and responses are JSON.
 
 ## Storage
 
-Everything mip writes lives under `~/.mip`. Change it with `MIP_HOME`.
+Everything mip writes lives under `~/.mip`.
 
 ```
 ~/.mip/

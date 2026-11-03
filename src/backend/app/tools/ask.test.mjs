@@ -1,6 +1,6 @@
 // Checks ask_user: it refuses bad input, keeps one question per reply, hands the question to the reply once, and needs an agent.
 // Run after a build: node src/backend/app/tools/ask.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load.
+// It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-ask-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const { askUserTool, takePendingAsk } = await import(`${DIST}app/tools/ask.js`);

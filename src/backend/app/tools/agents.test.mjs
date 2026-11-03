@@ -1,6 +1,6 @@
 // Checks the bots' agent tools: agents_list shows only the agents open to bots, and agent_ask refuses what it must. A task that cannot
 // start frees its room again, so the room can send another. Run after a build: node src/backend/app/tools/agents.test.mjs
-// It sets MIP_HOME to a temporary folder before the modules load.
+// It sets HOME to a temporary folder before the modules load.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const DIST = pathToFileURL(fileURLToPath(new URL("../../../../dist/backend/", import.meta.url))).href;
 const root = mkdtempSync(join(tmpdir(), "mip-agent-tools-"));
-process.env.MIP_HOME = join(root, "mip-home");
+process.env.HOME = join(root, "home");
 
 try {
   const { insertAgent, setAgentOpenToBots } = await import(`${DIST}storage/agents.js`);
