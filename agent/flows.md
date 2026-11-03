@@ -181,7 +181,7 @@ Steps:
 2. Members are the bots in the room. With no members, a `system` message says "No bots in this room yet. Add some with Members." and the call stops.
 3. Queue:
    - `mentionedBots(text, members)` (`app/room/engine.ts`): matches `@([A-Za-z][A-Za-z0-9_-]*)`, case-insensitive, unknown names ignored. Mentioned bots in mention order.
-   - With no mention: the master (`masterBotId`) first, then the other members in name order.
+   - With no mention the call stops after saving the message. Bots never speak unprompted. The master (`masterBotId`) has no turn role; it only sets which bot stays open when "Fold others" is on.
 4. `talking` marks the room. `converseRoom` runs in the background. Its `finally` clears the mark.
 5. Each turn calls `runTurn` (`app/room/room.ts`):
    - Prompt: "Room so far:", then the last 30 messages as `author: text`, then "You are <bot>...", the instruction to mention with `@Name` or reply `PASS`, and "Other bots in the room: ...".

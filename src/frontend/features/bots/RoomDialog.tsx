@@ -96,7 +96,7 @@ export function RoomDialog({ open, room, bots, onClose }: { open: boolean; room?
                   </option>
                 ))}
             </select>
-            <p className="text-xs opacity-60">The master answers first when no bot is mentioned.</p>
+            <p className="text-xs opacity-60">With Fold others on, the master's replies stay open.</p>
           </fieldset>
 
           <label className="label cursor-pointer gap-3 text-base-content">

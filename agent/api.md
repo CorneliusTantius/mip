@@ -114,7 +114,7 @@ App: `app/room/rooms.ts` (rooms), `app/room/room.ts` (messages and turns), `app/
 - GET: `after` 0 → the latest 100 messages. `after` > 0 → up to 200 with `id > after`. Both return oldest first.
 - `busy` and `speaking` are in memory. They clear on restart.
 - POST checks in this order: room (404), busy (409), empty text (400), length (400). It returns at once; turns run in the background.
-- Turn queue: if the text has `@Name` mentions, the queue starts with those bots. Otherwise it starts with every member, master first. A bot reply that names another member queues that member. At most 8 turns per message (`MAX_TURNS`).
+- Turn queue: the queue starts with the bots the text `@Name`s, in the order named. With no mention, no turn runs: the message is only saved. A bot reply that names another member queues that member. At most 8 turns per message (`MAX_TURNS`).
 - A room with no members gets a `system` message. The user message is still returned.
 - Room names are unique, case-insensitive. The last room cannot be deleted.
 

@@ -98,7 +98,7 @@ Bots are named agents, and they talk in rooms. Create them with **Manage bots** 
 
 - Make a room with **+ New room**, and pick the bots in it with **Room settings**. A bot can be in several rooms, and each room has its own messages.
 - Post in a room. A bot in that room that you mention with `@Name` answers first. Bots can mention each other, so one reply can start another bot's turn.
-- If nobody is mentioned, every bot in the room takes a turn in order.
+- Bots answer only when mentioned. A message with no `@Name` is saved, and no bot speaks.
 - Each bot has a color, set in its settings. Its messages take a light tint of it, and each `@Name` is a pill in that color. Click a pill to see the bot's profile.
 - A bot with nothing to add replies `PASS`.
 - One message sets off at most 8 turns. After that the room waits for your next message.

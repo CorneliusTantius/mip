@@ -68,6 +68,14 @@ try {
   );
   assert.deepEqual(room.roomStatus(lounge.id), { busy: false, speaking: null });
 
+  // A message with no @mention in a room that has bots is only saved: no bot answers, and the room is not busy.
+  bots.insertBot({ id: "b-quiet", name: "Quiet", persona: "Speaks only when named.", providerId: "claude-cli", model: null, thinking: null, color: "frost" });
+  rooms.editRoom(lounge.id, { botIds: ["b-quiet"] });
+  room.postToRoom({ room: lounge.id, text: "anyone here?" });
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.deepEqual(room.roomMessages(lounge.id, 0).map((m) => m.kind), ["user", "system", "user"]);
+  assert.deepEqual(room.roomStatus(lounge.id), { busy: false, speaking: null });
+
   // 6. Messages stay in their room. Main has none.
   assert.deepEqual(room.roomMessages("main", 0), []);
 

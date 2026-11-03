@@ -29,8 +29,8 @@ export function roomMessages(roomId: string, afterId: number): RoomMessage[] {
   return roomMessagesAfter(roomId, afterId, afterId > 0 ? 200 : 100);
 }
 
-// Posts a message to a room. The room's bots that are named in it answer first. With no names, every bot in the room takes a turn in order.
-// The conversation runs in the background, so this returns as soon as the message is saved.
+// Posts a message to a room. Only the bots named in it answer, in the order they are named. A message with no @mention saves and nothing
+// else happens. The conversation runs in the background, so this returns as soon as the message is saved.
 export function postToRoom(input: unknown): RoomMessage {
   const body = (input ?? {}) as { room?: unknown; text?: unknown };
   const room = findRoom(String(body.room ?? ""));
@@ -41,19 +41,18 @@ export function postToRoom(input: unknown): RoomMessage {
 
   const message = addRoomMessage({ roomId: room.id, kind: "user", botId: null, authorName: "You", text });
   const members = listBots().filter((bot) => room.botIds.includes(bot.id));
-  // With no @mention, the room master speaks first. The others keep their order.
-  const master = members.find((bot) => bot.id === room.masterBotId);
-  const ordered = master ? [master, ...members.filter((bot) => bot !== master)] : members;
   if (members.length === 0) {
     addRoomMessage({ roomId: room.id, kind: "system", botId: null, authorName: "System", text: "No bots in this room yet. Add some with Members." });
     return message;
   }
 
+  // Bots answer only when they are mentioned. A reply that mentions another bot starts that bot's turn in the same conversation.
   const named = mentionedBots(text, members);
+  if (named.length === 0) return message;
   talking.set(room.id, { speaking: null });
   converseRoom<Bot, ToolCall[]>({
     bots: members,
-    queue: named.length > 0 ? named : ordered,
+    queue: named,
     maxTurns: MAX_TURNS,
     runTurn: (bot) => runTurn(room, bot, members),
     say: (event) => {
