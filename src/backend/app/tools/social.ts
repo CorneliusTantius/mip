@@ -3,7 +3,7 @@ import { type MailAccount, readMailAccounts } from "../mail/accounts.js";
 import { listMailMessages, openMailMessage } from "../mail/mail.js";
 import { slackCall } from "../slack/api.js";
 import { type SlackAccount, readSlackConfig } from "../slack/config.js";
-import { listConversations, listMessages, listReplies, namesOf, resolveMentions } from "../slack/read.js";
+import { listConversations, listMessages, listReplies, namesOf, resolveMentions, unrepliedMessages } from "../slack/read.js";
 import { ok } from "./result.js";
 
 // Read-only tools for bots over the connected mail and Slack accounts. They never send, mark mail read, or change anything. What they read
@@ -12,6 +12,7 @@ import { ok } from "./result.js";
 const MAX_MAIL = 25;
 const MAX_SEARCH = 20;
 const MAX_READ = 30;
+const MAX_UNREPLIED = 30;
 const MAX_SNIPPET = 400;
 
 // The mail account a tool names: its id, its address, or its label. With one account connected, it can be left out.
@@ -155,5 +156,37 @@ export const slackReadTool: ToolSpec = {
   },
 };
 
+export const slackUnrepliedTool: ToolSpec = {
+  name: "slack_unreplied",
+  guide: "Lists the Slack messages from others that the connected account has not answered yet, newest first, with the conversation each one is in. Direct and group messages count, and so do channel messages that mention the account. Give query to keep only the messages that contain those words. Use it when the user asks what they still need to answer on Slack. It covers the 40 most recent conversations, and it does not send or mark anything.",
+  description: "List Slack messages from others that the account has not answered, newest first, with their conversation. Can keep only those that contain some words. Read-only.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      account: { type: "string", description: "The Slack account's name or workspace. Can be left out when only one account is connected" },
+      query: { type: "string", description: "Keep only the unreplied messages that contain these words. Can be left out" },
+      count: { type: "number", description: `How many messages, newest first. At most ${MAX_UNREPLIED}. Default 10` },
+    },
+  },
+  async run({ account, query, count }) {
+    const found = slackAccountFor(account);
+    const text = String(query ?? "").trim();
+    const words = text.toLowerCase().split(/\s+/).filter(Boolean);
+    const open = (await unrepliedMessages(found.id)).filter(({ message }) => {
+      const body = message.text.toLowerCase();
+      return words.every((word) => body.includes(word));
+    });
+    if (open.length === 0) return ok(words.length > 0 ? `No unreplied message contains "${text}".` : "No unreplied messages.");
+    const shown = open.slice(0, clampCount(count, 10, MAX_UNREPLIED));
+    const conversations = new Set(open.map(({ conversation }) => conversation.id)).size;
+    const header = `${open.length} unreplied message(s) in ${conversations} conversation(s).${shown.length < open.length ? ` Showing the newest ${shown.length}.` : ""}`;
+    const lines = shown.map(({ conversation, message }) => {
+      const where = conversation.kind === "channel" || conversation.kind === "private" ? `#${conversation.name}` : conversation.name;
+      return `${message.time.slice(0, 16).replace("T", " ")} ${where} (${conversation.id}) ${message.author}: ${oneLine(message.text)}`;
+    });
+    return ok([header, ...lines].join("\n"));
+  },
+};
+
 // The read tools for bots. They are deferred: a bot finds them with tool_search and runs them with tool_call.
-export const SOCIAL_TOOLS: ToolSpec[] = [mailListTool, mailReadTool, slackSearchTool, slackReadTool];
+export const SOCIAL_TOOLS: ToolSpec[] = [mailListTool, mailReadTool, slackSearchTool, slackReadTool, slackUnrepliedTool];

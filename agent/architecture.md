@@ -136,7 +136,7 @@ In the order the code runs:
   - `DEFERRED_TOOLS` (agent runs, not offered): `memory_search`, `memory_read`, `memory_edit`, `skill_file`.
   - Search tools (`app/tools/search.ts`): `tool_search` finds deferred tools by words, `tool_call` runs one of them by name.
   - Agent lists: `AGENT_TOOLS` = `BASIC_TOOLS` + the search tools (offered). `AGENT_DEFERRED` = `DEFERRED_TOOLS` + `spending_upsert` (deferred). `agentDeferredTools()` adds the connected MCP tools, taken when a run starts.
-  - Bot lists: `BOT_TOOLS` (offered): `memory_search`, `memory_read`, `memory_edit`, `skill_search`, `skill_read`, `skill_file`, `room_search`, `agents_list`, `agent_ask`, `tool_search`, `tool_call`. `botDeferredTools()` (deferred): `mail_list`, `mail_read`, `slack_search`, `slack_read`, `spending_list`, and the connected MCP tools.
+  - Bot lists: `BOT_TOOLS` (offered): `memory_search`, `memory_read`, `memory_edit`, `skill_search`, `skill_read`, `skill_file`, `room_search`, `agents_list`, `agent_ask`, `tool_search`, `tool_call`. `botDeferredTools()` (deferred): `mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unreplied`, `spending_list`, and the connected MCP tools.
   - Bots get no `BASIC_TOOLS`: no `bash`, `read`, `edit`, `write`, or `ask_user`.
 - Guides: `toolGuidesPrompt(tools)` puts the guides of the offered tools in the system prompt. Agent runs pass `AGENT_TOOLS` (`app/runs.ts`). Bot turns pass `BOT_TOOLS` (`app/room/room.ts`). A deferred tool's guide comes back in its `tool_search` result.
 - Run tokens: `registerRun(context)` returns a UUID for one run. `runContextForToken` reads it. `/mcp` answers `tools/list` and `tools/call` from the run's `tools` only. `tool_call` runs only a tool in the run's `deferred` list.

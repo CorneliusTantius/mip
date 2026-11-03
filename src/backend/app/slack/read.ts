@@ -53,6 +53,7 @@ const UNREAD_TTL = 2 * 60_000;
 const UNREAD_CONVERSATIONS = 40;
 const UNREAD_PER_CONVERSATION = 100;
 const UNREAD_BATCH = 5;
+const UNREPLIED_PER_CONVERSATION = 50;
 
 // The conversations of an account, channels first, then direct messages.
 export function listConversations(accountId: string, force = false): Promise<SlackConversation[]> {
@@ -116,6 +117,56 @@ async function unreadIn(account: SlackAccount, channel: string): Promise<number>
   } catch {
     // A conversation that cannot be read counts as none, so one refused read does not hide the rest.
     return 0;
+  }
+}
+
+export interface UnrepliedMessage {
+  conversation: SlackConversation;
+  message: SlackMessage;
+}
+
+// The messages from others that the user has not answered, newest first, each with its conversation. A message counts when no message of the
+// user comes after it in its conversation, and it is in a direct or group message, or it mentions the user. Bots are left out. Only the most
+// recent conversations are read, and thread replies are not, so a reply in a thread can show as unanswered.
+// shortcut: 40 conversations, 50 messages each, so an older unanswered message can be missed; raise these when Slack's limits allow.
+export function unrepliedMessages(accountId: string, force = false): Promise<UnrepliedMessage[]> {
+  const account = accountOf(accountId);
+  return cached(
+    `unreplied:${account.id}`,
+    UNREAD_TTL,
+    async () => {
+      const conversations = (await listConversations(accountId, force)).slice(0, UNREAD_CONVERSATIONS);
+      const names = await namesOf(account);
+      const found: UnrepliedMessage[] = [];
+      for (let i = 0; i < conversations.length; i += UNREAD_BATCH) {
+        const batch = conversations.slice(i, i + UNREAD_BATCH);
+        const reads = await Promise.all(batch.map((conversation) => unansweredIn(account, conversation)));
+        batch.forEach((conversation, j) => {
+          for (const message of reads[j]) found.push({ conversation, message: toMessage(message, names) });
+        });
+      }
+      return found.sort((a, b) => Number(b.message.ts) - Number(a.message.ts));
+    },
+    force,
+  );
+}
+
+// The messages in one conversation that the user has not answered. Slack lists the newest first, so the messages above the user's newest one
+// are the unanswered ones.
+async function unansweredIn(account: SlackAccount, conversation: SlackConversation): Promise<RawMessage[]> {
+  try {
+    const reply = await slackCall<{ messages: RawMessage[] }>("conversations.history", account.token, {
+      channel: conversation.id,
+      limit: UNREPLIED_PER_CONVERSATION,
+    });
+    const newestOwn = reply.messages.findIndex((message) => message.user === account.userId);
+    const open = newestOwn === -1 ? reply.messages : reply.messages.slice(0, newestOwn);
+    const addressed = conversation.kind === "dm" || conversation.kind === "group";
+    const mention = new RegExp(`<@${account.userId}(?:\\|[^>]*)?>`);
+    return open.filter((message) => message.user && message.user !== account.userId && (addressed || mention.test(message.text ?? "")));
+  } catch {
+    // A conversation that cannot be read has none, so one refused read does not hide the rest.
+    return [];
   }
 }
 
