@@ -72,7 +72,7 @@ try {
   assert.equal(described.tool_call.load, "search");
   assert.equal(described.room_search.load, "basic");
   assert.equal(described.agent_ask.load, "basic");
-  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send", "slack_mark_read", "spending_list"];
+  const botOnly = ["room_search", "agents_list", "agent_ask", "mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send", "slack_mark_read", "finance_list", "finance_create_entry"];
   assert.ok(describeTools().filter((tool) => !botOnly.includes(tool.name)).every((tool) => tool.agent === true));
   assert.deepEqual(describeTools().filter((tool) => tool.bot).map((tool) => tool.name), [
     "skill_search",
@@ -95,7 +95,8 @@ try {
     "slack_unread",
     "slack_send",
     "slack_mark_read",
-    "spending_list",
+    "finance_list",
+    "finance_create_entry",
   ]);
 
   console.log("tool search tests passed");

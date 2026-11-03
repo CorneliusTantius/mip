@@ -13,7 +13,7 @@ import { roomSearchTool } from "./room.js";
 import { toolCallTool, toolSearchTool } from "./search.js";
 import { skillFileTool, skillReadTool, skillSearchTool } from "./skills.js";
 import { SOCIAL_TOOLS } from "./social.js";
-import { spendingListTool, spendingUpsertTool } from "./financial.js";
+import { financeCreateEntryTool, financeListTool, spendingUpsertTool } from "./financial.js";
 import { errorMessage } from "../errors.js";
 import { activeRunId, startRun } from "../runs.js";
 import { fail, ok } from "./result.js";
@@ -120,8 +120,9 @@ const agentsList = guarded(agentsListTool);
 const agentAsk = guarded(agentAskTool);
 // The bots' tools for mail and Slack, reads and the sends and deletes that act as the user. Bots defer them, so they are found with tool_search and run with tool_call.
 const SOCIAL_DEFERRED = SOCIAL_TOOLS.map(guarded);
-// The spending entries, read-only. Bots defer it, so they find it with tool_search.
-const FINANCIAL_DEFERRED = [spendingListTool].map(guarded);
+// The finance tools for bots: finance_list reads the spending entries, and finance_create_entry adds one. Bots defer them, so they find
+// them with tool_search.
+const FINANCIAL_DEFERRED = [financeListTool, financeCreateEntryTool].map(guarded);
 // Agents defer the one tool that writes a spending entry, so they find it with tool_search.
 const AGENT_FINANCIAL = [spendingUpsertTool].map(guarded);
 

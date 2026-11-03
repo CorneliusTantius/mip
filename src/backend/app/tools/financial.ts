@@ -3,8 +3,9 @@ import { allSpending, saveSpendingEntry } from "../spending.js";
 import type { SpendingEntry } from "../../storage/spending.js";
 import { ok } from "./result.js";
 
-// Read-only tool over the spending entries. It never adds, edits, or removes one. What it reads goes to the model, so a run sees the
-// money the user has entered. Adding entries is a separate, approved step and is not offered here.
+// The finance tools over the spending entries. finance_list reads them, and finance_create_entry, which bots use, adds one. Neither
+// changes an existing entry. spending_upsert, which agents use, also changes one by id. What is read goes to the model, so a run sees the
+// money the user has entered.
 
 const MAX_RECENT = 50;
 const DEFAULT_RECENT = 10;
@@ -19,8 +20,8 @@ function sumOf(entries: SpendingEntry[], kind: SpendingEntry["kind"]): number {
   return entries.filter((entry) => entry.kind === kind).reduce((total, entry) => total + entry.amount, 0);
 }
 
-export const spendingListTool: ToolSpec = {
-  name: "spending_list",
+export const financeListTool: ToolSpec = {
+  name: "finance_list",
   guide: "Reads the spending entries: the income, expense, and balance totals, the total for each category, and the newest entries with their dates and descriptions. Filter by category or kind. Use it when the user asks how much was spent or earned, or on what. It never changes an entry.",
   description: "Read the spending entries: totals, totals per category, and the newest entries. Read-only.",
   inputSchema: {
@@ -61,10 +62,32 @@ export const spendingListTool: ToolSpec = {
   },
 };
 
-// Adds a spending entry, or changes one by its id. Agents only: bots read the entries and do not write them.
+// Adds a spending entry for a bot. It only adds: the fields it takes are fixed here, so an id cannot change an entry.
+export const financeCreateEntryTool: ToolSpec = {
+  name: "finance_create_entry",
+  guide: "Adds a spending entry: money in (income) or out (expense), with its category, an amount above 0, and an optional description. The date is the day the money moved, as YYYY-MM-DD; leave it out for today. Use it when someone in the room reports money in or out. It never changes an existing entry. The result gives the entry's id.",
+  description: "Add a spending entry: money in or out, with a category, an amount, and an optional date and description. Adds only; it never changes an entry.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["income", "expense"], description: "Money in or money out" },
+      category: { type: "string", description: "A name already used, or a new one" },
+      amount: { type: "number", description: "Above 0" },
+      description: { type: "string", description: "Optional, 200 characters at most" },
+      date: { type: "string", description: "The day the money moved, as YYYY-MM-DD. Leave out for today" },
+    },
+    required: ["kind", "category", "amount"],
+  },
+  async run({ kind, category, amount, description, date }) {
+    const entry = saveSpendingEntry({ kind, category, amount, description, date });
+    return ok(`Saved ${entry.id}: ${entry.kind} | ${entry.entryDate} | ${entry.category} | ${entry.amount}${entry.description ? ` | ${entry.description}` : ""}`);
+  },
+};
+
+// Adds a spending entry, or changes one by its id. Agents use it. Bots add entries with finance_create_entry.
 export const spendingUpsertTool: ToolSpec = {
   name: "spending_upsert",
-  guide: "Adds a spending entry, or changes one when id is given. Use the id that spending_list or an earlier result gives. Give the kind (income or expense), the category, the amount above 0, and an optional description. The date is the day the money moved, as YYYY-MM-DD; leave it out for today. Use it when the user reports money in or out, or asks to correct an entry. The result gives the entry's id.",
+  guide: "Adds a spending entry, or changes one when id is given. Use the id that finance_list or an earlier result gives. Give the kind (income or expense), the category, the amount above 0, and an optional description. The date is the day the money moved, as YYYY-MM-DD; leave it out for today. Use it when the user reports money in or out, or asks to correct an entry. The result gives the entry's id.",
   description: "Add a spending entry, or change one by id. Writes the spending entries.",
   inputSchema: {
     type: "object",

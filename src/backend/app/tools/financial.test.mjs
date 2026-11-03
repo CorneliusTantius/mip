@@ -12,11 +12,11 @@ process.env.HOME = join(root, "home");
 
 try {
   const { saveSpendingEntry } = await import(`${DIST}app/spending.js`);
-  const { spendingListTool, spendingUpsertTool } = await import(`${DIST}app/tools/financial.js`);
+  const { financeCreateEntryTool, financeListTool, spendingUpsertTool } = await import(`${DIST}app/tools/financial.js`);
   const { getSpendingEntry, localDate } = await import(`${DIST}storage/spending.js`);
 
   // Nothing entered yet.
-  assert.equal((await spendingListTool.run({}, {})).text, "No spending entries match.");
+  assert.equal((await financeListTool.run({}, {})).text, "No spending entries match.");
 
   saveSpendingEntry({ kind: "income", category: "Salary", amount: 1000 });
   saveSpendingEntry({ kind: "expense", category: "Food", amount: 300, description: "lunch" });
@@ -24,7 +24,7 @@ try {
   saveSpendingEntry({ kind: "expense", category: "Gas", amount: 50 });
 
   // All entries: totals, one line per category and kind, the largest first, then the newest entries.
-  const all = await spendingListTool.run({}, {});
+  const all = await financeListTool.run({}, {});
   assert.equal(all.isError, false);
   assert.match(all.text, /^Income 1000 \| Expense 550 \| Balance 450/);
   const lines = all.text.split("\n");
@@ -35,13 +35,13 @@ try {
   assert.match(all.text, /\| expense \| Food \| 300 \| lunch/, "a description is listed with its entry");
 
   // Filters: a category in any case, and a kind. A count caps the newest entries.
-  const food = await spendingListTool.run({ category: "food" }, {});
+  const food = await financeListTool.run({ category: "food" }, {});
   assert.match(food.text, /^Income 0 \| Expense 500 \| Balance -500/);
-  const income = await spendingListTool.run({ kind: "income" }, {});
+  const income = await financeListTool.run({ kind: "income" }, {});
   assert.match(income.text, /^Income 1000 \| Expense 0/);
-  const one = await spendingListTool.run({ count: 1 }, {});
+  const one = await financeListTool.run({ count: 1 }, {});
   assert.equal(one.text.split("\n").filter((line) => line.includes(" | income | ") || line.includes(" | expense | ")).length, 1);
-  assert.equal((await spendingListTool.run({ category: "Travel" }, {})).text, "No spending entries match.");
+  assert.equal((await financeListTool.run({ category: "Travel" }, {})).text, "No spending entries match.");
 
   // Each listed entry starts with its id, so a change can name it.
   assert.match(all.text, /^[0-9a-f-]{36} \| \d{4}-\d{2}-\d{2} \| expense \| Gas/m);
@@ -57,13 +57,13 @@ try {
   assert.equal(after.amount, 90);
   assert.equal(after.category, "Travel", "a category in another case keeps the existing spelling");
   assert.equal(after.createdAt, before.createdAt);
-  assert.equal((await spendingListTool.run({ category: "Travel" }, {})).text.split("\n")[0], "Income 0 | Expense 90 | Balance -90");
+  assert.equal((await financeListTool.run({ category: "Travel" }, {})).text.split("\n")[0], "Income 0 | Expense 90 | Balance -90");
 
   // The entry's day: the list shows it, spending_upsert takes it, and an entry without one is dated today.
   const dated = await spendingUpsertTool.run({ kind: "expense", category: "Books", amount: 40, date: "2026-02-10" }, {});
   assert.equal(dated.text, `Saved ${dated.text.slice("Saved ".length).split(":")[0]}: expense | 2026-02-10 | Books | 40`);
   const booksId = dated.text.slice("Saved ".length).split(":")[0];
-  assert.match((await spendingListTool.run({ category: "Books" }, {})).text, new RegExp(`^${booksId} \\| 2026-02-10 \\| expense \\| Books \\| 40$`, "m"));
+  assert.match((await financeListTool.run({ category: "Books" }, {})).text, new RegExp(`^${booksId} \\| 2026-02-10 \\| expense \\| Books \\| 40$`, "m"));
   const todayed = await spendingUpsertTool.run({ kind: "income", category: "Refund", amount: 9 }, {});
   const refundId = todayed.text.slice("Saved ".length).split(":")[0];
   assert.equal(getSpendingEntry(refundId).entryDate, localDate(Date.now()));
@@ -72,6 +72,20 @@ try {
   // Refused: a bad kind or amount throws the same message as the app's own save.
   await assert.rejects(spendingUpsertTool.run({ kind: "transfer", category: "x", amount: 1 }, {}), /kind must be income or expense/);
   await assert.rejects(spendingUpsertTool.run({ kind: "expense", category: "x", amount: 0 }, {}), /amount must be a number above 0/);
+
+  // finance_create_entry: a bot adds an entry, with the day it names or today. The id it is given is ignored, so it never changes an entry.
+  const created = await financeCreateEntryTool.run({ kind: "expense", category: "Coffee", amount: 4, description: "latte", date: "2026-04-02", id: booksId }, {});
+  assert.equal(created.isError, false);
+  const createdId = created.text.slice("Saved ".length).split(":")[0];
+  assert.notEqual(createdId, booksId);
+  assert.equal(getSpendingEntry(booksId).amount, 40, "the entry whose id was given is not changed");
+  assert.equal(getSpendingEntry(createdId).entryDate, "2026-04-02");
+  assert.equal(getSpendingEntry(createdId).description, "latte");
+  const gift = await financeCreateEntryTool.run({ kind: "income", category: "Gift", amount: 7 }, {});
+  assert.equal(getSpendingEntry(gift.text.slice("Saved ".length).split(":")[0]).entryDate, localDate(Date.now()));
+  assert.match((await financeListTool.run({ category: "Coffee" }, {})).text, new RegExp(`^${createdId} \\| 2026-04-02 \\| expense \\| Coffee \\| 4 \\| latte$`, "m"));
+  await assert.rejects(financeCreateEntryTool.run({ kind: "transfer", category: "x", amount: 1 }, {}), /kind must be income or expense/);
+  await assert.rejects(financeCreateEntryTool.run({ kind: "expense", category: "x", amount: 1, date: "2026-02-30" }, {}), /date must be a real day as YYYY-MM-DD/);
 
   console.log("spending tool tests passed");
 } finally {

@@ -433,7 +433,7 @@ Tests: `app/skills/format.test.mjs` (header and file rules) and `app/skills/skil
   - Agent run offers `AGENT_TOOLS` = `BASIC_TOOLS` + `SEARCH_TOOLS`. `BASIC_TOOLS` are `bash`, `read`, `edit`, `write`, `skill_search`, `skill_read`, `ask_user`.
   - Agent deferred list `AGENT_DEFERRED` = `DEFERRED_TOOLS` (`memory_search`, `memory_read`, `memory_edit`, `skill_file`) + `spending_upsert`, plus the connected MCP tools (`agentDeferredTools()`).
   - `SEARCH_TOOLS` are `tool_search` and `tool_call`.
-  - Bot turn: `BOT_TOOLS` offered directly. Deferred list `botDeferredTools()` = `SOCIAL_DEFERRED` (`mail_list`, `mail_read`, `mail_send`, `mail_delete`, `slack_search`, `slack_read`, `slack_unread`, `slack_send`, `slack_mark_read`) + `spending_list` + connected MCP tools.
+  - Bot turn: `BOT_TOOLS` offered directly. Deferred list `botDeferredTools()` = `SOCIAL_DEFERRED` (`mail_list`, `mail_read`, `mail_send`, `mail_delete`, `slack_search`, `slack_read`, `slack_unread`, `slack_send`, `slack_mark_read`) + `finance_list` + `finance_create_entry` + connected MCP tools.
 - Prompt: `toolGuidesPrompt(offered)` lists each offered tool's guide. The `tool_search` guide tells the model that other tools exist.
 - `tool_search(query)` (`app/tools/search.ts`): `searchTools` scores each deferred tool. Each query word found in the name adds 2. Each found in the description adds 1. Best first, up to 8. An empty query lists the first 8. Output is each tool's name, description, guide, and inputs.
 - `tool_call(name, input)`: runs one tool from the run's deferred list only. Any other name, including offered tools, fails with "no deferred tool named ... Find it with tool_search first."
@@ -563,7 +563,8 @@ Card: `features/spending/SpendingCard.tsx`, `AddSpendingDialog.tsx`, `useSpendin
 - `GET /api/spending` → `{entries}`, newest first.
 - `POST /api/spending` `{kind, category, amount, description?, date?, id?}` → 201 with the saved entry. `date` is `YYYY-MM-DD`; left out, a new entry gets today's day (server time zone) and an edit keeps its own day. `kind` is `income` or `expense`. `category` is trimmed, required, at most 40 characters. A name typed in another case uses the existing spelling. `amount` is above 0. `description` is at most 200 characters. An `id` at most 64 characters replaces that entry and keeps its first `createdAt`. Without an id a UUID is made.
 - Agents: `spending_upsert` (deferred, agent-only) adds or changes an entry by id, with an optional `date`. Its result is `Saved <id>: <kind> | <date> | <category> | <amount>`.
-- Bots: `spending_list` (deferred, bot-only) returns totals for income, expense, and balance, totals per category and kind, and the newest entries (default 10, at most 50), each with its entry date. It can filter by category and kind.
+- Bots: `finance_create_entry` (deferred, bot-only) adds an entry with `kind`, `category`, `amount`, and optional `description` and `date`. It takes no id, so it never changes an entry. Its result is `Saved <id>: ...`, the same as `spending_upsert`.
+- Bots: `finance_list` (deferred, bot-only) returns totals for income, expense, and balance, totals per category and kind, and the newest entries (default 10, at most 50), each with its entry date. It can filter by category and kind.
 - Sync: `spending/` (flow 15). Entries are matched by id. A same-id edit made on both sides keeps GitHub's copy. A removal on GitHub removes the local entry.
 
 ## 27. System update and restart
