@@ -2,6 +2,7 @@ import type { ToolSpec } from "../../adapters/contract.js";
 import { type MailAccount, readMailAccounts } from "../mail/accounts.js";
 import { listMailMessages, openMailMessage, sendMailMessage, trashMailMessage } from "../mail/mail.js";
 import { slackCall } from "../slack/api.js";
+import { markRead } from "../slack/mark.js";
 import { sendMessage } from "../slack/post.js";
 import { type SlackAccount, readSlackConfig } from "../slack/config.js";
 import { listConversations, listMessages, listReplies, namesOf, resolveMentions, unreadMessages } from "../slack/read.js";
@@ -258,6 +259,28 @@ export const slackSendTool: ToolSpec = {
   },
 };
 
+export const slackMarkReadTool: ToolSpec = {
+  name: "slack_mark_read",
+  guide: "Marks a Slack conversation as read for the connected user, up to a message, so the messages up to it stop showing as unread in Slack. The conversation is a channel id, a channel's name such as general, or a person's name for a direct message. Without ts it marks up to the newest message. It changes what the user sees as read, on every device, so use it only when the user asks you to mark that conversation read.",
+  description: "Mark a Slack conversation read for the connected user, up to its newest message or a given one. This changes Slack's read state, so use it only when asked.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      account: { type: "string", description: "The Slack account's name or workspace. Can be left out when only one account is connected" },
+      channel: { type: "string", description: "The conversation: its id (C…), its name such as general, or a person's name for a direct message" },
+      ts: { type: "string", description: "The timestamp of the message to read up to, from slack_read. Can be left out to read up to the newest message" },
+    },
+    required: ["channel"],
+  },
+  async run({ account, channel, ts }) {
+    const found = slackAccountFor(account);
+    const channelId = await channelIdOf(found, channel);
+    const marked = await markRead(found.id, channelId, ts ? String(ts) : undefined);
+    if (!marked.ts) return ok(`${String(channel).trim()} has no messages to mark.`);
+    return ok(`Marked ${String(channel).trim()} read up to ${marked.ts}.`);
+  },
+};
+
 // The tools for bots over mail and Slack. They are deferred: a bot finds them with tool_search and runs them with tool_call.
 export const SOCIAL_TOOLS: ToolSpec[] = [
   mailListTool,
@@ -268,4 +291,5 @@ export const SOCIAL_TOOLS: ToolSpec[] = [
   slackReadTool,
   slackUnreadTool,
   slackSendTool,
+  slackMarkReadTool,
 ];

@@ -17,8 +17,8 @@ try {
   const registry = await import(`${DIST}app/tools/index.js`);
   const social = await import(`${DIST}app/tools/social.js`);
   paths.ensureMipDirs();
-  const names = ["mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send"];
-  const WRITE_TOOLS = ["mail_send", "mail_delete", "slack_send"];
+  const names = ["mail_list", "mail_read", "mail_send", "mail_delete", "slack_search", "slack_read", "slack_unread", "slack_send", "slack_mark_read"];
+  const WRITE_TOOLS = ["mail_send", "mail_delete", "slack_send", "slack_mark_read"];
 
   // 1. Bots find these tools through tool_search. Agents do not get them.
   const bot = registry.botDeferredTools().map((tool) => tool.name);
@@ -135,6 +135,51 @@ try {
     assert.equal(calls.filter((call) => call.method === "chat.postMessage").length, 2, "a refused message is not posted");
   } finally {
     globalThis.fetch = sendFetch;
+  }
+
+  // 6. slack_mark_read marks a conversation read, up to the timestamp it is given or up to its newest message. A conversation with no messages
+  // is not marked, and a timestamp that is not one is refused. Marking forgets the unread answer, so the next read asks Slack again.
+  const markFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const method = String(url).split("/").pop();
+    const params = Object.fromEntries(new URLSearchParams(String(init.body)));
+    calls.push({ method, params });
+    const replies = {
+      "users.list": { ok: true, members: [] },
+      "users.conversations": { ok: true, channels: [{ id: "C1", name: "general" }, { id: "C2", name: "ops", is_group: true }] },
+      "conversations.history": { ok: true, messages: { C1: [{ ts: "1700000300.000200", user: "U2", text: "deploy done" }], C2: [] }[params.channel] },
+      "conversations.info": { ok: true, channel: { last_read: "1700000100.000000" } },
+      "conversations.mark": { ok: true },
+    };
+    return new Response(JSON.stringify(replies[method]), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  try {
+    const mark = tool("slack_mark_read");
+    const marks = () => calls.filter((call) => call.method === "conversations.mark");
+
+    const newest = await mark.run({ channel: "general" }, {});
+    assert.equal(newest.isError, false);
+    assert.equal(newest.text, "Marked general read up to 1700000300.000200.");
+    assert.deepEqual(marks().at(-1).params, { channel: "C1", ts: "1700000300.000200" });
+
+    const exact = await mark.run({ channel: "C1", ts: "1700000100.000000" }, {});
+    assert.equal(exact.text, "Marked C1 read up to 1700000100.000000.");
+    assert.deepEqual(marks().at(-1).params, { channel: "C1", ts: "1700000100.000000" });
+
+    const empty = await mark.run({ channel: "ops" }, {});
+    assert.equal(empty.text, "ops has no messages to mark.");
+    assert.equal(marks().length, 2, "a conversation with no messages is not marked");
+
+    const bad = await mark.run({ channel: "general", ts: "yesterday" }, {});
+    assert.equal(bad.isError, true);
+    assert.match(bad.text, /not a message timestamp/);
+    assert.equal(marks().length, 2, "a refused mark is not sent");
+
+    const before = calls.filter((call) => call.method === "conversations.info").length;
+    await tool("slack_unread").run({}, {});
+    assert.ok(calls.filter((call) => call.method === "conversations.info").length > before, "the unread answer is read again after a mark");
+  } finally {
+    globalThis.fetch = markFetch;
   }
 
   console.log("social tool tests passed");
