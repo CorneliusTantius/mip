@@ -5,6 +5,7 @@ import { BotProfileModal } from "./BotProfileModal";
 import { BotsDialog } from "./BotsDialog";
 import { MentionInput } from "./MentionInput";
 import { RoomDialog } from "./RoomDialog";
+import { RoomMembers } from "./RoomMembers";
 import { RoomTranscript } from "./RoomTranscript";
 import { useRoom } from "./useRoom";
 import { useRooms } from "./useRooms";
@@ -52,16 +53,10 @@ export function BotsCard() {
         </div>
 
         {active && (
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span className="text-xs opacity-70">In {active.name}:</span>
-            {members.map((bot) => (
-              <span key={bot.id} className="badge badge-outline gap-1.5">
-                <span className={`bot-dot size-2 bot-${bot.color}`} />
-                {bot.name}
-              </span>
-            ))}
-            {members.length === 0 && <span className="text-xs opacity-70">no bots yet</span>}
-            <button className="btn btn-xs btn-ghost ml-auto" onClick={() => setRoomDialog(active)}>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="flex-none text-xs opacity-70">In {active.name}:</span>
+            <RoomMembers bots={members} />
+            <button className="btn btn-xs btn-ghost flex-none" onClick={() => setRoomDialog(active)}>
               Room settings
             </button>
           </div>

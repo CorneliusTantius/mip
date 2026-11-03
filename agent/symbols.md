@@ -584,14 +584,16 @@
 | src/frontend/features/agent/useTranscript.ts | 11 | function | useTranscript |
 | src/frontend/features/bots/BotEditor.tsx | 21 | function | BotEditor |
 | src/frontend/features/bots/BotProfileModal.tsx | 7 | function | BotProfileModal |
-| src/frontend/features/bots/BotsCard.tsx | 13 | function | BotsCard |
+| src/frontend/features/bots/BotsCard.tsx | 14 | function | BotsCard |
 | src/frontend/features/bots/BotsDialog.tsx | 10 | function | BotsDialog |
 | src/frontend/features/bots/MentionInput.tsx | 7 | function | MentionInput |
 | src/frontend/features/bots/MessageText.tsx | 5 | function | MessageText |
 | src/frontend/features/bots/RoomDialog.tsx | 10 | function | RoomDialog |
+| src/frontend/features/bots/RoomMembers.tsx | 7 | function | RoomMembers |
 | src/frontend/features/bots/RoomTranscript.tsx | 11 | function | RoomTranscript |
 | src/frontend/features/bots/botColors.ts | 4 | const | BOT_COLORS |
 | src/frontend/features/bots/botColors.ts | 7 | function | nextBotColor |
+| src/frontend/features/bots/fitBadges.ts | 3 | function | badgesThatFit |
 | src/frontend/features/bots/mentions.ts | 4 | interface | Mention |
 | src/frontend/features/bots/mentions.ts | 12 | function | mentionAt |
 | src/frontend/features/bots/mentions.ts | 19 | function | suggestions |

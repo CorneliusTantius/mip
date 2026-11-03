@@ -123,7 +123,9 @@ Preact 11, Vite 8, Tailwind 4 (`@tailwindcss/vite`), daisyUI 5 (`themes: false`,
 ## features/bots/
 | file | exports | job |
 | --- | --- | --- |
-| `BotsCard.tsx` | `BotsCard` | Room tabs, `+ New room`, the room's bot badges, `Room settings`, `Manage bots`, transcript, status row, message form. |
+| `BotsCard.tsx` | `BotsCard` | Room tabs, `+ New room`, the room's bot line (`RoomMembers`), `Room settings`, `Manage bots`, transcript, status row, message form. |
+| `RoomMembers.tsx` | `RoomMembers` | The room's bots on one line: as many badges as fit, then `+n` (its `title` lists the hidden names). A hidden copy of every badge, plus a `+total` badge, is measured on each resize (`ResizeObserver`) and when the members change. |
+| `fitBadges.ts` | `badgesThatFit` | Pure rule for `RoomMembers`: how many badge widths fit in the width, leaving room for the `+n` badge. Tested by `fitBadges.test.mjs`. |
 | `useRooms.ts` | `useRooms` | Rooms, bots, and the room on screen. `reload()` reads both. Keeps the current room if it still exists, else the first. |
 | `useRoom.ts` | `useRoom(roomId)` | Messages, busy, speaking, error of one room. Polls every 1.5 s, asking only for messages after the last id. `send(text)` posts, polls at once, returns `true` when accepted. |
 | `RoomDialog.tsx` | `RoomDialog` | Create or edit a room: name, bots (checkboxes), master (`None` or a checked bot), `collapseOthers`, Delete room through `ConfirmDialog`. `onClose(changed)`. |
