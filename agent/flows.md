@@ -433,7 +433,7 @@ Tests: `app/skills/format.test.mjs` (header and file rules) and `app/skills/skil
   - Agent run offers `AGENT_TOOLS` = `BASIC_TOOLS` + `SEARCH_TOOLS`. `BASIC_TOOLS` are `bash`, `read`, `edit`, `write`, `skill_search`, `skill_read`, `ask_user`.
   - Agent deferred list `AGENT_DEFERRED` = `DEFERRED_TOOLS` (`memory_search`, `memory_read`, `memory_edit`, `skill_file`) + `spending_upsert`, plus the connected MCP tools (`agentDeferredTools()`).
   - `SEARCH_TOOLS` are `tool_search` and `tool_call`.
-  - Bot turn: `BOT_TOOLS` offered directly. Deferred list `botDeferredTools()` = `SOCIAL_DEFERRED` (`mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unreplied`) + `spending_list` + connected MCP tools.
+  - Bot turn: `BOT_TOOLS` offered directly. Deferred list `botDeferredTools()` = `SOCIAL_DEFERRED` (`mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unread`) + `spending_list` + connected MCP tools.
 - Prompt: `toolGuidesPrompt(offered)` lists each offered tool's guide. The `tool_search` guide tells the model that other tools exist.
 - `tool_search(query)` (`app/tools/search.ts`): `searchTools` scores each deferred tool. Each query word found in the name adds 2. Each found in the description adds 1. Best first, up to 8. An empty query lists the first 8. Output is each tool's name, description, guide, and inputs.
 - `tool_call(name, input)`: runs one tool from the run's deferred list only. Any other name, including offered tools, fails with "no deferred tool named ... Find it with tool_search first."
@@ -539,7 +539,7 @@ Disconnect: `DELETE /api/slack/accounts/:id` → `SlackReply`. 404 when not conn
 
 Reads (all answers cached in `slack-cache.json`; `?refresh=1` bypasses the cache):
 - `GET /api/slack/accounts/:id/conversations`: `users.conversations` (public and private channels, MPIMs, IMs; archived excluded; limit 200). Names come from `users.list`, cached for a day per team. Sorted: channels, private channels, group DMs, DMs, then by name. Cached 10 minutes.
-- `GET .../unread`: for the first 40 conversations, `conversations.info` `last_read` and `conversations.history` (limit 100), counting messages not from the user. Batches of 5. A failing conversation counts 0. Cached 2 minutes.
+- `GET .../unread`: `unreadCounts` (`app/slack/read.ts`) takes one count per conversation from `unreadMessages`. `unreadMessages` reads the first 40 conversations: `conversations.info` `last_read`, then `conversations.history` (limit 100), keeping messages not from the user. Batches of 5. A failing conversation has none. Cached 2 minutes.
 - `GET .../conversations/:channel/messages`: `conversations.history` (limit 30). Thread replies are removed, and each parent shows `replies`. Cached 2 minutes. The channel id must match `^[A-Z0-9]{1,32}$` (400).
 - `GET .../conversations/:channel/threads/:ts`: `conversations.replies` (limit 100). `ts` must match `^\d+\.\d+$` (400).
 - `resolveMentions` turns `<@U…>` into `@name`.
@@ -548,14 +548,14 @@ Send: `POST .../conversations/:channel/messages` (JSON) `{text, threadTs?}` → 
 
 Errors (`api.ts`): HTTP 429 gives 429 with `Retry-After`. A network failure gives 502. Slack error codes: `invalid_auth`, `not_authed`, `token_revoked`, `token_expired`, `account_inactive` give 401. `missing_scope` gives 403. `not_in_channel`, `channel_not_found` give 404. `ratelimited` gives 429. Any other code gives 502.
 
-Cache keys: `conversations:<account>`, `messages:<account>:<channel>`, `replies:<account>:<channel>:<ts>`, `unread:<account>`, `unreplied:<account>`, `users:<team id>`. Time to live: conversations 10 min; messages, replies, and unread 2 min; users 24 h.
+Cache keys: `conversations:<account>`, `messages:<account>:<channel>`, `replies:<account>:<channel>:<ts>`, `unread-messages:<account>`, `users:<team id>`. Time to live: conversations 10 min; messages, replies, and unread 2 min; users 24 h.
 
-Bots (read-only, deferred, bot-only): `slack_search` (`search.messages`, `count` up to 20, default 10, newest first) and `slack_read` (a channel id or a name, with optional `thread_ts`; 30 messages, or the last 100 replies). `slack_unreplied` (`unrepliedMessages`): the messages from others that the user has not answered, in the first 40 conversations, newest first, each with its conversation. `query` keeps the messages that contain all its words; `count` up to 30, default 10. It sends and marks nothing. `account` may be left out when one account is connected.
+Bots (read-only, deferred, bot-only): `slack_search` (`search.messages`, `count` up to 20, default 10, newest first) and `slack_read` (a channel id or a name, with optional `thread_ts`; 30 messages, or the last 100 replies). `slack_unread` (`unreadMessages`): the unread messages of the first 40 conversations, newest first, each with its conversation. `query` keeps the messages that contain all its words; `count` up to 30, default 10. It marks nothing read. `account` may be left out when one account is connected.
 
 Sync: the app and accounts go to `slack-app/` and `slack/` (GitHub's copy wins on conflict). The Slack cache goes to `slack-cache/` (the newer read wins). A `slack.json` entry that fails its checks stops the sync (409).
 
 Gotchas:
-- `deleteSlackAccount` drops every key of the account: `conversations:`, `messages:`, `replies:`, `unread:`, and `unreplied:`.
+- `deleteSlackAccount` drops every key of the account: `conversations:`, `messages:`, `replies:`, `unread:`, and `unread-messages:`.
 
 ## 26. Spending
 Card: `features/spending/SpendingCard.tsx`, `AddSpendingDialog.tsx`, `useSpending.ts`. Backend: `app/spending.ts`, `storage/spending.ts` (table `spending_entries`).

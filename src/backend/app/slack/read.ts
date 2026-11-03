@@ -53,7 +53,6 @@ const UNREAD_TTL = 2 * 60_000;
 const UNREAD_CONVERSATIONS = 40;
 const UNREAD_PER_CONVERSATION = 100;
 const UNREAD_BATCH = 5;
-const UNREPLIED_PER_CONVERSATION = 50;
 
 // The conversations of an account, channels first, then direct messages.
 export function listConversations(accountId: string, force = false): Promise<SlackConversation[]> {
@@ -81,66 +80,26 @@ export function listConversations(accountId: string, force = false): Promise<Sla
   );
 }
 
-// Unread messages per conversation: the messages after the user's last read, not counting the user's own. Slack has no unread count for a user
-// token, so each conversation is checked. Only the most recent conversations are counted, to stay under Slack's rate limits.
-// shortcut: 40 conversations, 100 messages each, so a busier inbox shows a low count; raise these when Slack's limits allow.
-export function unreadCounts(accountId: string, force = false): Promise<Record<string, number>> {
-  const account = accountOf(accountId);
-  return cached(
-    `unread:${account.id}`,
-    UNREAD_TTL,
-    async () => {
-      const conversations = (await listConversations(accountId, force)).slice(0, UNREAD_CONVERSATIONS);
-      const counts: Record<string, number> = {};
-      for (let i = 0; i < conversations.length; i += UNREAD_BATCH) {
-        await Promise.all(
-          conversations.slice(i, i + UNREAD_BATCH).map(async (conversation) => {
-            counts[conversation.id] = await unreadIn(account, conversation.id);
-          }),
-        );
-      }
-      return counts;
-    },
-    force,
-  );
-}
-
-async function unreadIn(account: SlackAccount, channel: string): Promise<number> {
-  try {
-    const info = await slackCall<{ channel: { last_read?: string } }>("conversations.info", account.token, { channel });
-    const reply = await slackCall<{ messages: { user?: string }[] }>("conversations.history", account.token, {
-      channel,
-      oldest: info.channel.last_read || "0",
-      limit: UNREAD_PER_CONVERSATION,
-    });
-    return reply.messages.filter((message) => message.user !== account.userId).length;
-  } catch {
-    // A conversation that cannot be read counts as none, so one refused read does not hide the rest.
-    return 0;
-  }
-}
-
-export interface UnrepliedMessage {
+export interface UnreadMessage {
   conversation: SlackConversation;
   message: SlackMessage;
 }
 
-// The messages from others that the user has not answered, newest first, each with its conversation. A message counts when no message of the
-// user comes after it in its conversation, and it is in a direct or group message, or it mentions the user. Bots are left out. Only the most
-// recent conversations are read, and thread replies are not, so a reply in a thread can show as unanswered.
-// shortcut: 40 conversations, 50 messages each, so an older unanswered message can be missed; raise these when Slack's limits allow.
-export function unrepliedMessages(accountId: string, force = false): Promise<UnrepliedMessage[]> {
+// The unread messages of the most recent conversations, newest first, each with its conversation. Slack has no unread count for a user
+// token, so each conversation is read from its last read point. Only the most recent conversations are checked, to stay under Slack's rate limits.
+// shortcut: 40 conversations, 100 messages each, so a busier inbox shows only part of its unread messages; raise these when Slack's limits allow.
+export function unreadMessages(accountId: string, force = false): Promise<UnreadMessage[]> {
   const account = accountOf(accountId);
   return cached(
-    `unreplied:${account.id}`,
+    `unread-messages:${account.id}`,
     UNREAD_TTL,
     async () => {
       const conversations = (await listConversations(accountId, force)).slice(0, UNREAD_CONVERSATIONS);
       const names = await namesOf(account);
-      const found: UnrepliedMessage[] = [];
+      const found: UnreadMessage[] = [];
       for (let i = 0; i < conversations.length; i += UNREAD_BATCH) {
         const batch = conversations.slice(i, i + UNREAD_BATCH);
-        const reads = await Promise.all(batch.map((conversation) => unansweredIn(account, conversation)));
+        const reads = await Promise.all(batch.map((conversation) => unreadIn(account, conversation.id)));
         batch.forEach((conversation, j) => {
           for (const message of reads[j]) found.push({ conversation, message: toMessage(message, names) });
         });
@@ -151,19 +110,24 @@ export function unrepliedMessages(accountId: string, force = false): Promise<Unr
   );
 }
 
-// The messages in one conversation that the user has not answered. Slack lists the newest first, so the messages above the user's newest one
-// are the unanswered ones.
-async function unansweredIn(account: SlackAccount, conversation: SlackConversation): Promise<RawMessage[]> {
+// The unread count of each of the most recent conversations, for the dashboard. A conversation with none is 0.
+export async function unreadCounts(accountId: string, force = false): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  for (const conversation of (await listConversations(accountId, force)).slice(0, UNREAD_CONVERSATIONS)) counts[conversation.id] = 0;
+  for (const { conversation } of await unreadMessages(accountId, force)) counts[conversation.id] = (counts[conversation.id] ?? 0) + 1;
+  return counts;
+}
+
+// The messages in one conversation after the user's last read, not counting the user's own. A conversation that cannot be read has none.
+async function unreadIn(account: SlackAccount, channel: string): Promise<RawMessage[]> {
   try {
+    const info = await slackCall<{ channel: { last_read?: string } }>("conversations.info", account.token, { channel });
     const reply = await slackCall<{ messages: RawMessage[] }>("conversations.history", account.token, {
-      channel: conversation.id,
-      limit: UNREPLIED_PER_CONVERSATION,
+      channel,
+      oldest: info.channel.last_read || "0",
+      limit: UNREAD_PER_CONVERSATION,
     });
-    const newestOwn = reply.messages.findIndex((message) => message.user === account.userId);
-    const open = newestOwn === -1 ? reply.messages : reply.messages.slice(0, newestOwn);
-    const addressed = conversation.kind === "dm" || conversation.kind === "group";
-    const mention = new RegExp(`<@${account.userId}(?:\\|[^>]*)?>`);
-    return open.filter((message) => message.user && message.user !== account.userId && (addressed || mention.test(message.text ?? "")));
+    return reply.messages.filter((message) => message.user !== account.userId);
   } catch {
     // A conversation that cannot be read has none, so one refused read does not hide the rest.
     return [];

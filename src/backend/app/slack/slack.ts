@@ -62,7 +62,7 @@ export function saveSlackAppInput(input: unknown): SlackReply {
 // Disconnects an account. Its token is removed from slack.json; nothing is revoked in Slack.
 export function deleteSlackAccount(id: string): SlackReply {
   removeSlackAccount(id);
-  forgetCache([`conversations:${id}`, `messages:${id}:`, `replies:${id}:`, `unread:${id}`, `unreplied:${id}`]);
+  forgetCache([`conversations:${id}`, `messages:${id}:`, `replies:${id}:`, `unread:${id}`, `unread-messages:${id}`]);
   return slackReply();
 }
 

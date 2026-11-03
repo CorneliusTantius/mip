@@ -236,12 +236,12 @@ App: `app/tools/index.ts` (`describeTools`, run lists).
 | `memory_search`, `memory_read`, `memory_edit` | deferred | yes | yes | `app/tools/memory.ts` |
 | `skill_file` | deferred | yes | yes | `app/tools/skills.ts` |
 | `tool_search`, `tool_call` | search | yes | yes | `app/tools/search.ts` |
-| `mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unreplied` | deferred | no | yes | `app/tools/social.ts` |
+| `mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unread` | deferred | no | yes | `app/tools/social.ts` |
 | `spending_list` | deferred | no | yes | `app/tools/financial.ts` |
 | `spending_upsert` | deferred | yes | no | `app/tools/financial.ts` |
 | `mcp_<server>_<tool>` | deferred | yes | yes | `app/mcp/manager.ts` (`mcpToolName`) |
 
-- Bot-only (`bot: true`, `agent: false`): `room_search`, `agents_list`, `agent_ask`, `mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unreplied`, `spending_list`. Nine tools.
+- Bot-only (`bot: true`, `agent: false`): `room_search`, `agents_list`, `agent_ask`, `mail_list`, `mail_read`, `slack_search`, `slack_read`, `slack_unread`, `spending_list`. Nine tools.
 - Agent-only (`agent: true`, `bot: false`): `bash`, `read`, `edit`, `write`, `ask_user`, `spending_upsert`. Six tools.
 - Offered directly on `POST /mcp` `tools/list`:
   - agents: `AGENT_TOOLS` (`bash`, `read`, `edit`, `write`, `skill_search`, `skill_read`, `ask_user`, `tool_search`, `tool_call`).

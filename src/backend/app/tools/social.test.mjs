@@ -16,7 +16,7 @@ try {
   const registry = await import(`${DIST}app/tools/index.js`);
   const social = await import(`${DIST}app/tools/social.js`);
   paths.ensureMipDirs();
-  const names = ["mail_list", "mail_read", "slack_search", "slack_read", "slack_unreplied"];
+  const names = ["mail_list", "mail_read", "slack_search", "slack_read", "slack_unread"];
 
   // 1. Bots find the read tools through tool_search. Agents do not get them.
   const bot = registry.botDeferredTools().map((tool) => tool.name);
@@ -41,8 +41,8 @@ try {
   assert.equal(noSlack.isError, true);
   assert.match(noSlack.text, /Name the Slack account/);
 
-  // 4. slack_unreplied lists the messages from others that the user has not answered: those above the user's newest message, in a direct or
-  // group message or mentioning the user. Slack is faked: fetch answers the methods the tool uses, and every call is recorded.
+  // 4. slack_unread lists the unread messages of the connected account, newest first, without the user's own, and asks Slack only to read.
+  // Slack is faked: fetch answers the methods the tool uses, and every call is recorded.
   const slack = await import(`${DIST}app/slack/config.js`);
   slack.saveSlackAccount({ id: "T1.U1", teamId: "T1", teamName: "Acme", userId: "U1", userName: "Me", token: "xoxp-test" });
   const realFetch = globalThis.fetch;
@@ -53,47 +53,39 @@ try {
     calls.push({ method, params });
     const replies = {
       "users.list": { ok: true, members: [{ id: "U2", profile: { display_name: "Dana" } }, { id: "U1", real_name: "Me" }] },
-      "users.conversations": { ok: true, channels: [{ id: "C1", name: "general" }, { id: "C2", name: "team-ops", is_mpim: true }, { id: "D1", is_im: true, user: "U2" }] },
+      "users.conversations": { ok: true, channels: [{ id: "C1", name: "general" }, { id: "C2", name: "ops", is_group: true }, { id: "D1", is_im: true, user: "U2" }] },
+      "conversations.info": { ok: true, channel: { last_read: { C1: "1700000100.000000", C2: "0", D1: "1700000500.000000" }[params.channel] } },
       "conversations.history": {
         ok: true,
         messages: {
-          C1: [
-            { ts: "1700000300.000200", user: "U2", text: "deploy done, thanks <@U1>" },
-            { ts: "1700000250.000000", user: "U3", text: "lunch?" },
-            { ts: "1700000200.000100", user: "U1", text: "my own message" },
-            { ts: "1700000100.000000", user: "U2", text: "older, answered" },
-          ],
+          C1: [{ ts: "1700000300.000200", user: "U2", text: "deploy done, thanks <@U1>" }, { ts: "1700000200.000100", user: "U1", text: "my own message" }],
           C2: [{ ts: "1700000400.000300", user: "U3", text: "outage in prod" }],
-          D1: [{ ts: "1700000500.000000", user: "U2", text: "ping, are you there?" }],
+          D1: [],
         }[params.channel],
       },
     };
     return new Response(JSON.stringify(replies[method]), { status: 200, headers: { "Content-Type": "application/json" } });
   };
   try {
-    const unreplied = tool("slack_unreplied");
-    const all = await unreplied.run({}, {});
+    const unread = tool("slack_unread");
+    const all = await unread.run({}, {});
     assert.equal(all.isError, false);
-    assert.match(all.text, /^3 unreplied message\(s\) in 3 conversation\(s\)\./);
-    const ping = all.text.indexOf("ping, are you there?");
-    const outage = all.text.indexOf("outage in prod");
-    const deploy = all.text.indexOf("deploy done, thanks @Me");
-    assert.ok(ping > 0 && ping < outage && outage < deploy, "the newest unreplied message comes first");
-    assert.match(all.text, /Dana \(D1\) Dana: ping, are you there\?/);
-    assert.match(all.text, /team-ops \(C2\) U3: outage in prod/);
+    assert.match(all.text, /^2 unread message\(s\) in 2 conversation\(s\)\./);
+    assert.ok(all.text.indexOf("outage in prod") < all.text.indexOf("deploy done, thanks @Me"), "the newest unread message comes first");
+    assert.match(all.text, /#ops \(C2\) U3: outage in prod/);
     assert.match(all.text, /#general \(C1\) Dana: deploy done, thanks @Me/);
-    for (const left of ["lunch?", "my own message", "older, answered"]) assert.ok(!all.text.includes(left), `${left} is not unreplied`);
+    assert.ok(!all.text.includes("my own message"), "the user's own messages are not unread");
+    assert.equal(calls.find((call) => call.method === "conversations.history" && call.params.channel === "C1").params.oldest, "1700000100.000000");
 
-    const words = await unreplied.run({ query: "OUTAGE" }, {});
+    const words = await unread.run({ query: "OUTAGE" }, {});
     assert.ok(words.text.includes("outage in prod") && !words.text.includes("deploy"), "query keeps the messages with its words");
-    const none = await unreplied.run({ query: "nothing here" }, {});
-    assert.equal(none.text, 'No unreplied message contains "nothing here".');
-    const one = await unreplied.run({ count: 1 }, {});
+    const none = await unread.run({ query: "nothing here" }, {});
+    assert.equal(none.text, 'No unread message contains "nothing here".');
+    const one = await unread.run({ count: 1 }, {});
     assert.match(one.text, /Showing the newest 1\./);
     assert.ok(!one.text.includes("deploy"));
 
-    assert.ok(calls.every((call) => ["users.list", "users.conversations", "conversations.history"].includes(call.method)), "only reads reach Slack");
-    assert.ok(calls.filter((call) => call.method === "conversations.history").every((call) => call.params.oldest === undefined), "no read is limited to unread messages");
+    assert.ok(calls.every((call) => ["users.list", "users.conversations", "conversations.info", "conversations.history"].includes(call.method)), "only reads reach Slack");
   } finally {
     globalThis.fetch = realFetch;
   }
