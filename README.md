@@ -22,10 +22,10 @@ Pi's Anthropic provider is hidden. Its only option is an API key, which bills se
 
 ```bash
 npm install
-npm start
+./run.sh
 ```
 
-`npm start` builds first, then runs the server. `npm run serve` runs the last build as it is.
+`./run.sh` builds, then starts the server in the background and gives the terminal back. Its log is `~/.mip/run.log`, and `~/.mip/run.pid` holds the process group id. Stop mip with `kill -- -$(cat ~/.mip/run.pid)`. `npm start` builds and runs the server in the foreground instead. `npm run serve` runs the last build as it is.
 
 Open http://127.0.0.1:3000. The gear icon opens Settings, where you sign providers in and out, and update mip (see Updating). Set `CLAUDE_BIN` if `claude` isn't on your PATH.
 

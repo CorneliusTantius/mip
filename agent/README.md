@@ -23,6 +23,7 @@ Run it after changing anything under `src/`.
 - The server serves `dist/frontend` and the API from one port, `127.0.0.1:3000` (`MIP_PORT` changes the port).
 
 ## Commands
+    ./run.sh                   # builds, then starts the server detached (setsid, nohup); log ~/.mip/run.log, pid ~/.mip/run.pid. Stop: kill -- -$(cat ~/.mip/run.pid)
     npm run typecheck          # backend and frontend, no emit
     npm run build              # build:backend, then build:frontend
     npm run build:backend      # tsc, src/backend to dist/backend
